@@ -17,3 +17,8 @@ dist/
 # Editor
 .vscode/
 *.swp
+
+# BMAD
+_bmad/
+.claude/
+.agents/
