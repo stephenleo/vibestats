@@ -4,9 +4,10 @@
 .LSOverride
 
 # Build artifacts (added during implementation)
-target/
+/target
 node_modules/
 dist/
+site/dist/
 .astro/
 
 # Local env / secrets

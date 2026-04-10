@@ -1,0 +1,5 @@
+name: vibestats
+description: 'Generate Claude Code activity heatmap'
+runs:
+  using: composite
+  steps: []

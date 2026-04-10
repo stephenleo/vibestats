@@ -1,0 +1,4 @@
+name: aggregate
+on:
+  workflow_dispatch:
+jobs: {}

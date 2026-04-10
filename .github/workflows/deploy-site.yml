@@ -1,0 +1,4 @@
+name: deploy-site
+on:
+  workflow_dispatch:
+jobs: {}
