@@ -158,7 +158,7 @@ No UX design document — vibestats has no bespoke UI beyond the Astro site and 
 
 ## Epic List
 
-| # | Epic | GitHub Issue | Stories |
+| # | Epic | GH Issue | Stories |
 |---|---|---|---|
 | 1 | Project Foundation & Schema Definitions | [#1](https://github.com/stephenleo/vibestats/issues/1) | #9, #10, #11, #12 |
 | 2 | Rust Binary — Foundation Modules | [#2](https://github.com/stephenleo/vibestats/issues/2) | #13, #14, #15, #16, #17 |
@@ -174,12 +174,12 @@ No UX design document — vibestats has no bespoke UI beyond the Astro site and 
 ---
 
 ## Epic 1: Project Foundation & Schema Definitions
-**GitHub Issue:** [stephenleo/vibestats#1](https://github.com/stephenleo/vibestats/issues/1)
+**GH Issue:** #1
 
 Set up the monorepo structure, initialize all component projects, and define the shared data contracts that every component depends on. Must be completed first — all downstream epics rely on the schemas defined here.
 
 ### Story 1.1: Initialize monorepo directory structure
-**GitHub Issue:** [stephenleo/vibestats#9](https://github.com/stephenleo/vibestats/issues/9)
+**GH Issue:** #9
 
 As a developer,
 I want the vibestats monorepo initialized with the correct directory structure,
@@ -199,7 +199,7 @@ So that all components have a defined home and the project is ready for implemen
 ---
 
 ### Story 1.2: Initialize Rust binary project
-**GitHub Issue:** [stephenleo/vibestats#10](https://github.com/stephenleo/vibestats/issues/10)
+**GH Issue:** #10
 
 As a developer,
 I want the Rust binary project initialized with all required crates declared,
@@ -222,7 +222,7 @@ So that the project compiles with a working CLI skeleton before any feature code
 ---
 
 ### Story 1.3: Initialize Astro site project
-**GitHub Issue:** [stephenleo/vibestats#11](https://github.com/stephenleo/vibestats/issues/11)
+**GH Issue:** #11
 
 As a developer,
 I want the Astro site project initialized with the correct structure and cal-heatmap dependency declared,
@@ -245,7 +245,7 @@ So that the dashboard and docs pages can be built without setup friction.
 ---
 
 ### Story 1.4: Define and document all JSON and TOML schemas
-**GitHub Issue:** [stephenleo/vibestats#12](https://github.com/stephenleo/vibestats/issues/12)
+**GH Issue:** #12
 
 As a developer,
 I want all shared data schemas formally documented in one place,
@@ -268,12 +268,12 @@ So that every component implements the same data contracts without ambiguity.
 ---
 
 ## Epic 2: Rust Binary — Foundation Modules
-**GitHub Issue:** [stephenleo/vibestats#2](https://github.com/stephenleo/vibestats/issues/2)
+**GH Issue:** #2
 
 Implement the foundational modules of the Rust binary: config, logger, checkpoint, JSONL parser, and GitHub API client. Depends on Epic 1.
 
 ### Story 2.1: Implement config module
-**GitHub Issue:** [stephenleo/vibestats#13](https://github.com/stephenleo/vibestats/issues/13)
+**GH Issue:** #13
 
 As the vibestats binary,
 I want a config module that reads and writes `~/.config/vibestats/config.toml` with correct permissions,
@@ -300,7 +300,7 @@ So that the OAuth token, machine ID, and repo path are stored securely.
 ---
 
 ### Story 2.2: Implement logger module
-**GitHub Issue:** [stephenleo/vibestats#14](https://github.com/stephenleo/vibestats/issues/14)
+**GH Issue:** #14
 
 As the vibestats binary,
 I want a logger module that appends structured entries to `~/.config/vibestats/vibestats.log`,
@@ -323,7 +323,7 @@ So that sync failures and diagnostics are captured without output to stdout duri
 ---
 
 ### Story 2.3: Implement checkpoint module
-**GitHub Issue:** [stephenleo/vibestats#15](https://github.com/stephenleo/vibestats/issues/15)
+**GH Issue:** #15
 
 As the vibestats binary,
 I want a checkpoint module that persists throttle state, per-date content hashes, auth error flag, and machine status,
@@ -350,7 +350,7 @@ So that sync operations are idempotent and the Stop hook hot path makes no unnec
 ---
 
 ### Story 2.4: Implement JSONL parser
-**GitHub Issue:** [stephenleo/vibestats#16](https://github.com/stephenleo/vibestats/issues/16)
+**GH Issue:** #16
 
 As the vibestats binary,
 I want a JSONL parser that walks `~/.claude/projects/**/*.jsonl` and extracts per-day session activity,
@@ -373,7 +373,7 @@ So that usage data is derived from the authoritative local source.
 ---
 
 ### Story 2.5: Implement GitHub API module
-**GitHub Issue:** [stephenleo/vibestats#17](https://github.com/stephenleo/vibestats/issues/17)
+**GH Issue:** #17
 
 As the vibestats binary,
 I want a single GitHub API module that handles all Contents API calls with retry and error handling,
@@ -400,12 +400,12 @@ So that no other module makes direct HTTP calls to GitHub and the silent failure
 ---
 
 ## Epic 3: Rust Binary — Sync Engine
-**GitHub Issue:** [stephenleo/vibestats#3](https://github.com/stephenleo/vibestats/issues/3)
+**GH Issue:** #3
 
 Implement core sync logic: Stop hook, SessionStart catch-up, staleness warnings, throttle, and backfill. Depends on Epic 2.
 
 ### Story 3.1: Implement core sync orchestration
-**GitHub Issue:** [stephenleo/vibestats#18](https://github.com/stephenleo/vibestats/issues/18)
+**GH Issue:** #18
 
 As the vibestats binary,
 I want a sync orchestration layer that coordinates JSONL parsing, hash comparison, and GitHub API push for a given date range,
@@ -428,7 +428,7 @@ So that any entry point (hook, CLI, backfill) routes through the same tested log
 ---
 
 ### Story 3.2: Implement Stop hook integration
-**GitHub Issue:** [stephenleo/vibestats#19](https://github.com/stephenleo/vibestats/issues/19)
+**GH Issue:** #19
 
 As the vibestats system,
 I want the Stop hook to fire after every Claude Code session response and sync today's data if not throttled,
@@ -451,7 +451,7 @@ So that the profile heatmap stays current with zero user action.
 ---
 
 ### Story 3.3: Implement SessionStart hook integration
-**GitHub Issue:** [stephenleo/vibestats#20](https://github.com/stephenleo/vibestats/issues/20)
+**GH Issue:** #20
 
 As the vibestats system,
 I want the SessionStart hook to perform catch-up sync, check staleness, surface auth errors, and detect machine retirement,
@@ -488,7 +488,7 @@ So that missed syncs are recovered and the user is warned about issues at sessio
 ---
 
 ### Story 3.4: Implement vibestats sync and vibestats sync --backfill commands
-**GitHub Issue:** [stephenleo/vibestats#21](https://github.com/stephenleo/vibestats/issues/21)
+**GH Issue:** #21
 
 As a developer,
 I want to manually trigger a sync or full historical backfill from the CLI,
@@ -515,12 +515,12 @@ So that I can recover gaps and verify my setup without waiting for a hook to fir
 ---
 
 ## Epic 4: Rust Binary — CLI Commands
-**GitHub Issue:** [stephenleo/vibestats#4](https://github.com/stephenleo/vibestats/issues/4)
+**GH Issue:** #4
 
 Implement the full CLI surface: status, machine management, auth token refresh, and uninstall. Depends on Epic 2 and 3.
 
 ### Story 4.1: Implement vibestats status command
-**GitHub Issue:** [stephenleo/vibestats#22](https://github.com/stephenleo/vibestats/issues/22)
+**GH Issue:** #22
 
 As a developer,
 I want `vibestats status` to show me all registered machines, last sync times, and auth token validity,
@@ -543,7 +543,7 @@ So that I can diagnose sync issues without reading log files.
 ---
 
 ### Story 4.2: Implement vibestats machines list and machines remove
-**GitHub Issue:** [stephenleo/vibestats#23](https://github.com/stephenleo/vibestats/issues/23)
+**GH Issue:** #23
 
 As a developer,
 I want to list and remove machines from vibestats-data,
@@ -566,7 +566,7 @@ So that I can manage which machines contribute to my heatmap.
 ---
 
 ### Story 4.3: Implement vibestats auth command
-**GitHub Issue:** [stephenleo/vibestats#24](https://github.com/stephenleo/vibestats/issues/24)
+**GH Issue:** #24
 
 As a developer,
 I want `vibestats auth` to refresh my GitHub OAuth token and update the Actions secret,
@@ -589,7 +589,7 @@ So that a revoked or expired token can be fixed with one command on any machine.
 ---
 
 ### Story 4.4: Implement vibestats uninstall command
-**GitHub Issue:** [stephenleo/vibestats#25](https://github.com/stephenleo/vibestats/issues/25)
+**GH Issue:** #25
 
 As a developer,
 I want `vibestats uninstall` to cleanly remove vibestats from a machine,
@@ -613,12 +613,12 @@ So that I can remove it without leaving behind hooks or binaries.
 ---
 
 ## Epic 5: GitHub Actions Pipeline
-**GitHub Issue:** [stephenleo/vibestats#5](https://github.com/stephenleo/vibestats/issues/5)
+**GH Issue:** #5
 
 Implement Python aggregation scripts, SVG generator, README updater, composite community GitHub Action, and user workflow template. Depends on Epic 1.
 
 ### Story 5.1: Implement aggregate.py
-**GitHub Issue:** [stephenleo/vibestats#26](https://github.com/stephenleo/vibestats/issues/26)
+**GH Issue:** #26
 
 As the GitHub Actions pipeline,
 I want an aggregation script that reads all Hive partition files from vibestats-data and produces a single merged daily dataset,
@@ -649,7 +649,7 @@ So that per-machine data is combined before SVG generation.
 ---
 
 ### Story 5.2: Implement generate_svg.py
-**GitHub Issue:** [stephenleo/vibestats#27](https://github.com/stephenleo/vibestats/issues/27)
+**GH Issue:** #27
 
 As the GitHub Actions pipeline,
 I want an SVG generator that renders a GitHub-contributions-style heatmap in Claude orange,
@@ -672,7 +672,7 @@ So that the output embeds in a profile README without JavaScript.
 ---
 
 ### Story 5.3: Implement update_readme.py
-**GitHub Issue:** [stephenleo/vibestats#28](https://github.com/stephenleo/vibestats/issues/28)
+**GH Issue:** #28
 
 As the GitHub Actions pipeline,
 I want a README updater that injects the SVG embed and dashboard link between the vibestats markers,
@@ -695,7 +695,7 @@ So that the profile README is updated automatically on every cron run.
 ---
 
 ### Story 5.4: Implement action.yml (composite community GitHub Action)
-**GitHub Issue:** [stephenleo/vibestats#29](https://github.com/stephenleo/vibestats/issues/29)
+**GH Issue:** #29
 
 As a vibestats user,
 I want a community GitHub Action at `stephenleo/vibestats` referenceable as `uses: stephenleo/vibestats@v1`,
@@ -718,7 +718,7 @@ So that I pick up aggregation fixes and SVG updates automatically without managi
 ---
 
 ### Story 5.5: Implement aggregate.yml (user vibestats-data workflow template)
-**GitHub Issue:** [stephenleo/vibestats#30](https://github.com/stephenleo/vibestats/issues/30)
+**GH Issue:** #30
 
 As a vibestats user,
 I want a ready-to-use workflow file for my `vibestats-data` repo that runs the community action on a daily cron,
@@ -741,12 +741,12 @@ So that my heatmap updates automatically every day.
 ---
 
 ## Epic 6: Bash Installer
-**GitHub Issue:** [stephenleo/vibestats#6](https://github.com/stephenleo/vibestats/issues/6)
+**GH Issue:** #6
 
 Implement `install.sh`: dependency checks, first-install path, multi-machine path, hook configuration, README marker injection, and post-install backfill. Depends on Epic 8 (binary release available).
 
 ### Story 6.1: Implement dependency detection and gh authentication
-**GitHub Issue:** [stephenleo/vibestats#31](https://github.com/stephenleo/vibestats/issues/31)
+**GH Issue:** #31
 
 As a new vibestats user,
 I want the installer to handle all dependency and authentication checks automatically,
@@ -773,7 +773,7 @@ So that I never need to manually install gh or run auth flows.
 ---
 
 ### Story 6.2: Implement first-install path
-**GitHub Issue:** [stephenleo/vibestats#32](https://github.com/stephenleo/vibestats/issues/32)
+**GH Issue:** #32
 
 As a first-time vibestats user,
 I want the installer to create my vibestats-data repo, write the workflow, and configure my tokens in one pass,
@@ -804,7 +804,7 @@ So that I can go from zero to a live heatmap without any manual GitHub steps.
 ---
 
 ### Story 6.3: Implement multi-machine install path
-**GitHub Issue:** [stephenleo/vibestats#33](https://github.com/stephenleo/vibestats/issues/33)
+**GH Issue:** #33
 
 As a developer adding a second machine,
 I want the installer to detect my existing vibestats-data repo and skip redundant setup steps,
@@ -823,7 +823,7 @@ So that adding a new machine is just as fast as the first install.
 ---
 
 ### Story 6.4: Implement hook configuration, README markers, and backfill trigger
-**GitHub Issue:** [stephenleo/vibestats#34](https://github.com/stephenleo/vibestats/issues/34)
+**GH Issue:** #34
 
 As a vibestats user completing installation,
 I want the installer to configure my Claude Code hooks, add README markers, and trigger an immediate backfill,
@@ -846,12 +846,12 @@ So that history is visible the moment I open my profile.
 ---
 
 ## Epic 7: vibestats.dev Astro Site
-**GitHub Issue:** [stephenleo/vibestats#7](https://github.com/stephenleo/vibestats/issues/7)
+**GH Issue:** #7
 
 Build the static documentation site and per-user interactive dashboard at vibestats.dev. Depends on Epic 1 (Astro init) and Epic 1.4 (public data.json schema).
 
 ### Story 7.1: Build base layouts and shared Astro components
-**GitHub Issue:** [stephenleo/vibestats#35](https://github.com/stephenleo/vibestats/issues/35)
+**GH Issue:** #35
 
 As a developer,
 I want base Astro layouts and shared components built,
@@ -874,7 +874,7 @@ So that all pages share consistent structure without duplicating markup.
 ---
 
 ### Story 7.2: Build per-user dashboard (u/index.astro + cal-heatmap)
-**GitHub Issue:** [stephenleo/vibestats#36](https://github.com/stephenleo/vibestats/issues/36)
+**GH Issue:** #36
 
 As a profile visitor,
 I want to open `vibestats.dev/username` and see an interactive activity heatmap with hover details,
@@ -905,7 +905,7 @@ So that I can explore a developer's Claude Code usage history beyond what the st
 ---
 
 ### Story 7.3: Build documentation pages
-**GitHub Issue:** [stephenleo/vibestats#37](https://github.com/stephenleo/vibestats/issues/37)
+**GH Issue:** #37
 
 As a potential vibestats user,
 I want clear documentation covering quickstart, architecture, CLI reference, and troubleshooting,
@@ -932,7 +932,7 @@ So that I can install and use vibestats without reading the source code.
 ---
 
 ### Story 7.4: Build landing page
-**GitHub Issue:** [stephenleo/vibestats#38](https://github.com/stephenleo/vibestats/issues/38)
+**GH Issue:** #38
 
 As a developer discovering vibestats,
 I want a compelling landing page at `vibestats.dev`,
@@ -955,12 +955,12 @@ So that I understand what it does and how to install it within 30 seconds.
 ---
 
 ## Epic 8: CI/CD & Distribution
-**GitHub Issue:** [stephenleo/vibestats#8](https://github.com/stephenleo/vibestats/issues/8)
+**GH Issue:** #8
 
 Set up GitHub Actions pipelines for cross-platform binary releases, Cloudflare Pages deployment, and GitHub Actions Marketplace publication.
 
 ### Story 8.1: Implement Rust binary release CI
-**GitHub Issue:** [stephenleo/vibestats#39](https://github.com/stephenleo/vibestats/issues/39)
+**GH Issue:** #39
 
 As a vibestats user,
 I want pre-compiled binaries for macOS arm64, macOS x86_64, and Linux x86_64 automatically published to GitHub Releases on every tag,
@@ -983,7 +983,7 @@ So that install.sh can download the correct binary without requiring Rust to be 
 ---
 
 ### Story 8.2: Implement Cloudflare Pages deploy workflow
-**GitHub Issue:** [stephenleo/vibestats#40](https://github.com/stephenleo/vibestats/issues/40)
+**GH Issue:** #40
 
 As a developer deploying vibestats.dev,
 I want a manually-triggered GitHub Actions workflow that deploys the Astro site to Cloudflare Pages,
@@ -1006,7 +1006,7 @@ So that I control exactly which version is live in production.
 ---
 
 ### Story 8.3: Configure GitHub Actions Marketplace publication
-**GitHub Issue:** [stephenleo/vibestats#41](https://github.com/stephenleo/vibestats/issues/41)
+**GH Issue:** #41
 
 As a vibestats user discovering the tool,
 I want the community action published on the GitHub Actions Marketplace,
