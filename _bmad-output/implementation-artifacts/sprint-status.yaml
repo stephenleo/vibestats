@@ -1,0 +1,142 @@
+# generated: 2026-04-10
+# last_updated: 2026-04-10
+# project: vibestats
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Implementation order: Epic 1 → Epic 2 → Epics 3+5 (parallel) → Epics 4+7 (parallel) → Epic 8 → Epic 6
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-10
+last_updated: 2026-04-10
+project: vibestats
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 1: Project Foundation & Schema Definitions
+  # GitHub Issue: #1
+  # Must complete first — all downstream epics depend on schemas
+  # ──────────────────────────────────────────────────────────────
+  epic-1: backlog
+  1-1-initialize-monorepo-directory-structure: backlog
+  1-2-initialize-rust-binary-project: backlog
+  1-3-initialize-astro-site-project: backlog
+  1-4-define-and-document-all-json-and-toml-schemas: backlog
+  epic-1-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 2: Rust Binary — Foundation Modules
+  # GitHub Issue: #2
+  # Depends on: Epic 1
+  # ──────────────────────────────────────────────────────────────
+  epic-2: backlog
+  2-1-implement-config-module: backlog
+  2-2-implement-logger-module: backlog
+  2-3-implement-checkpoint-module: backlog
+  2-4-implement-jsonl-parser: backlog
+  2-5-implement-github-api-module: backlog
+  epic-2-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 3: Rust Binary — Sync Engine
+  # GitHub Issue: #3
+  # Depends on: Epic 2 | Parallel with: Epic 5
+  # ──────────────────────────────────────────────────────────────
+  epic-3: backlog
+  3-1-implement-core-sync-orchestration: backlog
+  3-2-implement-stop-hook-integration: backlog
+  3-3-implement-sessionstart-hook-integration: backlog
+  3-4-implement-vibestats-sync-and-vibestats-sync-backfill-commands: backlog
+  epic-3-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 4: Rust Binary — CLI Commands
+  # GitHub Issue: #4
+  # Depends on: Epics 2+3 | Parallel with: Epic 7
+  # ──────────────────────────────────────────────────────────────
+  epic-4: backlog
+  4-1-implement-vibestats-status-command: backlog
+  4-2-implement-vibestats-machines-list-and-machines-remove: backlog
+  4-3-implement-vibestats-auth-command: backlog
+  4-4-implement-vibestats-uninstall-command: backlog
+  epic-4-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 5: GitHub Actions Pipeline
+  # GitHub Issue: #5
+  # Depends on: Epic 1 | Parallel with: Epic 3
+  # ──────────────────────────────────────────────────────────────
+  epic-5: backlog
+  5-1-implement-aggregate-py: backlog
+  5-2-implement-generate-svg-py: backlog
+  5-3-implement-update-readme-py: backlog
+  5-4-implement-action-yml-composite-community-github-action: backlog
+  5-5-implement-aggregate-yml-user-vibestats-data-workflow-template: backlog
+  epic-5-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 6: Bash Installer
+  # GitHub Issue: #6
+  # Depends on: Epic 8 (binary release available) — runs LAST
+  # ──────────────────────────────────────────────────────────────
+  epic-6: backlog
+  6-1-implement-dependency-detection-and-gh-authentication: backlog
+  6-2-implement-first-install-path: backlog
+  6-3-implement-multi-machine-install-path: backlog
+  6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: backlog
+  epic-6-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 7: vibestats.dev Astro Site
+  # GitHub Issue: #7
+  # Depends on: Epic 1 | Parallel with: Epic 4
+  # ──────────────────────────────────────────────────────────────
+  epic-7: backlog
+  7-1-build-base-layouts-and-shared-astro-components: backlog
+  7-2-build-per-user-dashboard-u-index-astro-cal-heatmap: backlog
+  7-3-build-documentation-pages: backlog
+  7-4-build-landing-page: backlog
+  epic-7-retrospective: optional
+
+  # ──────────────────────────────────────────────────────────────
+  # EPIC 8: CI/CD & Distribution
+  # GitHub Issue: #8
+  # Depends on: All prior epics complete | Enables: Epic 6
+  # ──────────────────────────────────────────────────────────────
+  epic-8: backlog
+  8-1-implement-rust-binary-release-ci: backlog
+  8-2-implement-cloudflare-pages-deploy-workflow: backlog
+  8-3-configure-github-actions-marketplace-publication: backlog
+  epic-8-retrospective: optional
