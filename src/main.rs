@@ -63,7 +63,7 @@ fn main() {
             MachinesSubcommand::List => println!("not yet implemented"),
             MachinesSubcommand::Remove { machine_id: _ } => println!("not yet implemented"),
         },
-        Commands::Auth => println!("not yet implemented"),
+        Commands::Auth => commands::auth::run(),
         Commands::Uninstall => println!("not yet implemented"),
         Commands::SessionStart => {
             hooks::session_start::run();

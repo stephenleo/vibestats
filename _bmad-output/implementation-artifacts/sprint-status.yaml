@@ -86,10 +86,10 @@ development_status:
   # GitHub Issue: #4
   # Depends on: Epics 2+3 | Parallel with: Epic 7
   # ──────────────────────────────────────────────────────────────
-  epic-4: backlog
+  epic-4: in-progress
   4-1-implement-vibestats-status-command: backlog
   4-2-implement-vibestats-machines-list-and-machines-remove: backlog
-  4-3-implement-vibestats-auth-command: backlog
+  4-3-implement-vibestats-auth-command: review
   4-4-implement-vibestats-uninstall-command: backlog
   epic-4-retrospective: optional
 
