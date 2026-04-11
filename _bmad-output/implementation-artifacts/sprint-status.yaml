@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (story 4.4 done)
+# last_updated: 2026-04-11 (epic 4 done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-11 (story 4.4 done)
+last_updated: 2026-04-11 (epic 4 done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -86,7 +86,7 @@ development_status:
   # GitHub Issue: #4
   # Depends on: Epics 2+3 | Parallel with: Epic 7
   # ──────────────────────────────────────────────────────────────
-  epic-4: in-progress
+  epic-4: done
   4-1-implement-vibestats-status-command: done
   4-2-implement-vibestats-machines-list-and-machines-remove: done
   4-3-implement-vibestats-auth-command: done
