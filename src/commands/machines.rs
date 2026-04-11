@@ -364,9 +364,16 @@ fn purge_remote(api: &GithubApi, machine_id: &str) -> usize {
                     };
 
                     for machine_dir in &machine_dirs {
-                        // Filter to only this machine's partition
+                        // Filter to only this machine's partition.
+                        // Use an exact segment boundary check to avoid matching
+                        // machines whose IDs share a prefix (e.g. "mbp" vs "mbp-2").
                         let target_segment = format!("machine_id={}", machine_id);
-                        if !machine_dir.contains(&target_segment) {
+                        let is_match = machine_dir
+                            .split('/')
+                            .last()
+                            .map(|seg| seg == target_segment)
+                            .unwrap_or(false);
+                        if !is_match {
                             continue;
                         }
                         // List data files within this machine's partition
