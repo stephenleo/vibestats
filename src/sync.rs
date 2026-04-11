@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::checkpoint::Checkpoint;
 use crate::config::Config;
 use crate::github_api::GithubApi;

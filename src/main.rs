@@ -1,4 +1,5 @@
 mod checkpoint;
+mod commands;
 mod config;
 mod github_api;
 mod jsonl_parser;
@@ -53,7 +54,7 @@ enum MachinesSubcommand {
 fn main() {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Sync { backfill: _ } => println!("not yet implemented"),
+        Commands::Sync { backfill } => commands::sync::run(backfill),
         Commands::Status => println!("not yet implemented"),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => println!("not yet implemented"),
