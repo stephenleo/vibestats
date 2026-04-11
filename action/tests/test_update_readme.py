@@ -154,7 +154,9 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
-    # File must NOT have been rewritten
+    # File must NOT have been rewritten.
+    # mtime equality is reliable here: subprocess.run() is blocking and introduces
+    # sufficient time separation; POSIX mtime resolution is 1 ns on macOS/Linux.
     mtime_after = readme.stat().st_mtime
     assert mtime_before == mtime_after, (
         "README file was modified despite identical content — expected no-op.\n"
