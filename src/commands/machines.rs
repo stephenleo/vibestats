@@ -370,7 +370,7 @@ fn purge_remote(api: &GithubApi, machine_id: &str) -> usize {
                         let target_segment = format!("machine_id={}", machine_id);
                         let is_match = machine_dir
                             .split('/')
-                            .last()
+                            .next_back()
                             .map(|seg| seg == target_segment)
                             .unwrap_or(false);
                         if !is_match {

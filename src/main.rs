@@ -70,7 +70,7 @@ fn main() {
             } => commands::machines::remove(&machine_id, purge_history),
         },
         Commands::Auth => commands::auth::run(),
-        Commands::Uninstall => println!("not yet implemented"),
+        Commands::Uninstall => commands::uninstall::run(),
         Commands::SessionStart => {
             hooks::session_start::run();
             std::process::exit(0);
