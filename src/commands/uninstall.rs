@@ -7,47 +7,113 @@ fn settings_path() -> Option<std::path::PathBuf> {
     })
 }
 
-/// Remove all hook entries whose "command" field contains "vibestats".
-/// Operates on the mutable JSON Value in-place.
-/// Preserves all other hooks and top-level settings keys.
-fn remove_vibestats_hooks(settings: &mut serde_json::Value) {
-    // Get the "hooks" object — if absent, nothing to do
-    let Some(hooks_map) = settings.get_mut("hooks").and_then(|h| h.as_object_mut()) else {
-        return;
-    };
+/// Returns the path to the installed vibestats binary at ~/.local/bin/vibestats,
+/// or None if HOME is not set.
+fn binary_path() -> Option<std::path::PathBuf> {
+    std::env::var("HOME").ok().map(|h| {
+        std::path::PathBuf::from(h)
+            .join(".local")
+            .join("bin")
+            .join("vibestats")
+    })
+}
 
-    // For each hook type ("Stop", "SessionStart", etc.)
-    for (_event, groups) in hooks_map.iter_mut() {
-        let Some(groups_arr) = groups.as_array_mut() else {
+/// True if a hook object's "command" field identifies a vibestats command.
+/// Matches exactly `"vibestats"` or anything starting with `"vibestats "` (with space).
+/// Narrow on purpose: avoids false positives like `"my-tool --flag vibestats-backup"`.
+fn is_vibestats_hook(hook_obj: &serde_json::Value) -> bool {
+    hook_obj
+        .get("command")
+        .and_then(|c| c.as_str())
+        .map(|cmd| cmd == "vibestats" || cmd.starts_with("vibestats "))
+        .unwrap_or(false)
+}
+
+/// Remove vibestats hook entries from a settings.json JSON Value in place.
+/// Preserves all non-vibestats hooks and all other top-level settings keys.
+/// Returns `true` if anything was removed, `false` otherwise.
+///
+/// Scope: only the `Stop` and `SessionStart` hook types — the only ones the vibestats
+/// installer writes to. Cleans up empty groups, empty hook-type arrays, and the
+/// top-level `hooks` object if it becomes empty.
+fn remove_vibestats_hooks(settings: &mut serde_json::Value) -> bool {
+    let mut changed = false;
+
+    // First pass: operate only on Stop and SessionStart under the "hooks" object.
+    for hook_type in &["Stop", "SessionStart"] {
+        let Some(groups_arr) = settings
+            .get_mut("hooks")
+            .and_then(|h| h.get_mut(*hook_type))
+            .and_then(|h| h.as_array_mut())
+        else {
             continue;
         };
-        // Each group has a "hooks" array of individual hook entries
+
+        // Filter inner "hooks" arrays inside each group.
         for group in groups_arr.iter_mut() {
             let Some(inner_hooks) = group.get_mut("hooks").and_then(|h| h.as_array_mut()) else {
                 continue;
             };
-            inner_hooks.retain(|hook| {
-                // Keep hooks whose "command" does NOT contain "vibestats"
-                let cmd = hook.get("command").and_then(|c| c.as_str()).unwrap_or("");
-                !cmd.contains("vibestats")
-            });
+            let before = inner_hooks.len();
+            inner_hooks.retain(|hook| !is_vibestats_hook(hook));
+            if inner_hooks.len() != before {
+                changed = true;
+            }
         }
-        // Remove groups that now have an empty "hooks" array
+
+        // Drop groups whose "hooks" array is now empty. Preserve groups without a
+        // "hooks" key (unknown format — leave untouched).
+        let before = groups_arr.len();
         groups_arr.retain(|group| {
             group
                 .get("hooks")
                 .and_then(|h| h.as_array())
                 .map(|arr| !arr.is_empty())
-                .unwrap_or(true) // Keep groups without a "hooks" key (unknown format)
+                .unwrap_or(true)
         });
+        if groups_arr.len() != before {
+            changed = true;
+        }
     }
+
+    if !changed {
+        return false;
+    }
+
+    // Second pass: drop hook-type keys whose value is now an empty array.
+    if let Some(hooks_obj) = settings.get_mut("hooks").and_then(|h| h.as_object_mut()) {
+        for hook_type in &["Stop", "SessionStart"] {
+            let is_empty = hooks_obj
+                .get(*hook_type)
+                .and_then(|v| v.as_array())
+                .map(|a| a.is_empty())
+                .unwrap_or(false);
+            if is_empty {
+                hooks_obj.remove(*hook_type);
+            }
+        }
+    }
+
+    // Third pass: drop the top-level "hooks" key if the object is now empty.
+    let hooks_empty = settings
+        .get("hooks")
+        .and_then(|h| h.as_object())
+        .map(|o| o.is_empty())
+        .unwrap_or(false);
+    if hooks_empty {
+        if let Some(root) = settings.as_object_mut() {
+            root.remove("hooks");
+        }
+    }
+
+    true
 }
 
 /// Entry point for `vibestats uninstall`.
 ///
 /// Steps:
 /// 1. Remove vibestats hook entries from ~/.claude/settings.json
-/// 2. Delete the vibestats binary
+/// 2. Delete the vibestats binary from ~/.local/bin/vibestats
 /// 3. Print manual cleanup instructions
 ///
 /// NEVER calls std::process::exit — main.rs handles exit.
@@ -59,7 +125,9 @@ pub fn run() {
         }
         Some(path) => {
             if !path.exists() {
-                println!("vibestats: ~/.claude/settings.json not found — skipping hook removal");
+                println!(
+                    "vibestats: no vibestats hooks found in settings.json (already clean)"
+                );
             } else {
                 match std::fs::read_to_string(&path) {
                     Err(e) => {
@@ -72,25 +140,32 @@ pub fn run() {
                             println!("Hook removal skipped.");
                         }
                         Ok(mut settings) => {
-                            remove_vibestats_hooks(&mut settings);
-                            match serde_json::to_string_pretty(&settings) {
-                                Err(e) => {
-                                    println!(
-                                        "vibestats: could not serialize ~/.claude/settings.json: {e}"
-                                    );
-                                }
-                                Ok(updated) => match std::fs::write(&path, updated) {
+                            if remove_vibestats_hooks(&mut settings) {
+                                match serde_json::to_string_pretty(&settings) {
                                     Err(e) => {
                                         println!(
-                                            "vibestats: could not write ~/.claude/settings.json: {e}"
+                                            "vibestats: could not serialize ~/.claude/settings.json: {e}"
                                         );
                                     }
-                                    Ok(()) => {
-                                        println!(
-                                            "vibestats: removed hooks from ~/.claude/settings.json"
-                                        );
+                                    Ok(updated) => {
+                                        match std::fs::write(&path, updated + "\n") {
+                                            Err(e) => {
+                                                println!(
+                                                    "vibestats: could not write ~/.claude/settings.json: {e}"
+                                                );
+                                            }
+                                            Ok(()) => {
+                                                println!(
+                                                    "vibestats: removed Stop and SessionStart hooks from ~/.claude/settings.json"
+                                                );
+                                            }
+                                        }
                                     }
-                                },
+                                }
+                            } else {
+                                println!(
+                                    "vibestats: no vibestats hooks found in settings.json (already clean)"
+                                );
                             }
                         }
                     },
@@ -99,20 +174,27 @@ pub fn run() {
         }
     }
 
-    // Step 2: Delete the vibestats binary
-    match std::env::current_exe() {
-        Err(e) => {
-            println!("vibestats: could not determine binary path: {e}");
-            println!("Delete the vibestats binary manually.");
+    // Step 2: Delete the vibestats binary from ~/.local/bin/vibestats (AC #4).
+    // This is the installer's target location; it is deliberately NOT `current_exe()`
+    // so a developer running `cargo run -- uninstall` does not nuke their dev build.
+    match binary_path() {
+        None => {
+            println!("vibestats: HOME not set — skipping binary deletion");
         }
-        Ok(exe_path) => match std::fs::remove_file(&exe_path) {
-            Ok(()) => println!("vibestats: deleted binary at {}", exe_path.display()),
+        Some(path) => match std::fs::remove_file(&path) {
+            Ok(()) => println!("vibestats: deleted binary at {}", path.display()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                println!(
+                    "vibestats: binary not found at {} (already removed?)",
+                    path.display()
+                );
+            }
             Err(e) => {
                 println!(
                     "vibestats: could not delete binary at {}: {e}",
-                    exe_path.display()
+                    path.display()
                 );
-                println!("Delete it manually: rm \"{}\"", exe_path.display());
+                println!("Delete it manually: rm \"{}\"", path.display());
             }
         },
     }
@@ -122,12 +204,12 @@ pub fn run() {
     println!("vibestats: uninstall complete.");
     println!();
     println!("Optional manual cleanup (not done automatically):");
-    println!("  - Delete your vibestats-data repo if you no longer want the data:");
-    println!("      gh repo delete <username>/vibestats-data --yes");
-    println!(
-        "  - Remove the <!-- vibestats-start --> and <!-- vibestats-end --> markers"
-    );
-    println!("    from your profile README at <username>/<username>/README.md");
+    println!("  1. Delete your vibestats-data repo if you no longer want the data:");
+    println!("       gh repo delete <username>/vibestats-data --yes");
+    println!("  2. Remove the heatmap markers from your profile README:");
+    println!("       Delete the lines between <!-- vibestats-start --> and <!-- vibestats-end -->");
+    println!("  3. Remove vibestats config and logs:");
+    println!("       rm -rf ~/.config/vibestats");
 }
 
 #[cfg(test)]
@@ -135,34 +217,68 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// Combined test for settings_path() under varying HOME state.
+    /// Mutating env vars is process-global, so both branches are exercised
+    /// serially inside one test to avoid races with parallel test execution.
     #[test]
-    fn settings_path_returns_some_when_home_is_set() {
-        // HOME must be set in a normal test environment
-        if std::env::var("HOME").is_ok() {
-            let path = settings_path();
-            assert!(path.is_some(), "settings_path must return Some when HOME is set");
-            let p = path.unwrap();
-            assert!(
-                p.to_string_lossy().ends_with(".claude/settings.json"),
-                "path must end with .claude/settings.json, got: {}",
-                p.display()
-            );
-        }
-    }
-
-    #[test]
-    fn settings_path_returns_none_when_home_unset() {
-        // Temporarily remove HOME
+    fn settings_path_reflects_home_state() {
         let saved = std::env::var("HOME").ok();
-        std::env::remove_var("HOME");
 
-        let path = settings_path();
-        assert!(path.is_none(), "settings_path must return None when HOME is unset");
+        // Case 1: HOME set
+        std::env::set_var("HOME", "/tmp/vibestats-test-home");
+        let path = settings_path().expect("must return Some when HOME is set");
+        assert!(
+            path.to_string_lossy().ends_with(".claude/settings.json"),
+            "path must end with .claude/settings.json, got: {}",
+            path.display()
+        );
+
+        // Case 2: HOME unset
+        std::env::remove_var("HOME");
+        assert!(
+            settings_path().is_none(),
+            "settings_path must return None when HOME is unset"
+        );
 
         // Restore HOME
         if let Some(h) = saved {
             std::env::set_var("HOME", h);
         }
+    }
+
+    #[test]
+    fn binary_path_builds_local_bin_path() {
+        let saved = std::env::var("HOME").ok();
+        std::env::set_var("HOME", "/tmp/vibestats-test-home");
+        let path = binary_path().expect("must return Some when HOME is set");
+        assert!(
+            path.to_string_lossy().ends_with(".local/bin/vibestats"),
+            "binary path must end with .local/bin/vibestats, got: {}",
+            path.display()
+        );
+        if let Some(h) = saved {
+            std::env::set_var("HOME", h);
+        } else {
+            std::env::remove_var("HOME");
+        }
+    }
+
+    #[test]
+    fn is_vibestats_hook_matches_only_exact_and_prefixed_commands() {
+        assert!(is_vibestats_hook(&json!({ "command": "vibestats" })));
+        assert!(is_vibestats_hook(&json!({ "command": "vibestats sync" })));
+        assert!(is_vibestats_hook(
+            &json!({ "command": "vibestats session-start" })
+        ));
+        // False positives the old `.contains()` implementation would have matched:
+        assert!(!is_vibestats_hook(
+            &json!({ "command": "my-tool --arg vibestats-fake" })
+        ));
+        assert!(!is_vibestats_hook(&json!({ "command": "vibestats-killer" })));
+        assert!(!is_vibestats_hook(&json!({ "command": "not-vibestats" })));
+        // Missing / non-string command:
+        assert!(!is_vibestats_hook(&json!({})));
+        assert!(!is_vibestats_hook(&json!({ "command": 42 })));
     }
 
     #[test]
@@ -178,7 +294,8 @@ mod tests {
             }
         });
 
-        remove_vibestats_hooks(&mut settings);
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(changed, "must report changed=true when hooks removed");
 
         let stop_hooks = &settings["hooks"]["Stop"][0]["hooks"];
         let arr = stop_hooks.as_array().expect("must be array");
@@ -204,7 +321,11 @@ mod tests {
             "other_setting": "should remain"
         });
 
-        remove_vibestats_hooks(&mut settings);
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(
+            !changed,
+            "must report changed=false when nothing vibestats-related is found"
+        );
 
         // Non-vibestats hooks must be preserved
         let stop_hooks = &settings["hooks"]["Stop"][0]["hooks"];
@@ -227,8 +348,8 @@ mod tests {
     fn hook_filtering_handles_missing_hook_keys_gracefully() {
         // No "hooks" key at all
         let mut settings = json!({ "some_other_key": 42 });
-        // Must not panic
-        remove_vibestats_hooks(&mut settings);
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(!changed);
         assert_eq!(settings["some_other_key"], 42);
     }
 
@@ -251,7 +372,8 @@ mod tests {
             }
         });
 
-        remove_vibestats_hooks(&mut settings);
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(changed);
 
         let stop_groups = settings["hooks"]["Stop"].as_array().expect("must be array");
         assert_eq!(
@@ -263,8 +385,8 @@ mod tests {
     }
 
     #[test]
-    fn hook_filtering_handles_missing_stop_and_session_start_gracefully() {
-        // Settings exist but have no Stop or SessionStart keys
+    fn hook_filtering_preserves_unknown_hook_types() {
+        // Settings has PreToolUse which vibestats never writes — must be untouched.
         let mut settings = json!({
             "hooks": {
                 "PreToolUse": [{
@@ -273,14 +395,69 @@ mod tests {
             }
         });
 
-        // Must not panic, must preserve unknown hook types
-        remove_vibestats_hooks(&mut settings);
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(!changed);
 
         let pre_hooks = &settings["hooks"]["PreToolUse"][0]["hooks"];
         assert_eq!(
             pre_hooks.as_array().unwrap().len(),
             1,
             "unknown hook type must be preserved"
+        );
+    }
+
+    #[test]
+    fn hook_filtering_strips_empty_hook_type_and_hooks_key_when_only_vibestats_present() {
+        let mut settings = json!({
+            "hooks": {
+                "Stop": [{
+                    "hooks": [
+                        { "type": "command", "command": "vibestats sync", "async": true }
+                    ]
+                }],
+                "SessionStart": [{
+                    "hooks": [
+                        { "type": "command", "command": "vibestats session-start" }
+                    ]
+                }]
+            },
+            "model": "sonnet"
+        });
+
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(changed, "must report changed=true");
+
+        // hooks object must be gone entirely (it was only vibestats).
+        assert!(
+            settings.get("hooks").is_none(),
+            "top-level hooks key must be removed when empty"
+        );
+        // Unrelated top-level settings must be preserved.
+        assert_eq!(settings["model"], "sonnet");
+    }
+
+    #[test]
+    fn hook_filtering_does_not_touch_non_stop_sessionstart_types_even_if_vibestats_command() {
+        // Spec scope: removal is limited to Stop/SessionStart. A vibestats command
+        // placed under an unexpected hook type must be preserved (out of scope).
+        let mut settings = json!({
+            "hooks": {
+                "PreToolUse": [{
+                    "hooks": [
+                        { "type": "command", "command": "vibestats weird-hook" }
+                    ]
+                }]
+            }
+        });
+
+        let changed = remove_vibestats_hooks(&mut settings);
+        assert!(
+            !changed,
+            "must not touch hook types outside Stop/SessionStart"
+        );
+        assert_eq!(
+            settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"],
+            "vibestats weird-hook"
         );
     }
 }
