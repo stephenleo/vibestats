@@ -87,7 +87,7 @@ development_status:
   # Depends on: Epics 2+3 | Parallel with: Epic 7
   # ──────────────────────────────────────────────────────────────
   epic-4: in-progress
-  4-1-implement-vibestats-status-command: in-progress
+  4-1-implement-vibestats-status-command: done
   4-2-implement-vibestats-machines-list-and-machines-remove: done
   4-3-implement-vibestats-auth-command: review
   4-4-implement-vibestats-uninstall-command: backlog

@@ -61,7 +61,7 @@ fn main() {
     let cli = Cli::parse();
     match cli.command {
         Commands::Sync { backfill } => commands::sync::run(backfill),
-        Commands::Status => println!("not yet implemented"),
+        Commands::Status => commands::status::run(),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => commands::machines::list(),
             MachinesSubcommand::Remove {
