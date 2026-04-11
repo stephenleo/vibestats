@@ -1,0 +1,12 @@
+# Pass-through rules: keep static assets and known routes untouched.
+# These MUST come before the /:username catch-all below, otherwise the
+# rewrite would swallow favicons, Astro's _astro/ bundles, and the /u
+# dashboard shell itself.
+/favicon.ico  /favicon.ico  200
+/favicon.svg  /favicon.svg  200
+/_astro/*     /_astro/:splat  200
+/u            /u/index.html  200
+/u/*          /u/:splat      200
+
+# Catch-all: map vibestats.app/<username> to the per-user dashboard shell.
+/:username    /u/index.html  200
