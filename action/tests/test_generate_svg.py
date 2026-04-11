@@ -1,8 +1,7 @@
-"""ATDD failing tests for generate_svg.py — TDD RED PHASE.
+"""ATDD tests for generate_svg.py — TDD GREEN PHASE.
 
 Story 5.2: Implement generate_svg.py
-Status: RED — all tests use @unittest.skip() because generate_svg.py is not yet implemented.
-Remove the skip decorators once the feature is implemented to verify GREEN phase.
+Status: GREEN — all 26 tests pass against the implemented generate_svg.py.
 
 Acceptance Criteria covered:
   AC1: Produces a valid SVG with 52-columns × 7-rows grid using xml.etree.ElementTree (stdlib only)
@@ -96,10 +95,6 @@ def _run_generate_svg(data: dict, tmp_dir: str) -> str:
 class TestSVGGridStructure(unittest.TestCase):
     """[P0] AC1: generate_svg produces a valid 52-columns × 7-rows heatmap SVG."""
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_svg_is_well_formed_xml(self):
         """[P0] SVG output must parse as well-formed XML without errors (AC1, AC3)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -108,10 +103,6 @@ class TestSVGGridStructure(unittest.TestCase):
             root = ET.fromstring(svg_content)
             self.assertIsNotNone(root)
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_svg_contains_exactly_364_rect_elements(self):
         """[P0] SVG must contain exactly 52 × 7 = 364 <rect> elements representing days (AC1)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -127,10 +118,6 @@ class TestSVGGridStructure(unittest.TestCase):
                 f"Expected 364 rect elements (52 × 7), got {len(rects)}",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_svg_has_correct_root_element(self):
         """[P0] Root element must be <svg> with xmlns and viewBox attributes (AC1, AC3)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -141,10 +128,6 @@ class TestSVGGridStructure(unittest.TestCase):
             # viewBox must be present
             self.assertIn("viewBox", root.attrib)
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_empty_days_map_still_produces_364_rect_elements(self):
         """[P0] Empty days dict must still produce a valid 52 × 7 grid (AC1 edge case, Story task 4.5)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -159,10 +142,6 @@ class TestSVGGridStructure(unittest.TestCase):
                 f"Empty days map: expected 364 rect elements, got {len(rects)}",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_each_rect_has_correct_dimensions(self):
         """[P0] Each <rect> must have width=10, height=10, rx=2 (AC1, Dev Notes SVG Grid Layout)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -177,10 +156,6 @@ class TestSVGGridStructure(unittest.TestCase):
                 self.assertEqual(rect.get("height"), "10", "Each rect must have height=10")
                 self.assertEqual(rect.get("rx"), "2", "Each rect must have rx=2 (rounded corners)")
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_svg_file_is_written_to_output_path(self):
         """[P1] generate_svg must write heatmap.svg to the specified output path (AC1)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -194,10 +169,6 @@ class TestSVGGridStructure(unittest.TestCase):
                 f"Expected heatmap.svg to be written to {output_path}",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_svg_contains_month_labels(self):
         """[P1] SVG must contain <text> elements for month labels (Jan–Dec) (AC1, Dev Notes)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -213,10 +184,6 @@ class TestSVGGridStructure(unittest.TestCase):
                 f"SVG head: {svg_content[:500]}",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_svg_contains_weekday_labels(self):
         """[P1] SVG must contain Mon, Wed, Fri weekday labels (AC1, Dev Notes)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -228,10 +195,6 @@ class TestSVGGridStructure(unittest.TestCase):
                     f"Expected weekday label '{day}' in SVG output",
                 )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_output_is_idempotent(self):
         """[P1] Same data.json input must always produce byte-identical SVG (AC1, Dev Notes Idempotency)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -253,10 +216,6 @@ class TestSVGGridStructure(unittest.TestCase):
 class TestSVGColourPalette(unittest.TestCase):
     """[P0/P1] AC2: colour palette uses Claude orange shades; zero days → neutral."""
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_zero_activity_days_use_neutral_colour(self):
         """[P0] Days with zero sessions must use neutral colour #ebedf0 (AC2)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -268,10 +227,6 @@ class TestSVGColourPalette(unittest.TestCase):
             "Expected neutral colour #ebedf0 for zero-activity days",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_empty_days_all_cells_use_neutral_colour(self):
         """[P0] When days is empty, all 364 cells must use #ebedf0 (AC2, task 4.5)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -289,10 +244,6 @@ class TestSVGColourPalette(unittest.TestCase):
                     f"Empty days: expected all rects to be #ebedf0, got fill={fill}",
                 )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_max_activity_day_uses_high_orange(self):
         """[P1] Day with maximum sessions must use high-intensity colour #f97316 (AC2 high endpoint)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -303,10 +254,6 @@ class TestSVGColourPalette(unittest.TestCase):
             "Expected high-intensity orange #f97316 for day with maximum sessions",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_low_activity_day_uses_low_orange(self):
         """[P1] Day with low (but non-zero) sessions must use low-intensity colour #fef3e8 (AC2 low endpoint)."""
         # data where one day has 1 session (low) and one day has many (high)
@@ -326,10 +273,6 @@ class TestSVGColourPalette(unittest.TestCase):
             "Expected low-intensity orange #fef3e8 for day with low sessions",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_colour_palette_does_not_include_unexpected_colours(self):
         """[P1] Only the five defined intensity colours should appear as fill values (AC2)."""
         allowed_fills = {"#ebedf0", "#fef3e8", "#fed7aa", "#fb923c", "#f97316"}
@@ -347,10 +290,6 @@ class TestSVGColourPalette(unittest.TestCase):
                     f"Unexpected fill colour '{fill}' — must be one of {allowed_fills}",
                 )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p2_intensity_buckets_use_log_scale(self):
         """[P2] Intensity bucketing follows log scale formula (AC2, Dev Notes)."""
         # With sessions 1, 2, 4, 8 where max=8:
@@ -378,10 +317,6 @@ class TestSVGColourPalette(unittest.TestCase):
 class TestSVGNoJavaScript(unittest.TestCase):
     """[P0] AC3: SVG must be static — no script elements, no event handlers, no foreignObject."""
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_no_script_elements(self):
         """[P0] SVG must not contain <script> elements (AC3, ADR-7)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -392,10 +327,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
             "SVG must not contain <script> elements — GitHub DOMPurify will strip them",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_no_onclick_handler(self):
         """[P0] SVG must not contain onclick event handlers (AC3, ADR-7)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -406,10 +337,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
             "SVG must not contain onclick handlers",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_no_onmouseover_handler(self):
         """[P0] SVG must not contain onmouseover event handlers (AC3, ADR-7)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -420,10 +347,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
             "SVG must not contain onmouseover handlers",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_no_foreign_object(self):
         """[P0] SVG must not contain <foreignObject> elements (AC3, ADR-7)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -434,10 +357,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
             "SVG must not contain <foreignObject> — GitHub DOMPurify will strip it",
         )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p0_no_javascript_event_handlers_comprehensive(self):
         """[P0] SVG must contain none of the known DOMPurify-stripped event handlers (AC3, task 4.4)."""
         forbidden_patterns = [
@@ -463,10 +382,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
                 f"SVG must not contain '{pattern}' — forbidden by GitHub DOMPurify",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_svg_uses_stdlib_only_no_third_party_imports(self):
         """[P1] generate_svg.py must import only stdlib modules — no third-party libs (Dev Notes)."""
         import ast  # noqa: PLC0415 (stdlib)
@@ -513,10 +428,6 @@ class TestSVGNoJavaScript(unittest.TestCase):
 class TestSVGInputValidation(unittest.TestCase):
     """[P1] generate_svg.py must validate inputs and exit non-zero on errors."""
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_cli_accepts_input_and_output_flags(self):
         """[P1] CLI interface must accept --input and --output flags (Dev Notes integration)."""
         import subprocess  # noqa: PLC0415
@@ -540,10 +451,6 @@ class TestSVGInputValidation(unittest.TestCase):
                 "Expected heatmap.svg to be created at the --output path",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_exits_nonzero_on_malformed_json_input(self):
         """[P1] Must exit non-zero with clear stderr message on malformed JSON input (AC1 error path)."""
         import subprocess  # noqa: PLC0415
@@ -569,10 +476,6 @@ class TestSVGInputValidation(unittest.TestCase):
                 "Expected a non-empty error message on stderr",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_exits_nonzero_on_missing_input_file(self):
         """[P1] Must exit non-zero with clear stderr message when input file does not exist (AC1 error path)."""
         import subprocess  # noqa: PLC0415
@@ -592,10 +495,6 @@ class TestSVGInputValidation(unittest.TestCase):
                 "Expected non-zero exit code when input file is missing",
             )
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase."
-    )
     def test_p1_validates_input_schema_has_required_keys(self):
         """[P1] Must exit non-zero when data.json is missing required top-level keys (AC1 validation)."""
         import subprocess  # noqa: PLC0415
@@ -625,11 +524,6 @@ class TestSVGInputValidation(unittest.TestCase):
 class TestSVGSnapshot(unittest.TestCase):
     """[P3] Snapshot regression: output matches golden file (task 4.6)."""
 
-    @unittest.skip(
-        "RED PHASE — generate_svg.py not yet implemented. "
-        "Remove this decorator after implementation to verify GREEN phase. "
-        "Also requires generating the golden fixture first."
-    )
     def test_p3_svg_snapshot_matches_golden_file(self):
         """[P3] SVG output must be byte-for-byte identical to golden fixture (task 4.6)."""
         golden_path = _EXPECTED_OUTPUT_DIR / "heatmap.svg"
