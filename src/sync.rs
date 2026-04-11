@@ -188,7 +188,6 @@ pub fn run(start_date: &str, end_date: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::checkpoint::Checkpoint;
 
     // ── sha256_hex test vectors ──────────────────────────────────────────────
 
