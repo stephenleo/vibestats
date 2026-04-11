@@ -221,10 +221,23 @@ claude-sonnet-4-6
 - site/package-lock.json
 - site/astro.config.mjs
 - site/tsconfig.json
+- site/.prettierrc
 - site/src/pages/index.astro
 - site/src/pages/u/index.astro
 - site/public/_redirects
+- site/public/favicon.svg
+- site/public/favicon.ico
 
 ## Change Log
 
 - 2026-04-11: Story 1.3 implemented — Astro minimal site scaffolded, cal-heatmap pinned, _redirects created, page stubs created. Build verified passing.
+- 2026-04-11: Applied code review fixes (`review(1.3): apply code review fixes`):
+  - Added placeholder `site/public/favicon.svg` and `site/public/favicon.ico` (referenced by `index.astro`).
+  - Normalized `site/src/pages/index.astro` from tabs to 2-space indentation; replaced stock `<title>Astro</title>` / `<h1>Astro</h1>` with vibestats title and a meaningful heading + description.
+  - Added `site/.prettierrc` enforcing 2-space indentation and Astro parser.
+  - Populated `site/astro.config.mjs` with `site: 'https://vibestats.app'`, `trailingSlash: 'never'`, `compressHTML: false`.
+  - Hardened `site/public/_redirects`: added explicit pass-through rules for `/favicon.ico`, `/favicon.svg`, `/_astro/*`, `/u`, and `/u/*` before the `/:username` catch-all so the rewrite no longer swallows static assets or the dashboard shell itself. **Note:** AC #3 specified the file contain exactly `/:username  /u/index.html  200` — the code review found this single-line form to be over-matching (matches favicons, Astro bundles, and `/u` itself) and explicitly requested the pass-through rules. The catch-all line is preserved verbatim; the passthroughs are additive.
+  - Added `"check": "astro check"` script to `site/package.json`.
+  - Tightened `site/tsconfig.json` `exclude` to include `node_modules`, `public`, and `.astro` in addition to `dist`.
+  - Verified `npm run build` still passes (2 pages built).
+  - Out of scope (per review notes): CI workflow, robots.txt/sitemap/404, Cloudflare Pages manifest, i18n, broader branding, `.npmrc` engine-strict, `og:` meta.
