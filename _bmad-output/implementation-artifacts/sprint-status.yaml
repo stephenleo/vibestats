@@ -61,7 +61,7 @@ development_status:
   # GitHub Issue: #2
   # Depends on: Epic 1
   # ──────────────────────────────────────────────────────────────
-  epic-2: in-progress
+  epic-2: done
   2-1-implement-config-module: done
   2-2-implement-logger-module: done
   2-3-implement-checkpoint-module: done
