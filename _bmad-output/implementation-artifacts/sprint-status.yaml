@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11
+# last_updated: 2026-04-11 (story 1.3 created)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -51,9 +51,9 @@ development_status:
   # ──────────────────────────────────────────────────────────────
   epic-1: in-progress
   1-1-initialize-monorepo-directory-structure: done
-  1-2-initialize-rust-binary-project: backlog
-  1-3-initialize-astro-site-project: backlog
-  1-4-define-and-document-all-json-and-toml-schemas: backlog
+  1-2-initialize-rust-binary-project: done
+  1-3-initialize-astro-site-project: review
+  1-4-define-and-document-all-json-and-toml-schemas: done
   epic-1-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────
