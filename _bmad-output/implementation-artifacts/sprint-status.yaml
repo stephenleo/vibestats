@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (stories 5.1, 5.2, 5.3 done)
+# last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-11 (stories 5.1, 5.2, 5.3 done)
+last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -102,8 +102,8 @@ development_status:
   5-1-implement-aggregate-py: done
   5-2-implement-generate-svg-py: done
   5-3-implement-update-readme-py: done
-  5-4-implement-action-yml-composite-community-github-action: backlog
-  5-5-implement-aggregate-yml-user-vibestats-data-workflow-template: backlog
+  5-4-implement-action-yml-composite-community-github-action: done
+  5-5-implement-aggregate-yml-user-vibestats-data-workflow-template: done
   epic-5-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────

@@ -96,3 +96,26 @@ that raised them. Revisit when the blocking rationale no longer applies.
   Actions workflow always passes a real login, so this is not exploitable
   today. Revisit if the script ever becomes callable from user-facing tooling
   or if we want defence-in-depth against workflow misconfiguration.
+
+## Deferred from: code review of story 5-4-implement-action-yml (2026-04-12)
+
+- **Push retry loop does not `git pull --rebase` between retries**
+  [action.yml:70-74] — The 3-retry loop in the "Push to profile-repo" step
+  only mitigates transient network errors. If a push fails because the remote
+  moved (race with another concurrent vibestats run against the same
+  profile-repo), every retry will also fail because the local branch is still
+  behind. The architecture spec calls for a simple retry, not rebase-retry,
+  so this matches the design. Revisit if we ever support multiple machines
+  writing to the same profile-repo concurrently — story 5.5 (`aggregate.yml`)
+  should set a `concurrency:` group on the calling workflow as the primary
+  mitigation, with rebase-on-conflict as a fallback inside this action.
+- **`update_readme.py` and `git add README.md` fail loudly if profile-repo
+  has no `README.md`** [action.yml:54, action.yml:62] — A brand-new
+  `username/username` repo without a README would crash the action at the
+  `update_readme.py` step (file-not-found) or, if somehow that step were
+  skipped, at the `git add README.md` step. Profile READMEs always exist by
+  GitHub convention (the `username/username` repo's README is the user-visible
+  GitHub profile), so this is the user-visible failure we want per NFR13.
+  Revisit only if onboarding ever needs to support an empty profile-repo —
+  in that case, install.sh (Epic 6) should create a stub README before the
+  first action run.
