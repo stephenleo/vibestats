@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-11T20:00:00Z_
+_Last updated: 2026-04-11T21:00:00Z_
 
 ## Stories
 
@@ -12,12 +12,12 @@ _Last updated: 2026-04-11T20:00:00Z_
 | 2.1 | 2 | Implement config module | done | #13 | #48 | merged | epic 1 complete | ✅ Yes (done) |
 | 2.2 | 2 | Implement logger module | done | #14 | #49 | merged | epic 1 complete | ✅ Yes (done) |
 | 2.3 | 2 | Implement checkpoint module | done | #15 | #50 | merged | epic 1 complete | ✅ Yes (done) |
-| 2.4 | 2 | Implement JSONL parser | backlog | #16 | — | — | epic 1 complete | ✅ Yes |
-| 2.5 | 2 | Implement GitHub API module | backlog | #17 | — | — | epic 1 complete | ✅ Yes |
-| 3.1 | 3 | Implement core sync orchestration | backlog | #18 | — | — | epic 2 complete | ❌ No (epic 2 not complete) |
-| 3.2 | 3 | Implement Stop hook integration | backlog | #19 | — | — | 3.1 | ❌ No (epic 2 not complete, 3.1 not merged) |
-| 3.3 | 3 | Implement SessionStart hook integration | backlog | #20 | — | — | 3.1 | ❌ No (epic 2 not complete, 3.1 not merged) |
-| 3.4 | 3 | Implement vibestats sync and sync --backfill commands | backlog | #21 | — | — | 3.1 | ❌ No (epic 2 not complete, 3.1 not merged) |
+| 2.4 | 2 | Implement JSONL parser | done | #16 | #53 | closed (direct) | epic 1 complete | ✅ Yes (done) |
+| 2.5 | 2 | Implement GitHub API module | done | #17 | #51 | merged | epic 1 complete | ✅ Yes (done) |
+| 3.1 | 3 | Implement core sync orchestration | backlog | #18 | — | — | epic 2 complete | ✅ Yes |
+| 3.2 | 3 | Implement Stop hook integration | backlog | #19 | — | — | 3.1 | ❌ No (3.1 not merged) |
+| 3.3 | 3 | Implement SessionStart hook integration | backlog | #20 | — | — | 3.1 | ❌ No (3.1 not merged) |
+| 3.4 | 3 | Implement vibestats sync and sync --backfill commands | backlog | #21 | — | — | 3.1 | ❌ No (3.1 not merged) |
 | 4.1 | 4 | Implement vibestats status command | backlog | #22 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
 | 4.2 | 4 | Implement vibestats machines list and machines remove | backlog | #23 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
 | 4.3 | 4 | Implement vibestats auth command | backlog | #24 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
@@ -84,12 +84,11 @@ _Last updated: 2026-04-11T20:00:00Z_
 ## Notes
 
 - **Epic 1 complete** — all four PRs merged: #43 (1.1), #44 (1.2), #46 (1.3), #45 (1.4). Worktrees and remote branches cleaned up.
-- **Stories 2.1, 2.2, 2.3 done** — PRs #48, #49, #50 merged. Issues #13, #14, #15 closed as completed.
-- **Stories 2.4 and 2.5 are "Ready to Work"** — no remaining blockers; epic 1 is complete. Can be worked in parallel with each other.
-- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 2.
-- **Story 7.1 is "Ready to Work"** — Epic 7 can begin (7.1 is the first story; 7.2–7.4 depend on 7.1).
-- **Parallelization opportunities:** 2.4 and 2.5 (parallel with each other), 5.1–5.5 (parallel), and 7.1 can all be worked now. Epics 2, 5, and 7 can proceed concurrently.
-- **Current bottleneck:** Epic 2 must fully complete (2.4 + 2.5 remaining) before Epic 3 can start. Epic 3 story 3.1 is a serial bottleneck within that epic.
-- **Worktrees:** No lingering worktrees for stories 2.1, 2.2, or 2.3 — main worktree is the only one present.
+- **Epic 2 complete** — all five stories done. PRs #48 (2.1), #49 (2.2), #50 (2.3) merged via GitHub. Stories 2.4 and 2.5 implemented via direct commits to main (deb76aa, 23b8443); PRs #53 and #51 closed accordingly. Worktrees and remote branches for 2.4 and 2.5 cleaned up.
+- **Story 3.1 is now "Ready to Work"** — epic 2 complete unblocks epic 3. 3.1 is the serial gatekeeper: 3.2, 3.3, 3.4 all depend on it.
+- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 3.
+- **Story 7.1 is "Ready to Work"** — Epic 7 can begin in parallel (7.2–7.4 depend on 7.1).
+- **Parallelization opportunities:** 3.1, 5.1–5.5 (parallel with each other and with 3.1), and 7.1 can all be worked concurrently. Epics 3, 5, and 7 can proceed in parallel.
+- **Current bottleneck:** Epic 3 story 3.1 is the serial gatekeeper within epic 3 — 3.2, 3.3, and 3.4 cannot start until 3.1 is merged. Epic 4 requires both epics 2 and 3 complete.
 - **GitHub auth:** `gh auth status` reports keyring token invalid. PR/issue status verified via GitHub MCP plugin. Run `gh auth login` to re-authenticate the CLI.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
