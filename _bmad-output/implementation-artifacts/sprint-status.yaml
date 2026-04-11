@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (all epic 1 stories done — PRs #43, #44, #45, #46 merged)
+# last_updated: 2026-04-11 (story 2.1 reviewed and marked done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -62,7 +62,7 @@ development_status:
   # Depends on: Epic 1
   # ──────────────────────────────────────────────────────────────
   epic-2: in-progress
-  2-1-implement-config-module: review
+  2-1-implement-config-module: done
   2-2-implement-logger-module: backlog
   2-3-implement-checkpoint-module: backlog
   2-4-implement-jsonl-parser: backlog

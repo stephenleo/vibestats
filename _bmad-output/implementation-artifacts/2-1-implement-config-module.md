@@ -1,6 +1,6 @@
 # Story 2.1: Implement config module
 
-Status: review
+Status: done
 
 <!-- GH Issue: #13 | Epic: #2 | PR must include: Closes #13 -->
 
@@ -51,6 +51,12 @@ so that the OAuth token, machine ID, and repo path are stored securely.
   - [x] Test `Config::generate_machine_id()` — verify the result is non-empty, contains only `[a-z0-9-]`, and is deterministic (same hostname → same ID on repeated calls)
   - [x] Test file creation sets `600` permissions — write a temp file, check `metadata().permissions().mode() & 0o777 == 0o600` (use `std::os::unix::fs::PermissionsExt`)
   - [x] Use `tempfile`-free approach: write to `std::env::temp_dir()` + unique suffix for test isolation; clean up in test teardown
+
+### Review Findings
+
+- [x] [Review][Patch] `config_path()` panics on missing HOME, violating NFR10/AC#4 [src/config.rs:14] — `std::env::var("HOME").expect(...)` crashes with non-zero exit if HOME is unset, bypassing the silent-failure contract. Load/save must return `Err` so `load_or_exit()` can print a human-readable message and exit 0.
+- [x] [Review][Patch] Race window between file write and `chmod 600` leaks sensitive token [src/config.rs:85-87] — `std::fs::write` creates the file with default umask perms (typically 644), then `set_permissions_600` narrows it. A concurrent reader could read the OAuth token during this window. Fix: open file with `OpenOptions` and `mode(0o600)` atomically via `PermissionsExt`.
+- [x] [Review][Patch] Machine ID slug can produce cosmetic artifacts on edge-case hostnames [src/config.rs:43-53] — After `take(20)` the slug may end in `-`, yielding `--hexhash`; if hostname has no alphanumerics, slug is empty, yielding `-hexhash`. Trim trailing dashes after truncation and fall back to `"machine"` if slug is empty.
 
 ## Dev Notes
 

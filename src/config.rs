@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -10,12 +11,15 @@ pub struct Config {
     pub vibestats_data_repo: String,
 }
 
-fn config_path() -> PathBuf {
-    let home = std::env::var("HOME").expect("HOME env not set");
-    PathBuf::from(home)
+fn config_path() -> Result<PathBuf, String> {
+    let home = std::env::var("HOME").map_err(|_| {
+        "HOME environment variable is not set. Run 'vibestats auth' after exporting HOME."
+            .to_string()
+    })?;
+    Ok(PathBuf::from(home)
         .join(".config")
         .join("vibestats")
-        .join("config.toml")
+        .join("config.toml"))
 }
 
 fn set_permissions_600(path: &std::path::Path) -> std::io::Result<()> {
@@ -23,6 +27,22 @@ fn set_permissions_600(path: &std::path::Path) -> std::io::Result<()> {
     let mut perms = std::fs::metadata(path)?.permissions();
     perms.set_mode(0o600);
     std::fs::set_permissions(path, perms)
+}
+
+/// Atomically create (or truncate) the file at `path` with mode 0600, so that the
+/// OAuth token is never briefly visible under a wider umask. On Unix this uses
+/// `OpenOptions::mode(0o600)` at creation time.
+fn write_file_mode_600(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(path)?;
+    file.write_all(contents)?;
+    // Re-assert mode in case the file already existed with looser perms.
+    set_permissions_600(path)
 }
 
 fn fnv1a_hash(s: &str) -> u64 {
@@ -40,7 +60,11 @@ fn generate_machine_id() -> String {
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_lowercase())
         .unwrap_or_else(|_| "unknown".to_string());
 
-    let slug: String = hostname
+    // Lowercase, alphanumeric-or-hyphen slug, truncated to 20 chars. We trim again
+    // after truncation so a slug that ends on a `-` boundary does not produce
+    // `--hex`; if the hostname had no alphanumeric characters at all, fall back
+    // to "machine" so the final ID is always well-formed.
+    let truncated: String = hostname
         .chars()
         .map(|c| if c.is_alphanumeric() { c } else { '-' })
         .collect::<String>()
@@ -48,6 +72,12 @@ fn generate_machine_id() -> String {
         .chars()
         .take(20)
         .collect();
+    let trimmed = truncated.trim_matches('-');
+    let slug = if trimmed.is_empty() {
+        "machine"
+    } else {
+        trimmed
+    };
 
     let hash = fnv1a_hash(&hostname);
     format!("{}-{:06x}", slug, hash & 0xffffff)
@@ -55,7 +85,7 @@ fn generate_machine_id() -> String {
 
 impl Config {
     pub fn load() -> Result<Config, String> {
-        let path = config_path();
+        let path = config_path()?;
         let contents = std::fs::read_to_string(&path).map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 format!(
@@ -75,16 +105,17 @@ impl Config {
     }
 
     pub fn save(&self) -> Result<(), String> {
-        let path = config_path();
+        let path = config_path()?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|e| format!("Failed to create config directory: {e}"))?;
         }
         let contents =
             toml::to_string(self).map_err(|e| format!("Failed to serialize config: {e}"))?;
-        std::fs::write(&path, contents)
+        // Write with 0600 at creation time so the token is never briefly world-
+        // or group-readable under the default umask (NFR6).
+        write_file_mode_600(&path, contents.as_bytes())
             .map_err(|e| format!("Failed to write config file: {e}"))?;
-        set_permissions_600(&path).map_err(|e| format!("Failed to set config permissions: {e}"))?;
         Ok(())
     }
 
@@ -205,8 +236,9 @@ vibestats_data_repo = "user/vibestats-data"
 machine_id = "host-aabbcc"
 vibestats_data_repo = "user/repo"
 "#;
-        std::fs::write(&path, contents).unwrap();
-        set_permissions_600(&path).unwrap();
+        // Exercise the same helper that Config::save() uses so we cover the
+        // race-free create-with-0600 path, not just a standalone chmod.
+        write_file_mode_600(&path, contents.as_bytes()).unwrap();
 
         let metadata = std::fs::metadata(&path).unwrap();
         let mode = metadata.permissions().mode() & 0o777;
@@ -214,6 +246,38 @@ vibestats_data_repo = "user/repo"
 
         // Cleanup
         std::fs::remove_dir_all(&temp_dir).ok();
+    }
+
+    #[test]
+    fn test_write_file_mode_600_overwrites_loose_perms() {
+        // If the file already exists with wider permissions (e.g. from a legacy
+        // install), save() must still end up at 0600.
+        let temp_dir = unique_temp_path("perms_overwrite_dir");
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let path = temp_dir.join("config.toml");
+        std::fs::write(&path, b"old").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+
+        write_file_mode_600(&path, b"new contents").unwrap();
+
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600, "existing file must be narrowed to 600, got {:o}", mode);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "new contents");
+
+        std::fs::remove_dir_all(&temp_dir).ok();
+    }
+
+    #[test]
+    fn test_generate_machine_id_fallback_for_empty_slug() {
+        // Guarantee the slug fallback path compiles and produces a well-formed
+        // ID shape. We cannot override the hostname, but we can exercise the
+        // format invariants against the real hostname and confirm the ID never
+        // starts with a '-' (which would have happened for a non-alphanumeric
+        // hostname under the pre-fix code).
+        let id = generate_machine_id();
+        assert!(!id.starts_with('-'), "machine_id must not start with '-', got: {id}");
+        assert!(!id.contains("--"), "machine_id must not contain '--', got: {id}");
     }
 
     #[test]
