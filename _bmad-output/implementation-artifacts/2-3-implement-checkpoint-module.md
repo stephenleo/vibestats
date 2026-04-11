@@ -1,6 +1,6 @@
 # Story 2.3: Implement Checkpoint Module
 
-Status: review
+Status: done
 
 <!-- GH Issue: #15 | Epic: #2 | PR must include: Closes #15 -->
 
@@ -488,9 +488,39 @@ claude-sonnet-4-6
 
 ### Review Findings
 
-_to be filled by reviewer_
+Reviewer: Step 3 code reviewer (bmad-code-review)  •  Date: 2026-04-11
+Reviewers: Blind Hunter (adversarial), Edge Case Hunter (path tracer)
+Verification: `cargo fmt --check`, `cargo test` (12/12 pass), `cargo clippy --all-targets -- -D warnings` (0 warnings)
+
+All findings auto-accepted and fixed in the same commit as the review.
+
+Patches applied:
+
+- [x] [Review][Patch] Clippy `field_reassign_with_default` in `should_throttle_old_timestamp_returns_false` [src/checkpoint.rs:258] — `cargo clippy --all-targets -- -D warnings` was failing on the test target (the story's original clippy invocation lacked `--all-targets` so the warning slipped through). Rewrote the test to use struct-update syntax.
+- [x] [Review][Patch] `parse_iso8601_utc` u64 underflow on pre-1970 dates [src/checkpoint.rs:64] — `days_since_epoch = era * 146097 + doe - 719468` underflows on u64 for any year < 1970, panicking in debug builds. Added an explicit `year < 1970` guard returning `None` before the civil-date math.
+- [x] [Review][Patch] `parse_iso8601_utc` accepted out-of-range month/day/hour/min/sec [src/checkpoint.rs:60-66] — a malformed throttle_timestamp could produce a nonsense `SystemTime` and make `should_throttle()` return the wrong answer. Added explicit range checks on every component.
+- [x] [Review][Patch] `parse_iso8601_utc` silently accepted timestamps without trailing `Z` [src/checkpoint.rs:42] — `trim_end_matches('Z')` happily accepted naive-looking strings as UTC. Switched to `strip_suffix('Z')?` so missing `Z` is a hard parse failure. Also reject extra `-` or `:` segments so offsets/fractional seconds are rejected explicitly.
+- [x] [Review][Patch] `save` was non-atomic — crash mid-write could corrupt checkpoint.toml [src/checkpoint.rs:105] — the Stop hook is exactly the path where a crash/kill mid-write is realistic, and a zero-length checkpoint file means the next run has no throttle state and may burn API calls (NFR2/NFR12 regression). Rewrote `save` to write to a sibling `.tmp` path and then `rename` it over the target for atomic replacement on POSIX.
+- [x] [Review][Patch] Fixed-name temp files in tests raced across parallel runs [src/checkpoint.rs:177] — `std::env::temp_dir().join("vibestats_checkpoint_test.toml")` collides between `cargo test`'s parallel threads and between worktrees on the same machine. Rewrote `temp_path` to combine pid + nanos + an atomic counter + the test name.
+- [x] [Review][Patch] Missing format/parse roundtrip coverage — added `format_parse_iso8601_roundtrip` to guard against drift between the two civil-date formulas.
+- [x] [Review][Patch] Missing parser-hardening regression tests — added `parse_iso8601_rejects_missing_z`, `parse_iso8601_rejects_out_of_range`, `parse_iso8601_rejects_pre_1970`, and `save_is_atomic_no_tmp_left_behind`.
+
+Deferred (tracked in `deferred-work.md`):
+
+- [x] [Review][Defer] No concurrent-writer lock on checkpoint.toml [src/checkpoint.rs:105] — deferred, pre-existing. Two simultaneous Stop hooks could race on the file. In practice Claude Code serializes Stop hook invocations per session, so this is NFR-level hardening not required to land this story.
+- [x] [Review][Defer] `Box<dyn std::error::Error>` is not `Send + Sync` [src/checkpoint.rs:112] — deferred, pre-existing. The architecture explicitly prohibits async runtimes (no tokio), so cross-thread error propagation is not needed.
+
+Dismissed (not acted on):
+
+- `should_throttle` uses strict `< 300` rather than `<= 300` — dismissed. The spec says "within 5 minutes" and strict `<` is a defensible reading; flipping it would break an existing test that verifies the 0-second boundary.
+- `#![allow(dead_code)]` at module level is too broad — dismissed. The story's Dev Notes explicitly call out this module as infrastructure whose callers land in later stories; the blanket allow is intentional and documented.
+- `format_iso8601_utc` masking pre-epoch clocks as `1970-01-01T00:00:00Z` — dismissed. A realistic production clock is never pre-1970.
+- Parser does not accept fractional seconds or `+00:00` offsets — dismissed. The canonical schema in `docs/schemas.md` specifies exactly `"YYYY-MM-DDTHH:MM:SSZ"`; we only produce that shape ourselves, and accepting variants would weaken validation.
+
+Triage totals: 8 patches applied, 2 deferred, 4 dismissed, 0 decision-needed.
 
 ## Change Log
 
 - 2026-04-11: Story created — comprehensive implementation guide for checkpoint module (Story 2.3)
 - 2026-04-11: Implementation complete — created `src/checkpoint.rs` with full Checkpoint struct, TOML I/O, throttle/hash/auth/status helpers, and 7 passing unit tests; wired `mod checkpoint;` into `src/main.rs`; 0 clippy warnings
+- 2026-04-11: Code review complete — hardened `parse_iso8601_utc` (reject pre-1970, out-of-range fields, missing `Z`), made `save` atomic via temp+rename, fixed clippy warning surfaced by `--all-targets`, made test tempfiles unique across parallel runs, added 5 new regression tests (12 total, all passing); status → done
