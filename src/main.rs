@@ -51,6 +51,9 @@ enum MachinesSubcommand {
     Remove {
         /// Machine ID to remove
         machine_id: String,
+        /// Permanently delete all historical Hive partition files
+        #[arg(long)]
+        purge_history: bool,
     },
 }
 
@@ -60,8 +63,11 @@ fn main() {
         Commands::Sync { backfill } => commands::sync::run(backfill),
         Commands::Status => println!("not yet implemented"),
         Commands::Machines { subcommand } => match subcommand {
-            MachinesSubcommand::List => println!("not yet implemented"),
-            MachinesSubcommand::Remove { machine_id: _ } => println!("not yet implemented"),
+            MachinesSubcommand::List => commands::machines::list(),
+            MachinesSubcommand::Remove {
+                machine_id,
+                purge_history,
+            } => commands::machines::remove(&machine_id, purge_history),
         },
         Commands::Auth => println!("not yet implemented"),
         Commands::Uninstall => println!("not yet implemented"),
