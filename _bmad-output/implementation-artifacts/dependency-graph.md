@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-11T12:05:00Z_
+_Last updated: 2026-04-11T13:00:00Z_
 
 ## Stories
 
@@ -18,9 +18,9 @@ _Last updated: 2026-04-11T12:05:00Z_
 | 3.2 | 3 | Implement Stop hook integration | done | #19 | #56 | merged | 3.1 | ✅ Yes (done) |
 | 3.3 | 3 | Implement SessionStart hook integration | done | #20 | #55 | merged | 3.1 | ✅ Yes (done) |
 | 3.4 | 3 | Implement vibestats sync and sync --backfill commands | done | #21 | #57 | merged | 3.1 | ✅ Yes (done) |
-| 4.1 | 4 | Implement vibestats status command | backlog | #22 | — | — | epics 2+3 complete | ✅ Yes |
-| 4.2 | 4 | Implement vibestats machines list and machines remove | backlog | #23 | — | — | epics 2+3 complete | ✅ Yes |
-| 4.3 | 4 | Implement vibestats auth command | backlog | #24 | — | — | epics 2+3 complete | ✅ Yes |
+| 4.1 | 4 | Implement vibestats status command | done | #22 | #58 | merged | epics 2+3 complete | ✅ Yes (done) |
+| 4.2 | 4 | Implement vibestats machines list and machines remove | done | #23 | #61 | merged | epics 2+3 complete | ✅ Yes (done) |
+| 4.3 | 4 | Implement vibestats auth command | done | #24 | #62 | merged | epics 2+3 complete | ✅ Yes (done) |
 | 4.4 | 4 | Implement vibestats uninstall command | backlog | #25 | — | — | epics 2+3 complete | ✅ Yes |
 | 5.1 | 5 | Implement aggregate.py | backlog | #26 | — | — | epic 1 complete | ✅ Yes |
 | 5.2 | 5 | Implement generate_svg.py | backlog | #27 | — | — | epic 1 complete | ✅ Yes |
@@ -89,11 +89,14 @@ _Last updated: 2026-04-11T12:05:00Z_
 - **Story 3.2 done** — PR #56 merged 2026-04-11T07:56:38Z. Worktree and remote branch cleaned up.
 - **Story 3.3 done** — PR #55 merged 2026-04-11T07:57:49Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
 - **Story 3.4 done** — PR #57 merged 2026-04-11T11:19:43Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
-- **Epic 3 complete** — All stories (3.1–3.4) done. Epic 4 (4.1–4.4) now unblocked.
-- **Stories 4.1–4.4 are now "Ready to Work"** — Epics 2 and 3 both complete. These can be worked in parallel within Epic 4.
-- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 4.
+- **Epic 3 complete** — All stories (3.1–3.4) done.
+- **Story 4.1 done** — PR #58 merged 2026-04-11T12:31:07Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
+- **Story 4.2 done** — PR #61 merged 2026-04-11T12:39:01Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
+- **Story 4.3 done** — PR #62 merged 2026-04-11T12:42:30Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
+- **Story 4.4 is the only remaining Epic 4 story** — "Ready to Work: Yes". Implement vibestats uninstall command.
+- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 4 (story 4.4).
 - **Story 7.1 is "Ready to Work"** — Epic 7 can begin in parallel with Epics 4 and 5 (7.2–7.4 depend on 7.1).
-- **Parallelization opportunities:** 4.1–4.4 (parallel within epic 4), 5.1–5.5 (parallel within epic 5), and 7.1 can all be worked concurrently.
+- **Parallelization opportunities:** 4.4, 5.1–5.5 (parallel within epic 5), and 7.1 can all be worked concurrently.
 - **Current bottleneck:** Epic 7 stories 7.2–7.4 are blocked until 7.1 is merged. Epic 8 blocked until all prior epics complete. Epic 6 blocked until Epic 8 complete.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
