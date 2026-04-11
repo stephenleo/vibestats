@@ -86,3 +86,13 @@ that raised them. Revisit when the blocking rationale no longer applies.
   `vibestats-data` could OOM the runner. The repo is owner-controlled so this
   is low risk; revisit only if the vibestats-data repo ever accepts writes
   from unverified sources.
+
+## Deferred from: code review of story 5-3-implement-update-readme-py (2026-04-11)
+
+- **No validation for empty `--username`** [action/update_readme.py:20-24] —
+  `argparse` currently accepts `--username ""`, which would produce broken URLs
+  (`https://raw.githubusercontent.com///main/vibestats/heatmap.svg`) and a
+  bogus dashboard link without surfacing an error. In practice the GitHub
+  Actions workflow always passes a real login, so this is not exploitable
+  today. Revisit if the script ever becomes callable from user-facing tooling
+  or if we want defence-in-depth against workflow misconfiguration.
