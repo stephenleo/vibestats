@@ -175,6 +175,16 @@ impl GithubApi {
     pub fn get_file_sha(&self, path: &str) -> Result<Option<String>, GithubApiError> {
         with_retry(|| get_file_sha_inner(&self.token, &self.repo, path))
     }
+
+    /// Retrieve the decoded content of a file in the repository.
+    ///
+    /// Returns:
+    /// - `Ok(Some(content))` — file exists, `content` is the decoded UTF-8 string
+    /// - `Ok(None)`          — file does not exist (404)
+    /// - `Err(_)`            — network error, unexpected HTTP status, or 401
+    pub fn get_file_content(&self, path: &str) -> Result<Option<String>, GithubApiError> {
+        with_retry(|| get_file_content_inner(&self.token, &self.repo, path))
+    }
 }
 
 // ─── Internal HTTP helpers ────────────────────────────────────────────────────
@@ -274,6 +284,65 @@ fn put_file_inner(
     }
 }
 
+/// Inner GET helper for file content — returns `Ok(Some(content))`, `Ok(None)` for 404, or `Err`.
+///
+/// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
+/// the error for retriability before boxing.
+#[allow(clippy::result_large_err)]
+fn get_file_content_inner(
+    token: &str,
+    repo: &str,
+    path: &str,
+) -> Result<Option<String>, ureq::Error> {
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+
+    let response = ureq::get(&url)
+        .set("Authorization", &format!("Bearer {}", token))
+        .set("User-Agent", "vibestats")
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call();
+
+    match response {
+        Ok(r) => {
+            let body = r.into_string().map_err(ureq::Error::from)?;
+
+            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: malformed JSON from Contents API: {}", e),
+                ))
+            })?;
+
+            let encoded = match json["content"].as_str() {
+                Some(s) => s,
+                None => {
+                    return Err(ureq::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "github_api: missing content field in Contents API response",
+                    )));
+                }
+            };
+
+            // GitHub wraps base64 at 60 chars with newlines — strip before decoding
+            let stripped = encoded.replace('\n', "");
+
+            match base64_decode(&stripped) {
+                Ok(content) => Ok(Some(content)),
+                Err(e) => Err(ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: base64 decode failed: {}", e),
+                ))),
+            }
+        }
+        Err(ureq::Error::Status(404, _)) => {
+            // File does not exist
+            Ok(None)
+        }
+        Err(e) => Err(e),
+    }
+}
+
 // ─── Base64 encoding (std-only, RFC 4648 standard alphabet) ───────────────────
 
 /// Encode `input` bytes as standard Base64 (RFC 4648).
@@ -318,6 +387,47 @@ fn base64_encode(input: &[u8]) -> String {
     }
 
     out
+}
+
+// ─── Base64 decoding (std-only, RFC 4648 standard alphabet) ──────────────────
+
+/// Decode a standard Base64 string (RFC 4648) to a UTF-8 string.
+///
+/// Input must NOT contain newlines — strip `\n` before calling.
+/// Padding characters (`=`) are automatically stripped.
+/// Returns `Err` on invalid base64 characters or invalid UTF-8 bytes.
+fn base64_decode(input: &str) -> Result<String, &'static str> {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    // Build reverse lookup: 256-byte array mapping ASCII -> 6-bit value (255 = invalid)
+    let mut rev = [255u8; 256];
+    for (i, &c) in TABLE.iter().enumerate() {
+        rev[c as usize] = i as u8;
+    }
+    // Strip padding before processing
+    let input: Vec<u8> = input.bytes().filter(|&b| b != b'=').collect();
+    let mut out = Vec::new();
+    for chunk in input.chunks(4) {
+        let vals: Vec<u8> = chunk.iter().map(|&b| rev[b as usize]).collect();
+        if vals.contains(&255) {
+            return Err("invalid base64 character");
+        }
+        match vals.len() {
+            4 => {
+                out.push((vals[0] << 2) | (vals[1] >> 4));
+                out.push((vals[1] << 4) | (vals[2] >> 2));
+                out.push((vals[2] << 6) | vals[3]);
+            }
+            3 => {
+                out.push((vals[0] << 2) | (vals[1] >> 4));
+                out.push((vals[1] << 4) | (vals[2] >> 2));
+            }
+            2 => {
+                out.push((vals[0] << 2) | (vals[1] >> 4));
+            }
+            _ => {}
+        }
+    }
+    String::from_utf8(out).map_err(|_| "base64 decoded bytes are not valid UTF-8")
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -595,6 +705,44 @@ mod tests {
             })
             .to_string()
         }
+    }
+
+    // ── base64_decode test vectors (RFC 4648) ─────────────────────────────────
+
+    #[test]
+    fn test_base64_decode_hello() {
+        // Known vector from story Dev Notes: base64_decode("aGVsbG8=") → "hello"
+        assert_eq!(base64_decode("aGVsbG8=").unwrap(), "hello");
+    }
+
+    #[test]
+    fn test_base64_decode_empty() {
+        assert_eq!(base64_decode("").unwrap(), "");
+    }
+
+    #[test]
+    fn test_base64_decode_roundtrip() {
+        // Encode then decode must produce the original string
+        let original = "vibestats test content";
+        let encoded = base64_encode(original.as_bytes());
+        let decoded = base64_decode(&encoded).unwrap();
+        assert_eq!(decoded, original);
+    }
+
+    #[test]
+    fn test_base64_decode_invalid_char() {
+        // Character '!' is not in the base64 alphabet
+        assert!(base64_decode("aG!sbG8=").is_err());
+    }
+
+    #[test]
+    fn test_base64_decode_strips_padding() {
+        // "TWFu" decodes to "Man" (no padding needed)
+        assert_eq!(base64_decode("TWFu").unwrap(), "Man");
+        // "TWE=" decodes to "Ma"
+        assert_eq!(base64_decode("TWE=").unwrap(), "Ma");
+        // "TQ==" decodes to "M"
+        assert_eq!(base64_decode("TQ==").unwrap(), "M");
     }
 
     // ── GithubApi::new ────────────────────────────────────────────────────────

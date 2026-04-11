@@ -38,6 +38,8 @@ enum Commands {
     Auth,
     /// Uninstall vibestats
     Uninstall,
+    /// Run the SessionStart hook (called by Claude Code at session start)
+    SessionStart,
 }
 
 #[derive(Subcommand)]
@@ -66,5 +68,9 @@ fn main() {
         },
         Commands::Auth => println!("not yet implemented"),
         Commands::Uninstall => println!("not yet implemented"),
+        Commands::SessionStart => {
+            hooks::session_start::run();
+            std::process::exit(0);
+        }
     }
 }
