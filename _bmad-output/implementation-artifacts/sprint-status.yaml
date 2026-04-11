@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (story 1.3 created)
+# last_updated: 2026-04-11 (all epic 1 stories done — PRs #43, #44, #45, #46 merged)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -49,10 +49,10 @@ development_status:
   # GitHub Issue: #1
   # Must complete first — all downstream epics depend on schemas
   # ──────────────────────────────────────────────────────────────
-  epic-1: in-progress
+  epic-1: done
   1-1-initialize-monorepo-directory-structure: done
   1-2-initialize-rust-binary-project: done
-  1-3-initialize-astro-site-project: review
+  1-3-initialize-astro-site-project: done
   1-4-define-and-document-all-json-and-toml-schemas: done
   epic-1-retrospective: optional
 
