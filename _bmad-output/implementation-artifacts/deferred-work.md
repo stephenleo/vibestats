@@ -36,3 +36,18 @@ that raised them. Revisit when the blocking rationale no longer applies.
   still finishes in ~3s total, but if test-suite runtime becomes a concern we
   can make the delay array an injectable parameter (or compile-time `cfg!(test)`
   override) so retry tests become effectively free.
+
+## Deferred from: code review of story 3-4-implement-vibestats-sync-and-vibestats-sync-backfill-commands (2026-04-11)
+
+- **`vibestats sync --backfill` stdout does not report actual synced/failed
+  counts** [src/commands/sync.rs:44-69] — AC #2 wording asks for "count of dates
+  synced and any failures", but the implementation reports only the count of
+  dates **found in JSONL** (since `sync::run` returns `()` and hides the
+  changed-vs-skipped split from its caller). Errors are routed to
+  `vibestats.log` via `logger::error`, never to stdout. This design is
+  **explicitly documented and justified** in the story Dev Notes ("the CLI is
+  user-initiated; errors belong in the log"). To truly satisfy AC #2's literal
+  wording, `sync::run` would need a richer return type (e.g.
+  `struct SyncReport { synced: u32, skipped: u32, failed: u32 }`), which is
+  out of scope for this story. Revisit if/when a future story wants to surface
+  sync outcomes on stdout or in `vibestats status`.
