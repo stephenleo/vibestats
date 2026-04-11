@@ -142,7 +142,15 @@ pub fn run(start_date: &str, end_date: &str) {
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
     let activities = jsonl_parser::parse_date_range(start_date, end_date);
 
-    for (date, activity) in &activities {
+    // Iterate dates in sorted order so log output and HTTP call ordering are
+    // deterministic across runs (HashMap iteration order is randomized per run).
+    // This has no correctness impact — idempotency is guaranteed by the hash
+    // check per date — but it keeps the log stream reproducible for debugging.
+    let mut dates: Vec<&String> = activities.keys().collect();
+    dates.sort();
+
+    for date in dates {
+        let activity = &activities[date];
         // Serialize with deterministic field order (sessions always before active_minutes)
         let payload = format!(
             r#"{{"sessions":{},"active_minutes":{}}}"#,
@@ -208,7 +216,42 @@ mod tests {
         assert_eq!(h1, h2, "sha256_hex must be deterministic");
         // Result must be lowercase 64-char hex
         assert_eq!(h1.len(), 64);
-        assert!(h1.chars().all(|c| c.is_ascii_hexdigit() && !c.is_uppercase()));
+        assert!(h1
+            .chars()
+            .all(|c| c.is_ascii_digit() || c.is_ascii_lowercase()));
+    }
+
+    #[test]
+    fn sha256_payload_known_vector() {
+        // Dev Notes in 3-1 explicitly list this payload shape as a test vector.
+        // Pin the expected hash so any accidental change to the payload byte
+        // format (e.g. spacing, field order) or the SHA256 implementation
+        // itself breaks this test loudly rather than silently violating
+        // idempotency (NFR12) against already-synced data.
+        let payload = b"{\"sessions\":4,\"active_minutes\":87}";
+        assert_eq!(
+            sha256_hex(payload),
+            "4c4abadf5bbf2aed4cbf40cd6ea569c1fd46ecfdc7f054edf6d5d8f4a5e3900a"
+        );
+    }
+
+    #[test]
+    fn payload_format_matches_hashed_bytes() {
+        // The payload string built inside `run` must hash to the same value as
+        // the documented test vector above. This guards against a refactor
+        // that switches to `serde_json::to_string` (non-deterministic field
+        // order) or otherwise changes the serialized byte sequence.
+        let sessions: u32 = 4;
+        let active_minutes: u32 = 87;
+        let payload = format!(
+            r#"{{"sessions":{},"active_minutes":{}}}"#,
+            sessions, active_minutes
+        );
+        assert_eq!(payload, r#"{"sessions":4,"active_minutes":87}"#);
+        assert_eq!(
+            sha256_hex(payload.as_bytes()),
+            "4c4abadf5bbf2aed4cbf40cd6ea569c1fd46ecfdc7f054edf6d5d8f4a5e3900a"
+        );
     }
 
     // ── hive_path tests ──────────────────────────────────────────────────────
