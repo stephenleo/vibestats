@@ -1,6 +1,7 @@
 mod checkpoint;
 mod config;
 mod github_api;
+mod hooks;
 mod jsonl_parser;
 mod logger;
 mod sync;
@@ -37,6 +38,8 @@ enum Commands {
     Auth,
     /// Uninstall vibestats
     Uninstall,
+    /// Run the SessionStart hook (called by Claude Code at session start)
+    SessionStart,
 }
 
 #[derive(Subcommand)]
@@ -53,7 +56,11 @@ enum MachinesSubcommand {
 fn main() {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Sync { backfill: _ } => println!("not yet implemented"),
+        Commands::Sync { backfill } if !backfill => {
+            hooks::stop_hook();
+            std::process::exit(0);
+        }
+        Commands::Sync { backfill: _ } => println!("not yet implemented"), // backfill=true, Story 3.4
         Commands::Status => println!("not yet implemented"),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => println!("not yet implemented"),
@@ -61,5 +68,9 @@ fn main() {
         },
         Commands::Auth => println!("not yet implemented"),
         Commands::Uninstall => println!("not yet implemented"),
+        Commands::SessionStart => {
+            hooks::session_start::run();
+            std::process::exit(0);
+        }
     }
 }

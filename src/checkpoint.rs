@@ -198,6 +198,14 @@ impl Checkpoint {
     pub fn set_machine_status(&mut self, status: &str) {
         self.machine_status = status.to_string();
     }
+
+    /// Returns the most recent date key in `date_hashes` (format `"YYYY-MM-DD"`).
+    ///
+    /// Lexicographic max is correct for zero-padded ISO 8601 date strings.
+    /// Returns `None` if `date_hashes` is empty.
+    pub fn get_last_sync_date(&self) -> Option<String> {
+        self.date_hashes.keys().max().cloned()
+    }
 }
 
 #[cfg(test)]
@@ -291,6 +299,28 @@ mod tests {
         assert!(!cp.is_retired()); // purged is not the same as retired
         cp.set_machine_status("active");
         assert!(!cp.is_retired());
+    }
+
+    #[test]
+    fn get_last_sync_date_empty_returns_none() {
+        let cp = Checkpoint::default();
+        assert!(cp.get_last_sync_date().is_none());
+    }
+
+    #[test]
+    fn get_last_sync_date_returns_max_key() {
+        let mut cp = Checkpoint::default();
+        cp.update_hash("2026-03-10", "hash1");
+        cp.update_hash("2026-04-11", "hash2");
+        cp.update_hash("2026-01-01", "hash3");
+        assert_eq!(cp.get_last_sync_date(), Some("2026-04-11".to_string()));
+    }
+
+    #[test]
+    fn get_last_sync_date_single_entry() {
+        let mut cp = Checkpoint::default();
+        cp.update_hash("2026-04-10", "hash1");
+        assert_eq!(cp.get_last_sync_date(), Some("2026-04-10".to_string()));
     }
 
     #[test]
