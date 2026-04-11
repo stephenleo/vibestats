@@ -1,12 +1,9 @@
-"""Acceptance tests for update_readme.py — TDD Red Phase.
+"""Acceptance tests for update_readme.py — TDD Green Phase.
 
 Story 5.3: Implement update_readme.py
 AC1: markers present → content replaced with SVG img tag and dashboard link
 AC2: markers absent → non-zero exit with clear error message
 AC3: identical content → script exits 0 and does NOT write file
-
-NOTE: All tests are marked @pytest.mark.skip (TDD RED PHASE).
-Remove @pytest.mark.skip after implementing update_readme.py to run the GREEN phase.
 """
 
 import subprocess
@@ -62,10 +59,6 @@ EXPECTED_LINK = f"[View interactive dashboard →](https://vibestats.dev/{USERNA
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="TDD RED PHASE — update_readme.py not yet implemented. "
-    "Remove this decorator after implementing the feature."
-)
 def test_tc1_markers_present_content_replaced(tmp_path: Path) -> None:
     """[P0] AC1: When markers are present, update_readme.py replaces content
     between them with the correct <img> tag and dashboard link."""
@@ -89,10 +82,6 @@ def test_tc1_markers_present_content_replaced(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="TDD RED PHASE — update_readme.py not yet implemented. "
-    "Remove this decorator after implementing the feature."
-)
 def test_tc2_correct_raw_githubusercontent_url(tmp_path: Path) -> None:
     """[P1] AC1: The injected <img> src must point to
     raw.githubusercontent.com/<username>/<username>/main/vibestats/heatmap.svg."""
@@ -117,10 +106,6 @@ def test_tc2_correct_raw_githubusercontent_url(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="TDD RED PHASE — update_readme.py not yet implemented. "
-    "Remove this decorator after implementing the feature."
-)
 def test_tc3_markers_absent_nonzero_exit(tmp_path: Path) -> None:
     """[P0] AC2/R-007: When markers are absent, update_readme.py must exit non-zero
     with a clear error message containing 'vibestats markers'."""
@@ -143,10 +128,6 @@ def test_tc3_markers_absent_nonzero_exit(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="TDD RED PHASE — update_readme.py not yet implemented. "
-    "Remove this decorator after implementing the feature."
-)
 def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
     """[P0] AC3/R-004: When the README already has the correct content between
     the markers, update_readme.py exits 0 without writing the file (idempotent run)."""
@@ -192,10 +173,6 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="TDD RED PHASE — update_readme.py not yet implemented. "
-    "Remove this decorator after implementing the feature."
-)
 def test_tc5_content_changed_file_is_written(tmp_path: Path) -> None:
     """[P1] When markers are present and the existing content differs from the
     expected injected block, update_readme.py writes the updated file to disk."""
