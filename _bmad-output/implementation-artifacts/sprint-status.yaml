@@ -63,8 +63,8 @@ development_status:
   # ──────────────────────────────────────────────────────────────
   epic-2: in-progress
   2-1-implement-config-module: done
-  2-2-implement-logger-module: backlog
-  2-3-implement-checkpoint-module: backlog
+  2-2-implement-logger-module: done
+  2-3-implement-checkpoint-module: done
   2-4-implement-jsonl-parser: backlog
   2-5-implement-github-api-module: backlog
   epic-2-retrospective: optional
