@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (all epic 1 stories done — PRs #43, #44, #45, #46 merged)
+# last_updated: 2026-04-11 (all epic 1 done — PRs #43, #44, #45, #46 merged; story 2.1 ready-for-dev)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-11
+last_updated: 2026-04-11 (stories 2.1, 2.2, and 2.3 ready-for-dev)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -61,10 +61,10 @@ development_status:
   # GitHub Issue: #2
   # Depends on: Epic 1
   # ──────────────────────────────────────────────────────────────
-  epic-2: backlog
-  2-1-implement-config-module: backlog
-  2-2-implement-logger-module: backlog
-  2-3-implement-checkpoint-module: backlog
+  epic-2: in-progress
+  2-1-implement-config-module: review
+  2-2-implement-logger-module: review
+  2-3-implement-checkpoint-module: review
   2-4-implement-jsonl-parser: backlog
   2-5-implement-github-api-module: backlog
   epic-2-retrospective: optional
