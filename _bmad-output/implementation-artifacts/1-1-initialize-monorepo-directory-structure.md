@@ -1,6 +1,6 @@
 # Story 1.1: Initialize Monorepo Directory Structure
 
-Status: review
+Status: done
 
 <!-- GH Issue: #9 | Epic: #1 | PR must include: Closes #9 -->
 
@@ -67,6 +67,11 @@ so that all components have a defined home and the project is ready for implemen
 - [x] Task 5: Verify structure integrity
   - [x] Run `git status` to confirm all files are tracked
   - [x] Confirm no files land in wrong directories
+
+### Review Findings
+
+- [x] [Review][Patch] Restore `.env`/`.env.local`/`*.toml.bak` ignore entries [.gitignore] — The rewrite of `.gitignore` dropped the pre-existing secret-file protections. Removing env-file ignores is a security regression. Fix: re-added `.env`, `.env.local`, `*.toml.bak` under a "Local env / secrets" section.
+- [x] [Review][Patch] Restore BMAD tooling directory ignores [.gitignore] — The rewrite dropped `_bmad/`, `.claude/`, `.agents/` entries. These directories were explicitly removed from version control in commit 85957e6 and still exist in the parent working tree. Fix: re-added them under a "BMAD tooling" section.
 
 ## Dev Notes
 

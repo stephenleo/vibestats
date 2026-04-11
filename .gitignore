@@ -14,3 +14,13 @@ site/.astro/
 .vscode/
 *.swp
 *.swo
+
+# Local env / secrets
+.env
+.env.local
+*.toml.bak
+
+# BMAD tooling (not version controlled — see commit 85957e6)
+_bmad/
+.claude/
+.agents/
