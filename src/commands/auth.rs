@@ -52,32 +52,50 @@ pub fn run() {
             return;
         }
     };
-    config.oauth_token = new_token.clone(); // clone because new_token is reused in gh secret set
+    config.oauth_token = new_token;
     if let Err(e) = config.save() {
         println!("vibestats: auth failed — could not save config: {e}");
         return;
     }
 
-    // Step 3 — update VIBESTATS_TOKEN Actions secret (non-fatal if it fails)
-    let secret_result = std::process::Command::new("gh")
-        .args([
-            "secret",
-            "set",
-            "VIBESTATS_TOKEN",
-            "--repo",
-            &config.vibestats_data_repo,
-            "--body",
-            &new_token,
-        ])
-        .output();
+    // Step 3 — update VIBESTATS_TOKEN Actions secret (non-fatal if it fails).
+    //
+    // SECURITY: we pass the token via stdin using `--body-file -` rather than
+    // `--body <token>` so the token never appears in this process's argv (and
+    // therefore never shows up in `ps` / `/proc/<pid>/cmdline`). NFR6.
+    let secret_result = (|| -> std::io::Result<std::process::Output> {
+        use std::io::Write;
+        let mut child = std::process::Command::new("gh")
+            .args([
+                "secret",
+                "set",
+                "VIBESTATS_TOKEN",
+                "--repo",
+                &config.vibestats_data_repo,
+                "--body-file",
+                "-",
+            ])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()?;
+        // Unwrap is safe because we configured stdin as piped above.
+        child
+            .stdin
+            .as_mut()
+            .expect("stdin is piped")
+            .write_all(config.oauth_token.as_bytes())?;
+        child.wait_with_output()
+    })();
 
     match secret_result {
         Err(e) => {
             println!(
                 "vibestats: token saved locally but could not update VIBESTATS_TOKEN secret: {e}"
             );
+            println!("Run manually (feeds token via stdin to avoid leaking it in argv):");
             println!(
-                "Run manually: gh secret set VIBESTATS_TOKEN --repo {} --body <token>",
+                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {} --body-file -",
                 config.vibestats_data_repo
             );
             // Continue — local token is updated; don't abort checkpoint clear
@@ -85,8 +103,9 @@ pub fn run() {
         Ok(out) if !out.status.success() => {
             let stderr = String::from_utf8_lossy(&out.stderr);
             println!("vibestats: token saved locally but 'gh secret set' failed: {stderr}");
+            println!("Run manually (feeds token via stdin to avoid leaking it in argv):");
             println!(
-                "Run manually: gh secret set VIBESTATS_TOKEN --repo {} --body <token>",
+                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {} --body-file -",
                 config.vibestats_data_repo
             );
             // Continue — local token is updated
