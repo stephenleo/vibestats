@@ -1,6 +1,6 @@
 # Story 4.1: Implement vibestats status Command
 
-Status: ready-for-dev
+Status: done
 
 <!-- GH Issue: #22 | Epic: #4 | PR must include: Closes #22 -->
 
@@ -20,48 +20,48 @@ so that I can diagnose sync issues without reading log files.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `pub mod status;` to `src/commands/mod.rs` (AC: all)
-  - [ ] Open `src/commands/mod.rs` (currently has only `pub mod sync;`)
-  - [ ] Add `pub mod status;` as a second line — do NOT add stubs for 4.2–4.4 commands yet
+- [x] Task 1: Add `pub mod status;` to `src/commands/mod.rs` (AC: all)
+  - [x] Open `src/commands/mod.rs` (currently has only `pub mod sync;`)
+  - [x] Add `pub mod status;` as a second line — do NOT add stubs for 4.2–4.4 commands yet
 
-- [ ] Task 2: Add `get_user` method to `GithubApi` in `src/github_api.rs` (AC: #2, #3)
-  - [ ] Implement `pub fn get_user(&self) -> Result<String, GithubApiError>` on `GithubApi`
-  - [ ] Call `GET https://api.github.com/user` with `Authorization: Bearer {token}`, `User-Agent: vibestats`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`
-  - [ ] On 200: parse `login` field from JSON response body, return `Ok(login)`
-  - [ ] On 401: return `Err(...)` immediately (do NOT retry — 401 is non-retriable per existing `is_status_retriable` logic; route through `with_retry` which handles this automatically)
-  - [ ] On 429 / 5xx / transport: let `with_retry` handle retries (same pattern as `get_file_sha`)
-  - [ ] Write inner function `get_user_inner(token: &str) -> Result<String, ureq::Error>` following the same pattern as `get_file_sha_inner` and `get_file_content_inner`
-  - [ ] Wrap with `with_retry(|| get_user_inner(&self.token))` in the public method
-  - [ ] Do NOT remove `#![allow(dead_code)]` from `github_api.rs` — the public `get_file_sha` method is not called externally and remains dead code; removing the suppression would cause a clippy warning
-  - [ ] Do NOT add `#![allow(clippy::result_large_err)]` — it is already at the top of `github_api.rs`
+- [x] Task 2: Add `get_user` method to `GithubApi` in `src/github_api.rs` (AC: #2, #3)
+  - [x] Implement `pub fn get_user(&self) -> Result<String, GithubApiError>` on `GithubApi`
+  - [x] Call `GET https://api.github.com/user` with `Authorization: Bearer {token}`, `User-Agent: vibestats`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`
+  - [x] On 200: parse `login` field from JSON response body, return `Ok(login)`
+  - [x] On 401: return `Err(...)` immediately (do NOT retry — 401 is non-retriable per existing `is_status_retriable` logic; route through `with_retry` which handles this automatically)
+  - [x] On 429 / 5xx / transport: let `with_retry` handle retries (same pattern as `get_file_sha`)
+  - [x] Write inner function `get_user_inner(token: &str) -> Result<String, ureq::Error>` following the same pattern as `get_file_sha_inner` and `get_file_content_inner`
+  - [x] Wrap with `with_retry(|| get_user_inner(&self.token))` in the public method
+  - [x] Do NOT remove `#![allow(dead_code)]` from `github_api.rs` — the public `get_file_sha` method is not called externally and remains dead code; removing the suppression would cause a clippy warning
+  - [x] Do NOT add `#![allow(clippy::result_large_err)]` — it is already at the top of `github_api.rs`
 
-- [ ] Task 3: Implement `src/commands/status.rs` (AC: #1, #2, #3)
-  - [ ] Create `src/commands/status.rs`
-  - [ ] Implement `pub fn run()` — the entry point called from `main.rs`
-  - [ ] Load config via `Config::load_or_exit()` (exits 0 with message if config missing)
-  - [ ] Create `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
-  - [ ] Fetch `registry.json` via `api.get_file_content("registry.json")` — all GitHub calls through `github_api.rs`
-  - [ ] Parse registry JSON; print each machine entry (see stdout contract below)
-  - [ ] Handle missing registry (404 → `Ok(None)`): print "No machines registered yet."
-  - [ ] Handle fetch error (`Err`): print "vibestats: failed to fetch registry — check your connection." and continue to auth check
-  - [ ] Perform auth check via `api.get_user()`:
+- [x] Task 3: Implement `src/commands/status.rs` (AC: #1, #2, #3)
+  - [x] Create `src/commands/status.rs`
+  - [x] Implement `pub fn run()` — the entry point called from `main.rs`
+  - [x] Load config via `Config::load_or_exit()` (exits 0 with message if config missing)
+  - [x] Create `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
+  - [x] Fetch `registry.json` via `api.get_file_content("registry.json")` — all GitHub calls through `github_api.rs`
+  - [x] Parse registry JSON; print each machine entry (see stdout contract below)
+  - [x] Handle missing registry (404 → `Ok(None)`): print "No machines registered yet."
+  - [x] Handle fetch error (`Err`): print "vibestats: failed to fetch registry — check your connection." and continue to auth check
+  - [x] Perform auth check via `api.get_user()`:
     - `Ok(login)` → print `"Auth: OK (github.com/{login})"`
     - `Err(_)` → print `"Auth: ERROR — run \`vibestats auth\` to re-authenticate"`
-  - [ ] Never call `std::process::exit` in `status.rs` — `main.rs` handles exit
+  - [x] Never call `std::process::exit` in `status.rs` — `main.rs` handles exit
 
-- [ ] Task 4: Wire `Commands::Status` into `main.rs` (AC: #1, #2, #3)
-  - [ ] Replace `Commands::Status => println!("not yet implemented")` with `Commands::Status => commands::status::run()`
-  - [ ] No other changes to `main.rs`
+- [x] Task 4: Wire `Commands::Status` into `main.rs` (AC: #1, #2, #3)
+  - [x] Replace `Commands::Status => println!("not yet implemented")` with `Commands::Status => commands::status::run()`
+  - [x] No other changes to `main.rs`
 
-- [ ] Task 5: Write co-located unit tests (AC: #1, #2, #3)
-  - [ ] `#[cfg(test)]` module inside `src/commands/status.rs`
-  - [ ] Test registry JSON parsing logic: parse a valid JSON string with 2 machines and verify both are found
-  - [ ] Test registry parse with empty `machines` array: should produce no machine output lines
-  - [ ] Test registry parse with malformed JSON: should not panic (graceful handling)
-  - [ ] Add unit tests for `get_user` JSON parsing logic in `src/github_api.rs` test module — test that `login` field is extracted correctly from a valid JSON body (same pattern as `test_parse_sha_present_in_json_body` which tests JSON parsing logic directly without network calls, since `get_user_inner` is private and cannot be called from `status.rs` tests)
-  - [ ] Run `cargo test` — must pass with 0 failures (currently 101 tests pass; new tests add to that count)
-  - [ ] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
-  - [ ] Run `cargo build` — must produce 0 errors (clean build)
+- [x] Task 5: Write co-located unit tests (AC: #1, #2, #3)
+  - [x] `#[cfg(test)]` module inside `src/commands/status.rs`
+  - [x] Test registry JSON parsing logic: parse a valid JSON string with 2 machines and verify both are found
+  - [x] Test registry parse with empty `machines` array: should produce no machine output lines
+  - [x] Test registry parse with malformed JSON: should not panic (graceful handling)
+  - [x] Add unit tests for `get_user` JSON parsing logic in `src/github_api.rs` test module — test that `login` field is extracted correctly from a valid JSON body (same pattern as `test_parse_sha_present_in_json_body` which tests JSON parsing logic directly without network calls, since `get_user_inner` is private and cannot be called from `status.rs` tests)
+  - [x] Run `cargo test` — must pass with 0 failures (currently 101 tests pass; new tests add to that count)
+  - [x] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
+  - [x] Run `cargo build` — must produce 0 errors (clean build)
 
 ## Dev Notes
 
@@ -341,6 +341,31 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+_No debug issues encountered. Implementation followed the story spec exactly._
+
 ### Completion Notes List
 
+- Implemented `get_user_inner` and `get_user` in `src/github_api.rs` following exact same pattern as `get_file_content_inner`. 401 is non-retriable per existing `is_status_retriable` logic; `with_retry` propagates it immediately.
+- Created `src/commands/status.rs` with `pub fn run()` that loads config, fetches registry.json, prints each machine entry (FR32), and checks auth token (FR33). Auth check always runs regardless of registry fetch outcome.
+- All error paths handled without `std::process::exit` or `unwrap()` in non-test code.
+- Added `pub mod status;` to `src/commands/mod.rs` (second line after `pub mod sync;`).
+- Wired `Commands::Status => commands::status::run()` in `main.rs`.
+- 7 new unit tests added (4 in `status.rs`, 3 in `github_api.rs`); total test count: 108 (up from 101). All pass.
+- `cargo clippy --all-targets -- -D warnings`: 0 warnings.
+- `cargo build`: 0 errors.
+
 ### File List
+
+- `src/commands/mod.rs` (modified — added `pub mod status;`)
+- `src/commands/status.rs` (new — `vibestats status` command implementation)
+- `src/github_api.rs` (modified — added `get_user_inner` + `GithubApi::get_user` + 3 unit tests)
+- `src/main.rs` (modified — wired `Commands::Status => commands::status::run()`)
+
+### Change Log
+
+- 2026-04-11: Implemented story 4.1 — `vibestats status` command. Added `get_user()` to `GithubApi`, created `src/commands/status.rs` with registry display (FR32) and auth check (FR33), wired into `main.rs`. 108 tests pass, 0 clippy warnings.
+- 2026-04-11: Code review completed (bmad-code-review). Clean review — all layers passed. Verified `cargo build`, `cargo test` (108/108), and `cargo clippy --all-targets -- -D warnings` all pass. AC1/AC2/AC3 satisfied; spec constraints (no exit/unwrap, no new crates, all GitHub HTTP via github_api.rs) all upheld. Status moved to done.
+
+### Review Findings
+
+_Clean review — all layers passed (Blind Hunter, Edge Case Hunter, Acceptance Auditor). No decision-needed, patch, or defer items raised._
