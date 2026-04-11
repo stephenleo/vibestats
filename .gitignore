@@ -1,24 +1,16 @@
+# Rust
+/target/
+
+# Node / Astro
+node_modules/
+site/dist/
+site/.astro/
+
 # macOS
 .DS_Store
-.AppleDouble
-.LSOverride
-
-# Build artifacts (added during implementation)
-target/
-node_modules/
-dist/
-.astro/
-
-# Local env / secrets
-.env
-.env.local
-*.toml.bak
 
 # Editor
+.idea/
 .vscode/
 *.swp
-
-# BMAD
-_bmad/
-.claude/
-.agents/
+*.swo

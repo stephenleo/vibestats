@@ -1,0 +1,5 @@
+name: 'vibestats'
+description: 'Aggregate Claude Code session activity and update your GitHub profile heatmap'
+runs:
+  using: 'composite'
+  steps: []
