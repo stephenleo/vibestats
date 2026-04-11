@@ -3,6 +3,7 @@ mod config;
 mod github_api;
 mod jsonl_parser;
 mod logger;
+mod sync;
 
 use clap::{Parser, Subcommand};
 
