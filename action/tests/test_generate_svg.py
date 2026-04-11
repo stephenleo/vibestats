@@ -510,6 +510,87 @@ class TestSVGInputValidation(unittest.TestCase):
                 "Expected non-zero exit code for input missing required keys",
             )
 
+    def test_p1_rejects_malformed_days_entry_sessions_type(self):
+        """[P1] Must exit non-zero when a days[*].sessions value is not a non-negative int (code review hardening)."""
+        import subprocess  # noqa: PLC0415
+
+        bad_data = {
+            "generated_at": "2026-04-11T01:00:00Z",
+            "username": "stephenleo",
+            "days": {
+                "2026-04-10": {"sessions": "three", "active_minutes": 45},
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_path = _write_data_json(tmp_dir, bad_data)
+            output_path = os.path.join(tmp_dir, "heatmap.svg")
+            module_path = str(_ACTION_DIR / "generate_svg.py")
+            result = subprocess.run(
+                [sys.executable, module_path, "--input", input_path, "--output", output_path],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(
+                result.returncode,
+                0,
+                "Expected non-zero exit code when days[*].sessions is not an int",
+            )
+            self.assertIn("sessions", result.stderr.lower())
+
+    def test_p1_rejects_negative_sessions(self):
+        """[P1] Must reject negative session counts (would crash math.log otherwise)."""
+        import subprocess  # noqa: PLC0415
+
+        bad_data = {
+            "generated_at": "2026-04-11T01:00:00Z",
+            "username": "stephenleo",
+            "days": {
+                "2026-04-10": {"sessions": -3, "active_minutes": 0},
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_path = _write_data_json(tmp_dir, bad_data)
+            output_path = os.path.join(tmp_dir, "heatmap.svg")
+            module_path = str(_ACTION_DIR / "generate_svg.py")
+            result = subprocess.run(
+                [sys.executable, module_path, "--input", input_path, "--output", output_path],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(
+                result.returncode,
+                0,
+                "Expected non-zero exit code for negative sessions value",
+            )
+
+    def test_p1_empty_days_with_invalid_generated_at_exits_nonzero(self):
+        """[P1] When days is empty AND generated_at is missing/invalid, exit non-zero.
+
+        Idempotency contract forbids falling back to date.today() — same input
+        must produce same output. Reject rather than silently desynchronise.
+        """
+        import subprocess  # noqa: PLC0415
+
+        bad_data = {
+            "generated_at": "not-a-date",
+            "username": "stephenleo",
+            "days": {},
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_path = _write_data_json(tmp_dir, bad_data)
+            output_path = os.path.join(tmp_dir, "heatmap.svg")
+            module_path = str(_ACTION_DIR / "generate_svg.py")
+            result = subprocess.run(
+                [sys.executable, module_path, "--input", input_path, "--output", output_path],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(
+                result.returncode,
+                0,
+                "Expected non-zero exit when generated_at is unparseable and days is empty",
+            )
+
 
 # ---------------------------------------------------------------------------
 # [P3] Snapshot test — byte-for-byte SVG comparison

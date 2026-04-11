@@ -22,13 +22,13 @@ to the specified output path. No JavaScript, no third-party dependencies — std
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import pathlib
 import sys
 import xml.etree.ElementTree as ET
 from datetime import date, timedelta
-from typing import Optional
 
 
 # ---------------------------------------------------------------------------
@@ -72,36 +72,30 @@ MONTH_ABBREVS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # Grid computation
 # ---------------------------------------------------------------------------
 
-def _compute_grid_dates(last_date: date) -> list[list[date | None]]:
+def _compute_grid_dates(last_date: date) -> list[list[date]]:
     """Return a 52-column × 7-row grid of dates.
 
     Column 0 is the oldest week; column 51 is the week containing last_date.
     Row 0 = Sunday, Row 6 = Saturday (matching GitHub's day ordering).
 
-    Cells before the first valid date in column 0 are None (padding).
+    Every cell is populated with a real date — the 52 × 7 window spans exactly
+    364 consecutive days (52 weeks) ending on the Saturday of the week that
+    contains last_date.
     """
-    # Find the Sunday that starts the current (last) week
-    # last_date.isoweekday(): 1=Mon … 7=Sun
-    day_of_week = last_date.weekday()  # 0=Mon … 6=Sun
-    # Convert to GitHub day index (0=Sun … 6=Sat)
-    # Python weekday: Mon=0…Sat=5, Sun=6
-    # GitHub row:     Sun=0…Sat=6
-    github_row_of_last = (day_of_week + 1) % 7  # Python Sun=6 → GitHub 0
+    # Python weekday(): Mon=0 … Sun=6.  Convert to GitHub row index (Sun=0 … Sat=6)
+    # so the Sunday that starts last_date's week sits at row 0 of that column.
+    github_row_of_last = (last_date.weekday() + 1) % 7  # Python Sun=6 → GitHub 0
 
-    # The last cell in the grid is (col=51, row=github_row_of_last)
-    # The Sunday of week 51 is:
+    # Sunday that starts the week containing last_date (column 51, row 0).
     sunday_of_last_week = last_date - timedelta(days=github_row_of_last)
 
-    # Sunday of week 0 (first column) is 51 weeks before sunday_of_last_week
+    # Sunday of week 0 (first column) is 51 weeks before sunday_of_last_week.
     sunday_of_first_week = sunday_of_last_week - timedelta(weeks=NUM_COLS - 1)
 
-    grid: list[list[date | None]] = []
+    grid: list[list[date]] = []
     for col in range(NUM_COLS):
-        column: list[date | None] = []
         week_sunday = sunday_of_first_week + timedelta(weeks=col)
-        for row in range(NUM_ROWS):
-            d = week_sunday + timedelta(days=row)
-            column.append(d)
+        column = [week_sunday + timedelta(days=row) for row in range(NUM_ROWS)]
         grid.append(column)
 
     return grid
@@ -112,10 +106,14 @@ def _compute_intensity(sessions: int, max_sessions: int) -> int:
 
     intensity = min(4, int(log(1 + sessions) / log(1 + max_sessions) * 4))
     where max_sessions is the max across all days with activity (>0).
-    If max_sessions == 0, returns 0. Any non-zero sessions always yields >= 1
-    to ensure visual distinction from zero-activity days.
+    If max_sessions == 0 or sessions <= 0, returns 0. Any non-zero sessions
+    always yields >= 1 to ensure visual distinction from zero-activity days.
+
+    Negative session counts are treated as zero activity rather than raising
+    (the aggregator should never emit them, but belt-and-braces keeps this
+    helper pure and crash-free on malformed upstream data).
     """
-    if max_sessions == 0 or sessions <= 0:
+    if max_sessions <= 0 or sessions <= 0:
         return 0
     raw = math.log(1 + sessions) / math.log(1 + max_sessions) * 4
     # Clamp to [1, 4] for non-zero activity days so they are always visually
@@ -127,15 +125,16 @@ def _compute_intensity(sessions: int, max_sessions: int) -> int:
 # SVG rendering
 # ---------------------------------------------------------------------------
 
-def _build_svg(grid: list[list[date | None]], days: dict[str, dict]) -> ET.Element:
+def _build_svg(grid: list[list[date]], days: dict[str, dict]) -> ET.Element:
     """Build and return the SVG ElementTree root element.
 
-    grid: list of 52 columns, each a list of 7 date-or-None values.
+    grid: list of 52 columns, each a list of 7 dates.
     days: mapping from "YYYY-MM-DD" → {"sessions": int, "active_minutes": int}
     """
-    # Compute max_sessions across all activity days
+    # Compute max_sessions across all activity days (validated to be ints
+    # upstream in generate(), so .get() default of 0 is purely defensive).
     max_sessions = max(
-        (v["sessions"] for v in days.values() if v.get("sessions", 0) > 0),
+        (v.get("sessions", 0) for v in days.values() if v.get("sessions", 0) > 0),
         default=0,
     )
 
@@ -152,7 +151,10 @@ def _build_svg(grid: list[list[date | None]], days: dict[str, dict]) -> ET.Eleme
 
     # --- Weekday labels (Mon, Wed, Fri) ---
     for row_idx, label in WEEKDAY_LABELS.items():
-        y = TOP_MARGIN + row_idx * CELL_STRIDE + CELL_SIZE - 1  # baseline align
+        # SVG <text> y anchors at the font baseline.  Offset by CELL_SIZE-1
+        # so the label sits vertically centred against its matching row of
+        # rects rather than hovering above them.
+        y = TOP_MARGIN + row_idx * CELL_STRIDE + CELL_SIZE - 1
         text = ET.SubElement(svg, "text")
         text.set("x", str(LEFT_MARGIN - 4))
         text.set("y", str(y))
@@ -163,13 +165,12 @@ def _build_svg(grid: list[list[date | None]], days: dict[str, dict]) -> ET.Eleme
         text.text = label
 
     # --- Month labels (abbreviated) ---
-    # Determine which column starts a new month and label it once
+    # Determine which column starts a new month and label it once.
+    # The grid is dense (every column has 7 real dates), so we use the
+    # first row's date as the column's representative.
     prev_month = None
     for col, column in enumerate(grid):
-        # Use the first non-None date in the column to determine its month
-        col_date = next((d for d in column if d is not None), None)
-        if col_date is None:
-            continue
+        col_date = column[0]
         month = col_date.month
         if month != prev_month:
             x = LEFT_MARGIN + col * CELL_STRIDE
@@ -188,14 +189,11 @@ def _build_svg(grid: list[list[date | None]], days: dict[str, dict]) -> ET.Eleme
             x = LEFT_MARGIN + col * CELL_STRIDE
             y = TOP_MARGIN + row * CELL_STRIDE
 
-            if cell_date is None:
-                fill = COLOUR_PALETTE[0]
-            else:
-                date_str = cell_date.strftime("%Y-%m-%d")
-                day_data = days.get(date_str, {})
-                sessions = day_data.get("sessions", 0)
-                intensity = _compute_intensity(sessions, max_sessions)
-                fill = COLOUR_PALETTE[intensity]
+            date_str = cell_date.strftime("%Y-%m-%d")
+            day_data = days.get(date_str, {})
+            sessions = day_data.get("sessions", 0)
+            intensity = _compute_intensity(sessions, max_sessions)
+            fill = COLOUR_PALETTE[intensity]
 
             rect = ET.SubElement(svg, "rect")
             rect.set("x", str(x))
@@ -210,7 +208,6 @@ def _build_svg(grid: list[list[date | None]], days: dict[str, dict]) -> ET.Eleme
 
 def _svg_to_string(svg_root: ET.Element) -> str:
     """Serialise SVG element to a Unicode string with XML declaration."""
-    import io
     tree = ET.ElementTree(svg_root)
     buf = io.StringIO()
     tree.write(buf, encoding="unicode", xml_declaration=True)
@@ -256,7 +253,28 @@ def generate(input_path: str, output_path: str) -> None:
 
     days: dict[str, dict] = data["days"]
 
-    # Determine last_date: use the latest date in the dataset or today if empty
+    # Validate each day entry — sessions must be a non-negative int.  Booleans
+    # are an int subclass in Python, so we reject them explicitly.
+    for date_str, entry in days.items():
+        if not isinstance(entry, dict):
+            print(
+                f"ERROR: data.json days['{date_str}'] must be an object, got "
+                f"{type(entry).__name__}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        sessions = entry.get("sessions", 0)
+        if isinstance(sessions, bool) or not isinstance(sessions, int) or sessions < 0:
+            print(
+                f"ERROR: data.json days['{date_str}'].sessions must be a "
+                f"non-negative integer, got {sessions!r}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    # Determine last_date: use the latest date in the dataset or fall back to
+    # generated_at for empty datasets.  We NEVER use date.today() here — that
+    # would violate the idempotency contract (same input → same output).
     if days:
         try:
             last_date = max(date.fromisoformat(d) for d in days.keys())
@@ -264,12 +282,24 @@ def generate(input_path: str, output_path: str) -> None:
             print(f"ERROR: Invalid date key in days: {exc}", file=sys.stderr)
             sys.exit(1)
     else:
-        # Use a fixed reference date for idempotency: parse from generated_at if available
+        # Empty days: parse date from generated_at.  Required for idempotency.
+        generated_at = data.get("generated_at")
+        if not isinstance(generated_at, str) or len(generated_at) < 10:
+            print(
+                "ERROR: data.json 'generated_at' must be an ISO-8601 string "
+                "(e.g., '2026-04-11T01:00:00Z') when 'days' is empty",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         try:
-            # generated_at: "2026-04-11T01:00:00Z" → take date part
-            last_date = date.fromisoformat(data["generated_at"][:10])
-        except (ValueError, KeyError):
-            last_date = date.today()
+            last_date = date.fromisoformat(generated_at[:10])
+        except ValueError as exc:
+            print(
+                f"ERROR: data.json 'generated_at' is not a valid ISO-8601 "
+                f"date: {exc}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
     # Build grid and SVG
     grid = _compute_grid_dates(last_date)
