@@ -1,0 +1,22 @@
+{
+  "machines": [
+    {
+      "machine_id": "machine-a",
+      "hostname": "workstation-a",
+      "status": "active",
+      "last_seen": "2026-04-11T10:00:00Z"
+    },
+    {
+      "machine_id": "machine-b",
+      "hostname": "laptop-b",
+      "status": "active",
+      "last_seen": "2026-04-10T09:00:00Z"
+    },
+    {
+      "machine_id": "machine-purged",
+      "hostname": "old-machine",
+      "status": "purged",
+      "last_seen": "2026-03-01T08:00:00Z"
+    }
+  ]
+}
