@@ -85,6 +85,10 @@ pub fn run() {
             .as_mut()
             .expect("stdin is piped")
             .write_all(config.oauth_token.as_bytes())?;
+        // Drop stdin to close the pipe and signal EOF to the child process.
+        // Without this, `gh secret set --body-file -` would block waiting for
+        // more input, and wait_with_output() would deadlock.
+        drop(child.stdin.take());
         child.wait_with_output()
     })();
 
