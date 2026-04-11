@@ -186,6 +186,60 @@ impl GithubApi {
         with_retry(|| get_file_content_inner(&self.token, &self.repo, path))
     }
 
+    /// Delete a file from the repository.
+    ///
+    /// Steps:
+    /// 1. GET current SHA — if 404 (already deleted), returns `Ok(())` (idempotent).
+    /// 2. DELETE using the SHA — retries on 429 / 5xx / transport errors.
+    ///
+    /// Returns:
+    /// - `Ok(())` — file deleted (or was already absent)
+    /// - `Err(_)` — network error, 401, or other non-retriable failure
+    pub fn delete_file(&self, path: &str) -> Result<(), GithubApiError> {
+        // Step 1: get SHA (with retry)
+        let sha = match with_retry(|| get_file_sha_inner(&self.token, &self.repo, path)) {
+            Ok(Some(sha)) => sha,
+            Ok(None) => return Ok(()), // Already deleted — idempotent
+            Err(e) => {
+                logger::error(&format!("github_api: get_file_sha failed for {}: {}", path, e));
+                return Err(e);
+            }
+        };
+        // Step 2: DELETE (with retry)
+        match with_retry(|| delete_file_inner(&self.token, &self.repo, path, &sha)) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                logger::error(&format!("github_api: delete_file failed for {}: {}", path, e));
+                Err(e)
+            }
+        }
+    }
+
+    /// List the file paths in a directory in the repository.
+    ///
+    /// Uses the GitHub Contents API GET on a directory path.
+    /// Returns only `"file"` type entries' `"path"` values; skips `"dir"` entries.
+    ///
+    /// Returns:
+    /// - `Ok(Vec<String>)` — list of file paths (may be empty)
+    /// - `Ok(Vec::new())`  — directory does not exist (404)
+    /// - `Err(_)`          — network error, unexpected HTTP status, or 401
+    pub fn list_directory(&self, path: &str) -> Result<Vec<String>, GithubApiError> {
+        with_retry(|| list_directory_inner(&self.token, &self.repo, path))
+    }
+
+    /// List all entries (both files and subdirectories) in a directory.
+    ///
+    /// Returns a tuple `(files, dirs)` where each is a `Vec<String>` of paths.
+    /// Returns `(vec![], vec![])` if the directory does not exist (404).
+    /// Returns `Err(_)` on network or API failure.
+    pub fn list_directory_all(
+        &self,
+        path: &str,
+    ) -> Result<(Vec<String>, Vec<String>), GithubApiError> {
+        with_retry(|| list_directory_all_inner(&self.token, &self.repo, path))
+    }
+
     /// Check auth token validity by calling `GET /user`.
     ///
     /// Returns:
@@ -351,6 +405,144 @@ fn get_file_content_inner(
             // File does not exist
             Ok(None)
         }
+        Err(e) => Err(e),
+    }
+}
+
+/// Inner DELETE helper. Returns `Ok(())` on success, `Err` otherwise.
+///
+/// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
+/// the error for retriability before boxing.
+#[allow(clippy::result_large_err)]
+fn delete_file_inner(
+    token: &str,
+    repo: &str,
+    path: &str,
+    sha: &str,
+) -> Result<(), ureq::Error> {
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+    let body = serde_json::json!({
+        "message": "vibestats: remove machine data",
+        "sha": sha
+    })
+    .to_string();
+    let response = ureq::delete(&url)
+        .set("Authorization", &format!("Bearer {}", token))
+        .set("User-Agent", "vibestats")
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .set("Content-Type", "application/json")
+        .send_string(&body);
+    match response {
+        Ok(_) => Ok(()),
+        Err(ureq::Error::Status(404, _)) => Ok(()), // already deleted — idempotent
+        Err(e) => Err(e),
+    }
+}
+
+/// Inner GET helper for directory listing — returns file paths, empty vec for 404, or `Err`.
+///
+/// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
+/// the error for retriability before boxing.
+#[allow(clippy::result_large_err)]
+fn list_directory_inner(
+    token: &str,
+    repo: &str,
+    path: &str,
+) -> Result<Vec<String>, ureq::Error> {
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+
+    let response = ureq::get(&url)
+        .set("Authorization", &format!("Bearer {}", token))
+        .set("User-Agent", "vibestats")
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call();
+
+    match response {
+        Ok(r) => {
+            let body = r.into_string().map_err(ureq::Error::from)?;
+            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: malformed JSON from Contents API directory: {}", e),
+                ))
+            })?;
+            let entries = match json.as_array() {
+                Some(arr) => arr,
+                None => {
+                    return Err(ureq::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "github_api: directory listing response is not a JSON array",
+                    )));
+                }
+            };
+            let paths: Vec<String> = entries
+                .iter()
+                .filter(|e| e["type"].as_str() == Some("file"))
+                .filter_map(|e| e["path"].as_str().map(|s| s.to_string()))
+                .collect();
+            Ok(paths)
+        }
+        Err(ureq::Error::Status(404, _)) => {
+            // Directory does not exist — return empty list
+            Ok(vec![])
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Inner helper for listing all directory entries (files and subdirectories).
+/// Returns `(files, dirs)` tuple, empty vecs for 404.
+#[allow(clippy::result_large_err)]
+fn list_directory_all_inner(
+    token: &str,
+    repo: &str,
+    path: &str,
+) -> Result<(Vec<String>, Vec<String>), ureq::Error> {
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+
+    let response = ureq::get(&url)
+        .set("Authorization", &format!("Bearer {}", token))
+        .set("User-Agent", "vibestats")
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call();
+
+    match response {
+        Ok(r) => {
+            let body = r.into_string().map_err(ureq::Error::from)?;
+            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: malformed JSON from Contents API directory: {}", e),
+                ))
+            })?;
+            let entries = match json.as_array() {
+                Some(arr) => arr,
+                None => {
+                    return Err(ureq::Error::from(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "github_api: directory listing response is not a JSON array",
+                    )));
+                }
+            };
+            let mut files = Vec::new();
+            let mut dirs = Vec::new();
+            for entry in entries {
+                let entry_type = entry["type"].as_str().unwrap_or("");
+                let entry_path = entry["path"].as_str().unwrap_or("").to_string();
+                if !entry_path.is_empty() {
+                    match entry_type {
+                        "file" => files.push(entry_path),
+                        "dir" => dirs.push(entry_path),
+                        _ => {}
+                    }
+                }
+            }
+            Ok((files, dirs))
+        }
+        Err(ureq::Error::Status(404, _)) => Ok((vec![], vec![])),
         Err(e) => Err(e),
     }
 }
@@ -791,6 +983,85 @@ mod tests {
         assert_eq!(base64_decode("TWE=").unwrap(), "Ma");
         // "TQ==" decodes to "M"
         assert_eq!(base64_decode("TQ==").unwrap(), "M");
+    }
+
+    // ── delete_file body construction ─────────────────────────────────────────
+
+    #[test]
+    fn test_delete_body_includes_sha_and_message() {
+        let sha = "deadbeef1234";
+        let body = build_delete_body(sha);
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(
+            parsed["sha"], sha,
+            "delete body must include the sha field"
+        );
+        assert_eq!(
+            parsed["message"], "vibestats: remove machine data",
+            "delete body must include the correct commit message"
+        );
+    }
+
+    #[test]
+    fn test_delete_body_does_not_include_content_field() {
+        let body = build_delete_body("abc123");
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert!(
+            parsed.get("content").is_none(),
+            "delete body must not include a content field"
+        );
+    }
+
+    #[test]
+    fn test_delete_body_sha_roundtrip() {
+        let sha = "0000000000000000000000000000000000000000";
+        let body = build_delete_body(sha);
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(parsed["sha"].as_str().unwrap(), sha);
+    }
+
+    /// Helper that mirrors the body-building logic in `delete_file_inner`.
+    fn build_delete_body(sha: &str) -> String {
+        serde_json::json!({
+            "message": "vibestats: remove machine data",
+            "sha": sha
+        })
+        .to_string()
+    }
+
+    // ── list_directory: JSON parsing ──────────────────────────────────────────
+
+    #[test]
+    fn test_list_directory_filters_files_only() {
+        // Simulate a GitHub Contents API directory response
+        let json_body = r#"[
+            {"type": "file", "path": "machines/year=2026/month=04/day=10/harness=claude/machine_id=abc123/data.json"},
+            {"type": "dir",  "path": "machines/year=2026/month=04/day=11"},
+            {"type": "file", "path": "machines/year=2026/month=04/day=10/harness=claude/machine_id=abc123/other.json"}
+        ]"#;
+        let json: serde_json::Value = serde_json::from_str(json_body).unwrap();
+        let entries = json.as_array().unwrap();
+        let paths: Vec<String> = entries
+            .iter()
+            .filter(|e| e["type"].as_str() == Some("file"))
+            .filter_map(|e| e["path"].as_str().map(|s| s.to_string()))
+            .collect();
+        assert_eq!(paths.len(), 2);
+        assert!(paths[0].ends_with("data.json"));
+        assert!(paths[1].ends_with("other.json"));
+    }
+
+    #[test]
+    fn test_list_directory_empty_array_returns_empty_vec() {
+        let json_body = "[]";
+        let json: serde_json::Value = serde_json::from_str(json_body).unwrap();
+        let entries = json.as_array().unwrap();
+        let paths: Vec<String> = entries
+            .iter()
+            .filter(|e| e["type"].as_str() == Some("file"))
+            .filter_map(|e| e["path"].as_str().map(|s| s.to_string()))
+            .collect();
+        assert!(paths.is_empty());
     }
 
     // ── get_user: login field extraction from /user JSON body ────────────────

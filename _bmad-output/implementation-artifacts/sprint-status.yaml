@@ -88,7 +88,7 @@ development_status:
   # ──────────────────────────────────────────────────────────────
   epic-4: in-progress
   4-1-implement-vibestats-status-command: done
-  4-2-implement-vibestats-machines-list-and-machines-remove: in-progress
+  4-2-implement-vibestats-machines-list-and-machines-remove: done
   4-3-implement-vibestats-auth-command: review
   4-4-implement-vibestats-uninstall-command: backlog
   epic-4-retrospective: optional
