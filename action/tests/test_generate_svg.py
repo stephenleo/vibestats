@@ -59,7 +59,30 @@ _SAMPLE_DATA_SINGLE_MAX = {
     },
 }
 
+# Low vs high sessions — used to verify low-intensity colour endpoint (AC2)
+_SAMPLE_DATA_LOW_AND_HIGH = {
+    "generated_at": "2026-04-11T01:00:00Z",
+    "username": "stephenleo",
+    "days": {
+        "2026-04-10": {"sessions": 1, "active_minutes": 10},
+        "2026-04-09": {"sessions": 20, "active_minutes": 300},
+    },
+}
+
+# Log-scale intensity fixture — max=8, low=1 → verifies bucket mapping (AC2 Dev Notes)
+_SAMPLE_DATA_LOG_SCALE = {
+    "generated_at": "2026-04-11T01:00:00Z",
+    "username": "stephenleo",
+    "days": {
+        "2026-04-10": {"sessions": 8, "active_minutes": 100},  # max → intensity 4 → #f97316
+        "2026-04-09": {"sessions": 1, "active_minutes": 10},   # low → intensity 1 → #fef3e8
+    },
+}
+
 _NS = {"svg": "http://www.w3.org/2000/svg"}
+
+# Grid dimensions — 52 ISO weeks × 7 days per week
+_GRID_CELL_COUNT = 52 * 7  # 364
 
 
 def _write_data_json(tmp_dir: str, data: dict) -> str:
@@ -71,20 +94,23 @@ def _write_data_json(tmp_dir: str, data: dict) -> str:
 
 
 def _run_generate_svg(data: dict, tmp_dir: str) -> str:
-    """Call generate_svg.generate() (or equivalent entry point) and return SVG content.
-
-    THIS WILL FAIL until generate_svg.py is implemented.
-    """
-    # Import the module under test — will raise ImportError or AttributeError
-    # until the implementation exists.
+    """Call generate_svg.generate() and return SVG content as a string."""
     import generate_svg  # noqa: PLC0415  (local import intentional)
 
     input_path = _write_data_json(tmp_dir, data)
     output_path = os.path.join(tmp_dir, "heatmap.svg")
-    # Expected CLI-compatible interface: generate_svg.generate(input_path, output_path)
     generate_svg.generate(input_path, output_path)  # type: ignore[attr-defined]
     with open(output_path, "r", encoding="utf-8") as fh:
         return fh.read()
+
+
+def _get_rects(svg_content: str) -> list:
+    """Parse SVG content and return all <rect> elements (namespace-aware)."""
+    root = ET.fromstring(svg_content)
+    rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
+    if not rects:
+        rects = root.findall(".//rect")
+    return rects
 
 
 # ---------------------------------------------------------------------------
@@ -107,15 +133,11 @@ class TestSVGGridStructure(unittest.TestCase):
         """[P0] SVG must contain exactly 52 × 7 = 364 <rect> elements representing days (AC1)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_ACTIVE, tmp_dir)
-            root = ET.fromstring(svg_content)
-            # Find all <rect> elements (with or without namespace)
-            rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
-            if not rects:
-                rects = root.findall(".//rect")
+            rects = _get_rects(svg_content)
             self.assertEqual(
                 len(rects),
-                364,
-                f"Expected 364 rect elements (52 × 7), got {len(rects)}",
+                _GRID_CELL_COUNT,
+                f"Expected {_GRID_CELL_COUNT} rect elements (52 × 7), got {len(rects)}",
             )
 
     def test_p0_svg_has_correct_root_element(self):
@@ -132,24 +154,18 @@ class TestSVGGridStructure(unittest.TestCase):
         """[P0] Empty days dict must still produce a valid 52 × 7 grid (AC1 edge case, Story task 4.5)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_EMPTY, tmp_dir)
-            root = ET.fromstring(svg_content)
-            rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
-            if not rects:
-                rects = root.findall(".//rect")
+            rects = _get_rects(svg_content)
             self.assertEqual(
                 len(rects),
-                364,
-                f"Empty days map: expected 364 rect elements, got {len(rects)}",
+                _GRID_CELL_COUNT,
+                f"Empty days map: expected {_GRID_CELL_COUNT} rect elements, got {len(rects)}",
             )
 
     def test_p0_each_rect_has_correct_dimensions(self):
         """[P0] Each <rect> must have width=10, height=10, rx=2 (AC1, Dev Notes SVG Grid Layout)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_ACTIVE, tmp_dir)
-            root = ET.fromstring(svg_content)
-            rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
-            if not rects:
-                rects = root.findall(".//rect")
+            rects = _get_rects(svg_content)
             self.assertGreater(len(rects), 0)
             for rect in rects:
                 self.assertEqual(rect.get("width"), "10", "Each rect must have width=10")
@@ -231,11 +247,8 @@ class TestSVGColourPalette(unittest.TestCase):
         """[P0] When days is empty, all 364 cells must use #ebedf0 (AC2, task 4.5)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_EMPTY, tmp_dir)
-            root = ET.fromstring(svg_content)
-            rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
-            if not rects:
-                rects = root.findall(".//rect")
-            self.assertEqual(len(rects), 364)
+            rects = _get_rects(svg_content)
+            self.assertEqual(len(rects), _GRID_CELL_COUNT)
             for rect in rects:
                 fill = rect.get("fill", "").lower()
                 self.assertEqual(
@@ -256,17 +269,8 @@ class TestSVGColourPalette(unittest.TestCase):
 
     def test_p1_low_activity_day_uses_low_orange(self):
         """[P1] Day with low (but non-zero) sessions must use low-intensity colour #fef3e8 (AC2 low endpoint)."""
-        # data where one day has 1 session (low) and one day has many (high)
-        data = {
-            "generated_at": "2026-04-11T01:00:00Z",
-            "username": "stephenleo",
-            "days": {
-                "2026-04-10": {"sessions": 1, "active_minutes": 10},
-                "2026-04-09": {"sessions": 20, "active_minutes": 300},
-            },
-        }
         with tempfile.TemporaryDirectory() as tmp_dir:
-            svg_content = _run_generate_svg(data, tmp_dir)
+            svg_content = _run_generate_svg(_SAMPLE_DATA_LOW_AND_HIGH, tmp_dir)
         self.assertIn(
             "#fef3e8",
             svg_content.lower(),
@@ -278,10 +282,7 @@ class TestSVGColourPalette(unittest.TestCase):
         allowed_fills = {"#ebedf0", "#fef3e8", "#fed7aa", "#fb923c", "#f97316"}
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_ACTIVE, tmp_dir)
-            root = ET.fromstring(svg_content)
-            rects = root.findall(".//{http://www.w3.org/2000/svg}rect")
-            if not rects:
-                rects = root.findall(".//rect")
+            rects = _get_rects(svg_content)
             for rect in rects:
                 fill = rect.get("fill", "").lower()
                 self.assertIn(
@@ -291,21 +292,15 @@ class TestSVGColourPalette(unittest.TestCase):
                 )
 
     def test_p2_intensity_buckets_use_log_scale(self):
-        """[P2] Intensity bucketing follows log scale formula (AC2, Dev Notes)."""
-        # With sessions 1, 2, 4, 8 where max=8:
-        # intensity(1) = min(4, int(log(2)/log(9)*4)) = min(4, int(0.63)) = 0 → #ebedf0
-        # intensity(8) = min(4, int(log(9)/log(9)*4)) = 4 → #f97316
-        data = {
-            "generated_at": "2026-04-11T01:00:00Z",
-            "username": "stephenleo",
-            "days": {
-                "2026-04-10": {"sessions": 8, "active_minutes": 100},  # max → intensity 4
-                "2026-04-09": {"sessions": 1, "active_minutes": 10},   # low → intensity 0 or 1
-            },
-        }
+        """[P2] Intensity bucketing follows log scale formula (AC2, Dev Notes).
+
+        With max=8, low=1:
+          intensity(8) = min(4, int(log(9)/log(9)*4)) = 4 → #f97316
+          intensity(1) = min(4, int(log(2)/log(9)*4)) = 1 → #fef3e8 (clamped from 0 for non-zero)
+        """
         with tempfile.TemporaryDirectory() as tmp_dir:
-            svg_content = _run_generate_svg(data, tmp_dir)
-        # The day with max sessions must map to #f97316
+            svg_content = _run_generate_svg(_SAMPLE_DATA_LOG_SCALE, tmp_dir)
+        # The day with max sessions must map to high-intensity orange
         self.assertIn("#f97316", svg_content.lower())
 
 
