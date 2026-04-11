@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-11T14:00:00Z_
+_Last updated: 2026-04-11T14:45:00Z_
 
 ## Stories
 
@@ -22,9 +22,9 @@ _Last updated: 2026-04-11T14:00:00Z_
 | 4.2 | 4 | Implement vibestats machines list and machines remove | done | #23 | #61 | merged | epics 2+3 complete | ✅ Yes (done) |
 | 4.3 | 4 | Implement vibestats auth command | done | #24 | #62 | merged | epics 2+3 complete | ✅ Yes (done) |
 | 4.4 | 4 | Implement vibestats uninstall command | done | #25 | #63 | merged | epics 2+3 complete | ✅ Yes (done) |
-| 5.1 | 5 | Implement aggregate.py | backlog | #26 | — | — | epic 1 complete | ✅ Yes |
-| 5.2 | 5 | Implement generate_svg.py | backlog | #27 | — | — | epic 1 complete | ✅ Yes |
-| 5.3 | 5 | Implement update_readme.py | backlog | #28 | — | — | epic 1 complete | ✅ Yes |
+| 5.1 | 5 | Implement aggregate.py | done | #26 | #64 | merged | epic 1 complete | ✅ Yes (done) |
+| 5.2 | 5 | Implement generate_svg.py | done | #27 | #65 | merged | epic 1 complete | ✅ Yes (done) |
+| 5.3 | 5 | Implement update_readme.py | done | #28 | #66 | merged | epic 1 complete | ✅ Yes (done) |
 | 5.4 | 5 | Implement action.yml (composite community GitHub Action) | backlog | #29 | — | — | epic 1 complete | ✅ Yes |
 | 5.5 | 5 | Implement aggregate.yml (user vibestats-data workflow template) | backlog | #30 | — | — | epic 1 complete | ✅ Yes |
 | 6.1 | 6 | Implement dependency detection and gh authentication | backlog | #31 | — | — | epic 8 complete | ❌ No (epic 8 not complete) |
@@ -95,9 +95,12 @@ _Last updated: 2026-04-11T14:00:00Z_
 - **Story 4.3 done** — PR #62 merged 2026-04-11T12:42:30Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
 - **Story 4.4 done** — PR #63 merged 2026-04-11T13:32:22Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
 - **Epic 4 complete** — All stories (4.1–4.4) done.
-- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 is the current active epic alongside Epic 7.
+- **Story 5.1 done** — PR #64 merged 2026-04-11T14:25:26Z. Worktree and remote branch cleaned up.
+- **Story 5.2 done** — PR #65 merged 2026-04-11T14:32:23Z. Worktree and remote branch cleaned up.
+- **Story 5.3 done** — PR #66 merged 2026-04-11T14:34:02Z. Worktree and remote branch cleaned up.
+- **Stories 5.4–5.5 are "Ready to Work"** — Epic 5 is still in-progress with 5.4 and 5.5 remaining.
 - **Story 7.1 is "Ready to Work"** — Epic 7 can begin in parallel with Epic 5 (7.2–7.4 depend on 7.1).
-- **Parallelization opportunities:** 5.1–5.5 (parallel within epic 5) and 7.1 can all be worked concurrently.
+- **Parallelization opportunities:** 5.4, 5.5 (parallel within epic 5) and 7.1 can all be worked concurrently.
 - **Current bottleneck:** Epic 7 stories 7.2–7.4 are blocked until 7.1 is merged. Epic 8 blocked until all prior epics complete. Epic 6 blocked until Epic 8 complete.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
