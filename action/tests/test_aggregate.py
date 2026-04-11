@@ -1,16 +1,11 @@
-"""test_aggregate.py — ATDD failing tests for aggregate.py (TDD RED PHASE).
+"""test_aggregate.py — Unit tests for aggregate.py.
 
 Story 5.1: Implement aggregate.py
 GH Issue: #26
 
-All tests are marked with @unittest.skip() — this is intentional.
-They document EXPECTED behaviour before implementation exists.
-Remove @unittest.skip() after implementing aggregate.py to enter the green phase.
-
 Test IDs follow: 5.1-UNIT-{SEQ}
 """
 
-import collections
 import json
 import os
 import pathlib
@@ -24,7 +19,6 @@ import unittest
 # ---------------------------------------------------------------------------
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent / "fixtures" / "sample_machine_data"
-EXPECTED_OUTPUT = pathlib.Path(__file__).parent / "fixtures" / "expected_output" / "data.json"
 
 # Expected days values derived from fixtures (purged machine excluded):
 #   2026-04-09: machine-a/claude(3s,45m) + machine-b/claude(2s,30m) + machine-a/codex(1s,10m)
@@ -51,7 +45,7 @@ def _import_aggregate():
 
 
 # ---------------------------------------------------------------------------
-# P0 Tests (Critical — TDD RED PHASE)
+# P0 Tests (Critical)
 # ---------------------------------------------------------------------------
 
 
@@ -61,7 +55,6 @@ class TestAggregateSumMultipleMachines(unittest.TestCase):
     def test_two_machines_same_date_sessions_summed(self):
         """Given two active machines on 2026-04-10, when aggregated,
         their sessions must be summed (4+1=5)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -71,7 +64,6 @@ class TestAggregateSumMultipleMachines(unittest.TestCase):
     def test_two_machines_same_date_active_minutes_summed(self):
         """Given two active machines on 2026-04-10, when aggregated,
         their active_minutes must be summed (60+15=75)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -86,7 +78,6 @@ class TestAggregatePurgedMachineSkipped(unittest.TestCase):
         """Given machine-purged has status=purged in registry.json,
         its 99 sessions on 2026-04-09 must NOT appear in the output.
         Expected: sessions=6 (not 105=6+99)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -99,7 +90,6 @@ class TestAggregatePurgedMachineSkipped(unittest.TestCase):
         """Given machine-purged has status=purged in registry.json,
         its 999 active_minutes on 2026-04-09 must NOT appear in the output.
         Expected: active_minutes=85 (not 1084=85+999)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -114,7 +104,6 @@ class TestAggregateOutputSchema(unittest.TestCase):
 
     def test_output_has_exactly_three_top_level_keys(self):
         """data.json must have exactly: generated_at, username, days. No extras."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -123,7 +112,6 @@ class TestAggregateOutputSchema(unittest.TestCase):
     def test_days_values_have_only_numeric_fields(self):
         """Each days entry must have only sessions (int) and active_minutes (int).
         No machine IDs, Hive paths, hostnames, or raw file content."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -138,7 +126,6 @@ class TestAggregateOutputSchema(unittest.TestCase):
 
     def test_days_values_contain_no_string_leakage(self):
         """No string values in days entries — no machine IDs, paths, or hostnames."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -152,7 +139,6 @@ class TestAggregateOutputSchema(unittest.TestCase):
 
     def test_username_set_correctly(self):
         """username field must equal the value passed to aggregate()."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -160,7 +146,6 @@ class TestAggregateOutputSchema(unittest.TestCase):
 
     def test_generated_at_is_iso8601_utc(self):
         """generated_at must be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601 UTC)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         import re
 
         agg = _import_aggregate()
@@ -181,7 +166,6 @@ class TestAggregateErrorExit(unittest.TestCase):
 
     def test_malformed_data_json_causes_nonzero_exit(self):
         """Given a data.json with invalid JSON, running aggregate.py must exit non-zero."""
-        # THIS TEST WILL FAIL — aggregate.py not yet implemented
         aggregate_script = pathlib.Path(__file__).parent.parent / "aggregate.py"
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -208,7 +192,6 @@ class TestAggregateErrorExit(unittest.TestCase):
     def test_missing_sessions_field_causes_nonzero_exit(self):
         """Given a data.json missing the required 'sessions' field,
         running aggregate.py must exit non-zero."""
-        # THIS TEST WILL FAIL — aggregate.py not yet implemented
         aggregate_script = pathlib.Path(__file__).parent.parent / "aggregate.py"
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -236,7 +219,7 @@ class TestAggregateErrorExit(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# P1 Tests (High — TDD RED PHASE)
+# P1 Tests (High)
 # ---------------------------------------------------------------------------
 
 
@@ -245,7 +228,6 @@ class TestAggregateSingleMachineBaseline(unittest.TestCase):
 
     def test_single_machine_single_date_correct_values(self):
         """Given a single active machine with one date, output matches exact values."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -267,7 +249,6 @@ class TestAggregateMultipleDates(unittest.TestCase):
     def test_all_three_expected_dates_present(self):
         """Given fixtures with data on 2026-04-09, 2026-04-10, and 2026-04-11,
         all three dates appear in the output."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -277,7 +258,6 @@ class TestAggregateMultipleDates(unittest.TestCase):
 
     def test_all_dates_match_expected_values(self):
         """All date values in days must match the pre-computed expected output."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -285,7 +265,7 @@ class TestAggregateMultipleDates(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# P2 Tests (Medium — TDD RED PHASE)
+# P2 Tests (Medium)
 # ---------------------------------------------------------------------------
 
 
@@ -294,7 +274,6 @@ class TestAggregateEmptyHiveDirectory(unittest.TestCase):
 
     def test_empty_machines_directory_returns_empty_days(self):
         """Given no Hive partition files exist, output must contain days: {} without error."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -310,7 +289,6 @@ class TestAggregateEmptyHiveDirectory(unittest.TestCase):
 
     def test_missing_machines_directory_returns_empty_days(self):
         """Given no machines/ directory at all, output must contain days: {} without error."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -328,7 +306,6 @@ class TestAggregateMultipleHarnesses(unittest.TestCase):
     def test_claude_and_codex_harness_sessions_summed_on_same_date(self):
         """Given machine-a has data in both harness=claude and harness=codex on 2026-04-09,
         their sessions must be summed (3+1=4 from machine-a alone on that date before machine-b)."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -338,7 +315,6 @@ class TestAggregateMultipleHarnesses(unittest.TestCase):
     def test_claude_and_codex_harness_active_minutes_summed_on_same_date(self):
         """Given machine-a has data in both harness=claude(45m) and harness=codex(10m) on 2026-04-09,
         plus machine-b/claude(30m), total active_minutes must be 85."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
@@ -352,7 +328,6 @@ class TestAggregateIdempotency(unittest.TestCase):
     def test_idempotent_days_output(self):
         """Running aggregate() twice on the same fixtures must produce identical days content.
         Only generated_at is allowed to differ between runs."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         result1 = agg.aggregate(FIXTURES_ROOT, "testuser")
@@ -371,7 +346,6 @@ class TestAggregateRegistryMissingOrMalformed(unittest.TestCase):
 
     def test_missing_registry_includes_all_machines(self):
         """Given no registry.json exists, all machines (including former purged ones) are included."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -392,7 +366,6 @@ class TestAggregateRegistryMissingOrMalformed(unittest.TestCase):
     def test_malformed_registry_treated_as_empty_purged_set(self):
         """Given registry.json exists but contains invalid JSON,
         the purged set is treated as empty and all machines are included."""
-        # THIS TEST WILL FAIL — aggregate() not yet implemented
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -409,23 +382,6 @@ class TestAggregateRegistryMissingOrMalformed(unittest.TestCase):
 
         # Malformed registry → empty purged set → machine included
         self.assertEqual(result["days"]["2026-04-09"]["sessions"], 5)
-
-
-# ---------------------------------------------------------------------------
-# Subagent 4A output record (for aggregation step verification)
-# ---------------------------------------------------------------------------
-# Summary:
-#   subagent: "atdd-unit-tests"
-#   test_count: 18
-#   tdd_phase: "RED"
-#   all_tests_skipped: true
-#   acceptance_criteria_covered:
-#     - "AC1: globs all matching paths and sums sessions+active_minutes by date"
-#     - "AC2: multiple machines on same date → summed not overwritten"
-#     - "AC3: purged machine files skipped"
-#     - "AC4: exits non-zero on any error"
-#     - "AC5: data.json conforms to public schema"
-# ---------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
