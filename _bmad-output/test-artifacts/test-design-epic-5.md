@@ -17,9 +17,9 @@ inputDocuments:
 
 # Test Design: Epic 5 — GitHub Actions Pipeline
 
-**Date:** 2026-04-11
+**Date:** 2026-04-12 (updated; originally 2026-04-11)
 **Author:** Leo
-**Status:** Draft
+**Status:** Active
 
 ---
 
@@ -27,7 +27,7 @@ inputDocuments:
 
 **Scope:** Epic-level test design for Epic 5 — GitHub Actions Pipeline.
 
-Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, update_readme.py), the composite community GitHub Action (action.yml), and the user workflow template (aggregate.yml). All five stories are currently in `backlog` status; implementation has not started. The test design covers Stories 5.1–5.5 in full.
+Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, update_readme.py), the composite community GitHub Action (action.yml), and the user workflow template (aggregate.yml). Stories 5.1–5.3 are `done` (implemented and merged as of 2026-04-11); Stories 5.4 and 5.5 remain in `backlog`. The test design covers Stories 5.1–5.5 in full.
 
 **Risk Summary:**
 
@@ -99,12 +99,12 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 ## Entry Criteria
 
-- [ ] Stories 5.1–5.5 requirements and acceptance criteria agreed upon by Dev and QA
-- [ ] Python scripts (`aggregate.py`, `generate_svg.py`, `update_readme.py`) implemented and accessible
-- [ ] `action.yml` declared at repo root
-- [ ] `aggregate.yml` workflow template created
-- [ ] Test fixture directory `action/tests/fixtures/` populated with representative Hive partition data and a sample `registry.json`
-- [ ] Python stdlib-only constraint confirmed (no pip dependencies)
+- [x] Stories 5.1–5.5 requirements and acceptance criteria agreed upon by Dev and QA
+- [x] Python scripts (`aggregate.py`, `generate_svg.py`, `update_readme.py`) implemented and accessible (Stories 5.1–5.3 done)
+- [x] Test fixture directory `action/tests/fixtures/` populated with representative Hive partition data and a sample `registry.json`
+- [x] Python stdlib-only constraint confirmed (no pip dependencies)
+- [ ] `action.yml` composite action declared at repo root (Story 5.4 — backlog)
+- [ ] `aggregate.yml` workflow template created (Story 5.5 — backlog)
 
 ## Exit Criteria
 
@@ -263,7 +263,7 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 **Owner:** Dev/QA
 **Timeline:** Before Story 5.1 PR merge
-**Status:** Planned
+**Status:** Implemented (Story 5.1 done; tests exist in `action/tests/test_aggregate.py`)
 **Verification:** All R-001 linked P0 tests passing in CI
 
 ---
@@ -278,7 +278,7 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 **Owner:** Dev/QA
 **Timeline:** Before Story 5.1 PR merge
-**Status:** Planned
+**Status:** Implemented (Story 5.1 done; schema assertion test in `action/tests/test_aggregate.py`)
 **Verification:** Schema assertion test in P0 suite passes on every PR
 
 ---
@@ -292,7 +292,7 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 **Owner:** Dev/QA
 **Timeline:** Before Story 5.4 PR merge
-**Status:** Planned
+**Status:** Planned (Story 5.4 in backlog)
 **Verification:** Integration test passes; manual smoke test on test repo
 
 ---
@@ -306,7 +306,7 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 **Owner:** Dev/QA
 **Timeline:** Before Story 5.3 PR merge
-**Status:** Planned
+**Status:** Implemented (Story 5.3 done; tests exist in `action/tests/test_update_readme.py`)
 **Verification:** P0 unit test for idempotent run passes
 
 ---
@@ -320,7 +320,7 @@ Epic 5 delivers the Python aggregation pipeline (aggregate.py, generate_svg.py, 
 
 **Owner:** Dev/QA
 **Timeline:** Before Story 5.5 PR merge
-**Status:** Planned
+**Status:** Planned (Story 5.5 in backlog)
 **Verification:** YAML schema test passes in CI on every PR
 
 ---
