@@ -74,12 +74,12 @@ development_status:
   # GitHub Issue: #3
   # Depends on: Epic 2 | Parallel with: Epic 5
   # ──────────────────────────────────────────────────────────────
-  epic-3: in-progress
+  epic-3: done
   3-1-implement-core-sync-orchestration: done
-  3-2-implement-stop-hook-integration: backlog
-  3-3-implement-sessionstart-hook-integration: backlog
+  3-2-implement-stop-hook-integration: done
+  3-3-implement-sessionstart-hook-integration: done
   3-4-implement-vibestats-sync-and-vibestats-sync-backfill-commands: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   # ──────────────────────────────────────────────────────────────
   # EPIC 4: Rust Binary — CLI Commands

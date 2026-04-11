@@ -1,6 +1,6 @@
 # Story 3.3: Implement SessionStart Hook Integration
 
-Status: ready-for-dev
+Status: review
 
 <!-- GH Issue: #20 | Epic: #3 | PR must include: Closes #20 -->
 
@@ -30,58 +30,58 @@ so that missed syncs are recovered and the user is warned about issues at sessio
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `get_file_content` method to `src/github_api.rs` (AC: #1)
-  - [ ] Add `pub fn get_file_content(&self, path: &str) -> Result<Option<String>, GithubApiError>` — returns base64-decoded file content, or `Ok(None)` on 404
-  - [ ] Extract base64-decoded content from the `"content"` field in the GitHub Contents API JSON response (field uses `base64` encoding with newlines — strip `\n` before decoding)
-  - [ ] Use the existing `with_retry` wrapper for backoff on 429/5xx
-  - [ ] On 401: return `Err` (same as `get_file_sha`)
-  - [ ] Add a `base64_decode` helper (std-only, no new crates — see Dev Notes for implementation)
-  - [ ] Write co-located unit test for `base64_decode` using a known vector
+- [x] Task 1: Add `get_file_content` method to `src/github_api.rs` (AC: #1)
+  - [x] Add `pub fn get_file_content(&self, path: &str) -> Result<Option<String>, GithubApiError>` — returns base64-decoded file content, or `Ok(None)` on 404
+  - [x] Extract base64-decoded content from the `"content"` field in the GitHub Contents API JSON response (field uses `base64` encoding with newlines — strip `\n` before decoding)
+  - [x] Use the existing `with_retry` wrapper for backoff on 429/5xx
+  - [x] On 401: return `Err` (same as `get_file_sha`)
+  - [x] Add a `base64_decode` helper (std-only, no new crates — see Dev Notes for implementation)
+  - [x] Write co-located unit test for `base64_decode` using a known vector
 
-- [ ] Task 2: Add `get_last_sync_date` helper to `src/checkpoint.rs` (AC: #3, #4)
-  - [ ] Add `pub fn get_last_sync_date(&self) -> Option<String>` — returns the most recent date key in `date_hashes` (format `"YYYY-MM-DD"`)
-  - [ ] Return `None` if `date_hashes` is empty
-  - [ ] Use `date_hashes.keys().max().cloned()` — lexicographic max is correct for `"YYYY-MM-DD"` strings (dates are already zero-padded by `jsonl_parser.rs`)
-  - [ ] Write co-located unit test verifying the max-key logic with multiple date entries
+- [x] Task 2: Add `get_last_sync_date` helper to `src/checkpoint.rs` (AC: #3, #4)
+  - [x] Add `pub fn get_last_sync_date(&self) -> Option<String>` — returns the most recent date key in `date_hashes` (format `"YYYY-MM-DD"`)
+  - [x] Return `None` if `date_hashes` is empty
+  - [x] Use `date_hashes.keys().max().cloned()` — lexicographic max is correct for `"YYYY-MM-DD"` strings (dates are already zero-padded by `jsonl_parser.rs`)
+  - [x] Write co-located unit test verifying the max-key logic with multiple date entries
 
-- [ ] Task 3: Create `src/hooks/session_start.rs` with `pub fn run()` (AC: #1, #2, #3, #4)
-  - [ ] Step 1 — Machine retirement check:
-    - [ ] Load config via `Config::load_or_exit()` and checkpoint via `Checkpoint::load(&checkpoint_path)`
-    - [ ] Create `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
-    - [ ] Call `api.get_file_content("registry.json")` — if `Ok(None)`, skip retirement check and continue to Step 2
-    - [ ] If registry fetched: parse JSON, find the machine entry where `"machine_id" == config.machine_id`
-    - [ ] If entry has `"status": "retired"`: call `checkpoint.set_machine_status("retired")`, save checkpoint, print `"vibestats: this machine has been retired. Sync skipped."`, and **return early** (Steps 2–4 are skipped; `main.rs` calls `exit(0)`)
-    - [ ] If registry fetch fails (`Err`): log via `logger::error`, continue to Step 2 (retirement check failure is non-fatal)
-  - [ ] Step 2 — Auth error surface:
-    - [ ] If `checkpoint.auth_error == true`: print `"vibestats: auth error detected. Run \`vibestats auth\` to re-authenticate."`, call `checkpoint.clear_auth_error()`, save checkpoint before returning (auth_error must be cleared even if subsequent steps also call save)
-  - [ ] Step 3 — Catch-up sync:
-    - [ ] Guard: only proceed if `checkpoint.machine_status != "retired"`
-    - [ ] Compute `last_sync_date = checkpoint.get_last_sync_date()` — if `None`, skip catch-up (no previous sync recorded)
-    - [ ] Compute `yesterday` as today's date minus one day in `"YYYY-MM-DD"` format (see Dev Notes)
-    - [ ] If `last_sync_date < yesterday` (string comparison is correct for `YYYY-MM-DD`): call `sync::run(&last_sync_date, &yesterday)`
-    - [ ] If `last_sync_date >= yesterday`: no gap — skip catch-up
-  - [ ] Step 4 — Staleness warning:
-    - [ ] Reload checkpoint from disk after `sync::run` (sync may have updated `throttle_timestamp`)
-    - [ ] If `checkpoint.throttle_timestamp` is `None`: skip staleness warning (no sync has ever run)
-    - [ ] Compute elapsed seconds since `checkpoint.throttle_timestamp` (see Dev Notes)
-    - [ ] If elapsed > 86400 seconds (24 hours): print `"vibestats: last sync was N days ago on this machine. Run \`vibestats status\` to diagnose."` where `N = elapsed_seconds / 86400`
+- [x] Task 3: Create `src/hooks/session_start.rs` with `pub fn run()` (AC: #1, #2, #3, #4)
+  - [x] Step 1 — Machine retirement check:
+    - [x] Load config via `Config::load_or_exit()` and checkpoint via `Checkpoint::load(&checkpoint_path)`
+    - [x] Create `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
+    - [x] Call `api.get_file_content("registry.json")` — if `Ok(None)`, skip retirement check and continue to Step 2
+    - [x] If registry fetched: parse JSON, find the machine entry where `"machine_id" == config.machine_id`
+    - [x] If entry has `"status": "retired"`: call `checkpoint.set_machine_status("retired")`, save checkpoint, print `"vibestats: this machine has been retired. Sync skipped."`, and **return early** (Steps 2–4 are skipped; `main.rs` calls `exit(0)`)
+    - [x] If registry fetch fails (`Err`): log via `logger::error`, continue to Step 2 (retirement check failure is non-fatal)
+  - [x] Step 2 — Auth error surface:
+    - [x] If `checkpoint.auth_error == true`: print `"vibestats: auth error detected. Run \`vibestats auth\` to re-authenticate."`, call `checkpoint.clear_auth_error()`, save checkpoint before returning (auth_error must be cleared even if subsequent steps also call save)
+  - [x] Step 3 — Catch-up sync:
+    - [x] Guard: only proceed if `checkpoint.machine_status != "retired"`
+    - [x] Compute `last_sync_date = checkpoint.get_last_sync_date()` — if `None`, skip catch-up (no previous sync recorded)
+    - [x] Compute `yesterday` as today's date minus one day in `"YYYY-MM-DD"` format (see Dev Notes)
+    - [x] If `last_sync_date < yesterday` (string comparison is correct for `YYYY-MM-DD`): call `sync::run(&last_sync_date, &yesterday)`
+    - [x] If `last_sync_date >= yesterday`: no gap — skip catch-up
+  - [x] Step 4 — Staleness warning:
+    - [x] Reload checkpoint from disk after `sync::run` (sync may have updated `throttle_timestamp`)
+    - [x] If `checkpoint.throttle_timestamp` is `None`: skip staleness warning (no sync has ever run)
+    - [x] Compute elapsed seconds since `checkpoint.throttle_timestamp` (see Dev Notes)
+    - [x] If elapsed > 86400 seconds (24 hours): print `"vibestats: last sync was N days ago on this machine. Run \`vibestats status\` to diagnose."` where `N = elapsed_seconds / 86400`
 
-- [ ] Task 4: Create `src/hooks/mod.rs` declaring `pub mod session_start;`
+- [x] Task 4: Create `src/hooks/mod.rs` declaring `pub mod session_start;`
 
-- [ ] Task 5: Wire `hooks` module into `src/main.rs` (AC: #1, #2, #3, #4)
-  - [ ] Add `mod hooks;` to `src/main.rs` alongside existing `mod` declarations
-  - [ ] Add a `SessionStart` subcommand to the `Commands` enum in `main.rs` (used by Claude Code hook: `command: vibestats session-start`)
-  - [ ] In the `Commands::SessionStart` match arm: call `hooks::session_start::run(); std::process::exit(0);`
-  - [ ] Do NOT add `#![allow(dead_code)]` to `session_start.rs` — it is a new file that is immediately called from `main.rs`
+- [x] Task 5: Wire `hooks` module into `src/main.rs` (AC: #1, #2, #3, #4)
+  - [x] Add `mod hooks;` to `src/main.rs` alongside existing `mod` declarations
+  - [x] Add a `SessionStart` subcommand to the `Commands` enum in `main.rs` (used by Claude Code hook: `command: vibestats session-start`)
+  - [x] In the `Commands::SessionStart` match arm: call `hooks::session_start::run(); std::process::exit(0);`
+  - [x] Do NOT add `#![allow(dead_code)]` to `session_start.rs` — it is a new file that is immediately called from `main.rs`
 
-- [ ] Task 6: Write co-located unit tests in `src/hooks/session_start.rs` (AC: #1, #2, #3, #4)
-  - [ ] Test `yesterday()` helper returns a valid `"YYYY-MM-DD"` string
-  - [ ] Test `days_since_timestamp` returns correct values for known inputs
-  - [ ] Test that auth error message is printed and flag cleared when `auth_error = true`
-  - [ ] Test that catch-up sync is skipped when `machine_status == "retired"`
-  - [ ] Test that staleness warning fires when elapsed > 24 hours
-  - [ ] Run `cargo test` — must pass with 0 failures
-  - [ ] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
+- [x] Task 6: Write co-located unit tests in `src/hooks/session_start.rs` (AC: #1, #2, #3, #4)
+  - [x] Test `yesterday()` helper returns a valid `"YYYY-MM-DD"` string
+  - [x] Test `days_since_timestamp` returns correct values for known inputs
+  - [x] Test that auth error message is printed and flag cleared when `auth_error = true`
+  - [x] Test that catch-up sync is skipped when `machine_status == "retired"`
+  - [x] Test that staleness warning fires when elapsed > 24 hours
+  - [x] Run `cargo test` — must pass with 0 failures
+  - [x] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
 
 ## Dev Notes
 
@@ -437,6 +437,25 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+None — implementation completed without issues.
+
 ### Completion Notes List
 
+- Implemented `get_file_content` method on `GithubApi` with inner helper `get_file_content_inner` following the same pattern as `get_file_sha_inner`. Added `base64_decode` std-only helper using RFC 4648 reverse-lookup table. Fixed clippy warning: used `vals.contains(&255)` instead of `vals.iter().any(|&v| v == 255)`.
+- Added `get_last_sync_date()` to `Checkpoint` using `date_hashes.keys().max().cloned()` — lexicographic max is correct for zero-padded ISO 8601 dates.
+- Created `src/hooks/session_start.rs` with `pub fn run()` implementing all four behaviours in the correct order: retirement check → auth error surface → catch-up sync → staleness warning. Re-implemented `parse_iso8601_utc` inline per architecture constraints (private function in checkpoint.rs must not be re-exported).
+- Created `src/hooks/mod.rs` declaring `pub mod session_start;`.
+- Wired `mod hooks;` into `main.rs`, added `Commands::SessionStart` variant with clap's automatic kebab-case conversion, and wired it to `hooks::session_start::run(); std::process::exit(0);`.
+- All 93 tests pass (74 pre-existing + 19 new). Zero clippy warnings.
+
 ### File List
+
+- `src/github_api.rs` — added `get_file_content()`, `get_file_content_inner()`, `base64_decode()` + 5 new unit tests
+- `src/checkpoint.rs` — added `get_last_sync_date()` + 3 new unit tests
+- `src/hooks/mod.rs` — NEW: `pub mod session_start;`
+- `src/hooks/session_start.rs` — NEW: `pub fn run()` + 11 unit tests
+- `src/main.rs` — added `mod hooks;`, `Commands::SessionStart` variant, match arm
+
+### Change Log
+
+- 2026-04-11: Implemented Story 3.3 — SessionStart hook integration. Added `get_file_content` to `GithubApi`, `get_last_sync_date` to `Checkpoint`, created `src/hooks/session_start.rs` with four-step SessionStart behaviour (retirement check, auth error surface, catch-up sync, staleness warning), wired `SessionStart` subcommand into `main.rs`. 93 tests pass, 0 clippy warnings.

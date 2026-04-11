@@ -1,6 +1,6 @@
 # Story 3.2: Implement Stop Hook Integration
 
-Status: ready-for-dev
+Status: review
 
 <!-- GH Issue: #19 | Epic: #3 | PR must include: Closes #19 -->
 
@@ -20,31 +20,31 @@ So that the profile heatmap stays current with zero user action.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `src/hooks.rs` with `pub fn stop_hook()` function (AC: #1, #2)
-  - [ ] Add `#![allow(dead_code)]` at top of `hooks.rs` — `session_start_hook()` caller arrives in Story 3.3
-  - [ ] Do NOT remove `#![allow(dead_code)]` from `sync.rs` — internal helpers (`sha256_hex`, `hive_path`) remain private and the attribute stays until the compiler no longer needs it
-  - [ ] Load checkpoint via `checkpoint_path()` helper (reuse the same pattern from `sync.rs`)
-  - [ ] Call `checkpoint.should_throttle()` — if true, exit 0 immediately without calling `sync::run`
-  - [ ] If throttle clear: call `sync::run(today, today)` where `today` is `today_utc()`
-  - [ ] After `sync::run` returns (it always returns `()`): call `checkpoint.update_throttle_timestamp()`, save checkpoint, exit 0
-  - [ ] NEVER call `std::process::exit` directly from hooks.rs — use `main.rs` dispatch (see Task 3 below)
-  - [ ] If `checkpoint_path()` returns `None` (HOME unset): skip throttle check and call `sync::run` (fail-open)
+- [x] Task 1: Create `src/hooks.rs` with `pub fn stop_hook()` function (AC: #1, #2)
+  - [x] Add `#![allow(dead_code)]` at top of `hooks.rs` — `session_start_hook()` caller arrives in Story 3.3
+  - [x] Do NOT remove `#![allow(dead_code)]` from `sync.rs` — internal helpers (`sha256_hex`, `hive_path`) remain private and the attribute stays until the compiler no longer needs it
+  - [x] Load checkpoint via `checkpoint_path()` helper (reuse the same pattern from `sync.rs`)
+  - [x] Call `checkpoint.should_throttle()` — if true, exit 0 immediately without calling `sync::run`
+  - [x] If throttle clear: call `sync::run(today, today)` where `today` is `today_utc()`
+  - [x] After `sync::run` returns (it always returns `()`): call `checkpoint.update_throttle_timestamp()`, save checkpoint, exit 0
+  - [x] NEVER call `std::process::exit` directly from hooks.rs — use `main.rs` dispatch (see Task 3 below)
+  - [x] If `checkpoint_path()` returns `None` (HOME unset): skip throttle check and call `sync::run` (fail-open)
 
-- [ ] Task 2: Implement `today_utc()` date helper in `hooks.rs` (AC: #2)
-  - [ ] Private `fn today_utc() -> String` — returns current UTC date as `"YYYY-MM-DD"`
-  - [ ] Use `std::time::SystemTime::now()` and civil-date formula (same approach as `checkpoint.rs`'s `format_iso8601_utc`) — no `chrono` crate
-  - [ ] Extract only the date portion `"YYYY-MM-DD"` (not the full ISO 8601 timestamp)
-  - [ ] Must produce zero-padded month and day (e.g., `"2026-04-09"` not `"2026-4-9"`)
+- [x] Task 2: Implement `today_utc()` date helper in `hooks.rs` (AC: #2)
+  - [x] Private `fn today_utc() -> String` — returns current UTC date as `"YYYY-MM-DD"`
+  - [x] Use `std::time::SystemTime::now()` and civil-date formula (same approach as `checkpoint.rs`'s `format_iso8601_utc`) — no `chrono` crate
+  - [x] Extract only the date portion `"YYYY-MM-DD"` (not the full ISO 8601 timestamp)
+  - [x] Must produce zero-padded month and day (e.g., `"2026-04-09"` not `"2026-4-9"`)
 
-- [ ] Task 3: Wire `hooks::stop_hook()` into `main.rs` dispatch (AC: #2)
-  - [ ] Add `mod hooks;` to `src/main.rs` alongside existing `mod` declarations
-  - [ ] In `main()`, replace single `Commands::Sync { backfill: _ }` arm with two arms: `Commands::Sync { backfill } if !backfill` → call `hooks::stop_hook()` then `std::process::exit(0)`
-  - [ ] Leave `Commands::Sync { backfill: true }` and all other commands as `println!("not yet implemented")` — Story 3.4 wires those
-  - [ ] `std::process::exit(0)` is the ONLY place in the codebase it is called — always in `main.rs`, never inside modules
+- [x] Task 3: Wire `hooks::stop_hook()` into `main.rs` dispatch (AC: #2)
+  - [x] Add `mod hooks;` to `src/main.rs` alongside existing `mod` declarations
+  - [x] In `main()`, replace single `Commands::Sync { backfill: _ }` arm with two arms: `Commands::Sync { backfill } if !backfill` → call `hooks::stop_hook()` then `std::process::exit(0)`
+  - [x] Leave `Commands::Sync { backfill: true }` and all other commands as `println!("not yet implemented")` — Story 3.4 wires those
+  - [x] `std::process::exit(0)` is the ONLY place in the codebase it is called — always in `main.rs`, never inside modules
 
-- [ ] Task 4: Document hook configuration for `~/.claude/settings.json` (AC: #3)
-  - [ ] No code change needed — the installer (Epic 6, Story 6.4) writes this config
-  - [ ] Confirm the expected JSON structure in a code comment in `hooks.rs`:
+- [x] Task 4: Document hook configuration for `~/.claude/settings.json` (AC: #3)
+  - [x] No code change needed — the installer (Epic 6, Story 6.4) writes this config
+  - [x] Confirm the expected JSON structure in a code comment in `hooks.rs`:
     ```json
     {
       "hooks": {
@@ -52,15 +52,15 @@ So that the profile heatmap stays current with zero user action.
       }
     }
     ```
-  - [ ] This AC is verified at installer level; this story only implements the binary behaviour
+  - [x] This AC is verified at installer level; this story only implements the binary behaviour
 
-- [ ] Task 5: Write co-located unit tests (AC: #1, #2)
-  - [ ] `#[cfg(test)]` module inside `src/hooks.rs`
-  - [ ] Test `today_utc()` returns a string matching `"YYYY-MM-DD"` format (10 chars, digit-dash pattern)
-  - [ ] Test throttle branch: construct a `Checkpoint` with `update_throttle_timestamp()` just called → `should_throttle()` returns true → stop_hook logic would exit without calling sync (test via direct checkpoint inspection, not full integration)
-  - [ ] Test non-throttle branch: construct a `Checkpoint` with old/absent throttle → `should_throttle()` returns false
-  - [ ] Run `cargo test` — must pass with 0 failures
-  - [ ] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
+- [x] Task 5: Write co-located unit tests (AC: #1, #2)
+  - [x] `#[cfg(test)]` module inside `src/hooks.rs`
+  - [x] Test `today_utc()` returns a string matching `"YYYY-MM-DD"` format (10 chars, digit-dash pattern)
+  - [x] Test throttle branch: construct a `Checkpoint` with `update_throttle_timestamp()` just called → `should_throttle()` returns true → stop_hook logic would exit without calling sync (test via direct checkpoint inspection, not full integration)
+  - [x] Test non-throttle branch: construct a `Checkpoint` with old/absent throttle → `should_throttle()` returns false
+  - [x] Run `cargo test` — must pass with 0 failures
+  - [x] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
 
 ## Dev Notes
 
@@ -349,6 +349,25 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+No issues encountered during implementation.
+
 ### Completion Notes List
 
+- Created `src/hooks.rs` with `stop_hook()` public function and private `today_utc()` helper.
+- `stop_hook()` reads checkpoint, checks throttle (returns early if throttled), calls `sync::run(today, today)`, updates throttle timestamp, and saves checkpoint.
+- `today_utc()` uses std-only civil-date formula (no chrono), returning zero-padded "YYYY-MM-DD".
+- `checkpoint_path()` helper copied from `sync.rs` for module isolation (acceptable duplication per architecture).
+- `hooks.rs` never calls `std::process::exit` — exit delegated to `main.rs`.
+- `main.rs` updated: added `mod hooks;` and split `Commands::Sync` dispatch into two arms: `backfill=false` calls `hooks::stop_hook()` then `std::process::exit(0)`; `backfill=true` remains `println!("not yet implemented")`.
+- Hook configuration reference comment added to `hooks.rs` (AC #3 — installer writes this in Story 6.4).
+- 5 new unit tests in `hooks.rs::tests` covering: `today_utc` format, zero-padding, throttle-active branch, throttle-clear (old timestamp) branch, throttle-clear (absent timestamp) branch.
+- Full test suite: 79 tests, 0 failures. `cargo clippy --all-targets -- -D warnings`: 0 warnings.
+
 ### File List
+
+- `src/hooks.rs` — NEW
+- `src/main.rs` — MODIFIED (added `mod hooks;`, updated `Commands::Sync` dispatch)
+
+## Change Log
+
+- 2026-04-11: Implemented Stop hook integration — created `src/hooks.rs` with `stop_hook()`, `today_utc()`, and `checkpoint_path()` helpers; updated `src/main.rs` dispatch to call `hooks::stop_hook()` for non-backfill sync. All ACs satisfied. 79 tests passing, 0 clippy warnings.

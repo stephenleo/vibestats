@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-11T22:00:00Z_
+_Last updated: 2026-04-11T22:30:00Z_
 
 ## Stories
 
@@ -15,13 +15,13 @@ _Last updated: 2026-04-11T22:00:00Z_
 | 2.4 | 2 | Implement JSONL parser | done | #16 | #53 | closed (direct) | epic 1 complete | ✅ Yes (done) |
 | 2.5 | 2 | Implement GitHub API module | done | #17 | #51 | merged | epic 1 complete | ✅ Yes (done) |
 | 3.1 | 3 | Implement core sync orchestration | done | #18 | #54 | merged | epic 2 complete | ✅ Yes (done) |
-| 3.2 | 3 | Implement Stop hook integration | backlog | #19 | — | — | 3.1 | ✅ Yes |
-| 3.3 | 3 | Implement SessionStart hook integration | backlog | #20 | — | — | 3.1 | ✅ Yes |
-| 3.4 | 3 | Implement vibestats sync and sync --backfill commands | backlog | #21 | — | — | 3.1 | ✅ Yes |
-| 4.1 | 4 | Implement vibestats status command | backlog | #22 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
-| 4.2 | 4 | Implement vibestats machines list and machines remove | backlog | #23 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
-| 4.3 | 4 | Implement vibestats auth command | backlog | #24 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
-| 4.4 | 4 | Implement vibestats uninstall command | backlog | #25 | — | — | epics 2+3 complete | ❌ No (epics 2+3 not complete) |
+| 3.2 | 3 | Implement Stop hook integration | done | #19 | #56 | merged | 3.1 | ✅ Yes (done) |
+| 3.3 | 3 | Implement SessionStart hook integration | done | #20 | #55 | merged | 3.1 | ✅ Yes (done) |
+| 3.4 | 3 | Implement vibestats sync and sync --backfill commands | in-progress | #21 | #57 | open | 3.1 | ✅ Yes (in progress) |
+| 4.1 | 4 | Implement vibestats status command | backlog | #22 | — | — | epics 2+3 complete | ❌ No (epic 3 not complete) |
+| 4.2 | 4 | Implement vibestats machines list and machines remove | backlog | #23 | — | — | epics 2+3 complete | ❌ No (epic 3 not complete) |
+| 4.3 | 4 | Implement vibestats auth command | backlog | #24 | — | — | epics 2+3 complete | ❌ No (epic 3 not complete) |
+| 4.4 | 4 | Implement vibestats uninstall command | backlog | #25 | — | — | epics 2+3 complete | ❌ No (epic 3 not complete) |
 | 5.1 | 5 | Implement aggregate.py | backlog | #26 | — | — | epic 1 complete | ✅ Yes |
 | 5.2 | 5 | Implement generate_svg.py | backlog | #27 | — | — | epic 1 complete | ✅ Yes |
 | 5.3 | 5 | Implement update_readme.py | backlog | #28 | — | — | epic 1 complete | ✅ Yes |
@@ -85,10 +85,14 @@ _Last updated: 2026-04-11T22:00:00Z_
 
 - **Epic 1 complete** — all four PRs merged: #43 (1.1), #44 (1.2), #46 (1.3), #45 (1.4). Worktrees and remote branches cleaned up.
 - **Epic 2 complete** — all five stories done. PRs #48 (2.1), #49 (2.2), #50 (2.3) merged via GitHub. Stories 2.4 and 2.5 implemented via direct commits to main (deb76aa, 23b8443); PRs #53 and #51 closed accordingly. Worktrees and remote branches for 2.4 and 2.5 cleaned up.
-- **Story 3.1 done** — PR #54 merged 2026-04-11. Worktree `.worktrees/story-3.1-implement-core-sync-orchestration` removed; remote branch deleted by GitHub on merge. Epic 3 stories 3.2, 3.3, 3.4 are now all "Ready to Work".
+- **Story 3.1 done** — PR #54 merged 2026-04-11. Epic 3 stories 3.2, 3.3, 3.4 all unblocked.
+- **Story 3.2 done** — PR #56 merged 2026-04-11T07:56:38Z. Worktree and remote branch cleaned up.
+- **Story 3.3 done** — PR #55 merged 2026-04-11T07:57:49Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
+- **Story 3.4 in-progress** — PR #57 open (not yet merged). Worktree `.worktrees/story-3.4-implement-vibestats-sync-and-sync-backfill-commands` still active.
 - **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 3.
 - **Story 7.1 is "Ready to Work"** — Epic 7 can begin in parallel (7.2–7.4 depend on 7.1).
-- **Parallelization opportunities:** 3.2, 3.3, 3.4 (parallel within epic 3), 5.1–5.5 (parallel within epic 5), and 7.1 can all be worked concurrently. Epics 3, 5, and 7 can proceed in parallel.
-- **Current bottleneck:** Epic 4 requires both epics 2 and 3 complete. Epic 3 still has 3 stories remaining (3.2, 3.3, 3.4).
+- **Parallelization opportunities:** 5.1–5.5 (parallel within epic 5) and 7.1 can be worked concurrently with Epic 3 finishing up.
+- **Current bottleneck:** Epic 4 requires both epics 2 and 3 complete. Story 3.4 PR #57 must be merged to unblock Epic 4. Epic 7 stories 7.2–7.4 are blocked until 7.1 is merged.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
+- **sprint-status.yaml note:** sprint-status shows 3.4 as `done` but PR #57 is still open. GitHub is authoritative — story 3.4 remains in-progress until PR merges.
