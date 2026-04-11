@@ -208,22 +208,13 @@ pub fn run() {
 
     if let Some(ref ts) = checkpoint.throttle_timestamp {
         if let Some(days) = days_since_timestamp(ts) {
+            // days > 0 means elapsed >= 86400 seconds (more than 1 full day).
+            // N is floor(elapsed_seconds / 86400) per spec — `days` already holds this.
             if days > 0 {
-                // elapsed > 86400 seconds (more than 1 full day)
-                let elapsed_secs = std::time::SystemTime::now()
-                    .duration_since(
-                        parse_iso8601_utc(ts)
-                            .unwrap_or(std::time::UNIX_EPOCH),
-                    )
-                    .unwrap_or_default()
-                    .as_secs();
-                let n = elapsed_secs / 86400;
-                if n > 0 {
-                    println!(
-                        "vibestats: last sync was {} days ago on this machine. Run `vibestats status` to diagnose.",
-                        n
-                    );
-                }
+                println!(
+                    "vibestats: last sync was {} days ago on this machine. Run `vibestats status` to diagnose.",
+                    days
+                );
             }
         }
     }
