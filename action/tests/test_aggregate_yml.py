@@ -12,7 +12,6 @@ Test IDs follow the story task list:
 
 import pathlib
 
-import pytest
 import yaml
 
 # ---------------------------------------------------------------------------
