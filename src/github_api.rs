@@ -185,6 +185,18 @@ impl GithubApi {
     pub fn get_file_content(&self, path: &str) -> Result<Option<String>, GithubApiError> {
         with_retry(|| get_file_content_inner(&self.token, &self.repo, path))
     }
+
+    /// Check auth token validity by calling `GET /user`.
+    ///
+    /// Returns:
+    /// - `Ok(login)` — token is valid; `login` is the authenticated GitHub username
+    /// - `Err(_)`    — token is invalid (401) or network/server error
+    ///
+    /// Note: 401 is non-retriable per `is_status_retriable` — propagated immediately.
+    /// 429 / 5xx / transport errors are retried via `with_retry`.
+    pub fn get_user(&self) -> Result<String, GithubApiError> {
+        with_retry(|| get_user_inner(&self.token))
+    }
 }
 
 // ─── Internal HTTP helpers ────────────────────────────────────────────────────
@@ -338,6 +350,42 @@ fn get_file_content_inner(
         Err(ureq::Error::Status(404, _)) => {
             // File does not exist
             Ok(None)
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Inner GET helper for GitHub `/user` endpoint — returns the authenticated user's login.
+///
+/// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
+/// the error for retriability before boxing.
+/// 401 is non-retriable per `is_status_retriable` — propagated immediately.
+#[allow(clippy::result_large_err)]
+fn get_user_inner(token: &str) -> Result<String, ureq::Error> {
+    let url = "https://api.github.com/user";
+    let response = ureq::get(url)
+        .set("Authorization", &format!("Bearer {}", token))
+        .set("User-Agent", "vibestats")
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call();
+
+    match response {
+        Ok(r) => {
+            let body = r.into_string().map_err(ureq::Error::from)?;
+            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: malformed JSON from /user: {}", e),
+                ))
+            })?;
+            match json["login"].as_str() {
+                Some(login) => Ok(login.to_string()),
+                None => Err(ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "github_api: missing login field in /user response",
+                ))),
+            }
         }
         Err(e) => Err(e),
     }
@@ -743,6 +791,35 @@ mod tests {
         assert_eq!(base64_decode("TWE=").unwrap(), "Ma");
         // "TQ==" decodes to "M"
         assert_eq!(base64_decode("TQ==").unwrap(), "M");
+    }
+
+    // ── get_user: login field extraction from /user JSON body ────────────────
+
+    #[test]
+    fn test_parse_login_present_in_user_json_body() {
+        // Simulate a valid /user response body — verify login field is extracted correctly
+        let json_body = r#"{"login": "octocat", "id": 1, "type": "User"}"#;
+        let json: serde_json::Value = serde_json::from_str(json_body).unwrap();
+        let login = json["login"].as_str().map(|s| s.to_string());
+        assert_eq!(login, Some("octocat".to_string()));
+    }
+
+    #[test]
+    fn test_parse_login_missing_field_returns_none() {
+        // Simulate a /user response body without "login" field
+        let json_body = r#"{"id": 1, "type": "User"}"#;
+        let json: serde_json::Value = serde_json::from_str(json_body).unwrap();
+        let login = json["login"].as_str().map(|s| s.to_string());
+        assert_eq!(login, None);
+    }
+
+    #[test]
+    fn test_parse_login_with_hyphenated_username() {
+        // GitHub usernames can contain hyphens
+        let json_body = r#"{"login": "step-hen-leo", "id": 42}"#;
+        let json: serde_json::Value = serde_json::from_str(json_body).unwrap();
+        let login = json["login"].as_str().map(|s| s.to_string());
+        assert_eq!(login, Some("step-hen-leo".to_string()));
     }
 
     // ── GithubApi::new ────────────────────────────────────────────────────────
