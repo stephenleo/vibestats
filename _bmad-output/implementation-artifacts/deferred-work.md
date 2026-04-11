@@ -51,3 +51,21 @@ that raised them. Revisit when the blocking rationale no longer applies.
   `struct SyncReport { synced: u32, skipped: u32, failed: u32 }`), which is
   out of scope for this story. Revisit if/when a future story wants to surface
   sync outcomes on stdout or in `vibestats status`.
+
+## Deferred from: code review of story 4-2-implement-vibestats-machines-list-and-machines-remove (2026-04-11)
+
+- **Remote purge walks entire `machines/` tree for every target machine**
+  [src/commands/machines.rs:279] — `purge_remote` does a depth-first walk of
+  `machines/year=*/month=*/day=*/harness=*/machine_id=*` and only filters by
+  the target machine_id at the leaf level. For a multi-year dataset this can
+  easily produce hundreds of GET calls against the 5000/hour GitHub rate
+  limit. This is architecturally intended per the story Dev Notes ("more
+  network-intensive but necessary for remote purge"); a future optimization
+  could use the Git Trees API (GET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1)
+  to fetch the entire repo tree in a single call, then filter client-side.
+- **No unit tests for `purge_self` / `purge_remote` / `update_local_checkpoint`**
+  [src/commands/machines.rs:231-385] — These helpers call through `GithubApi`
+  and `Checkpoint::save`, both of which hit real I/O. Testing them requires
+  either a mocking framework (forbidden by story "no new crates" constraint)
+  or extracting the business logic into pure functions that take trait objects.
+  Revisit if/when the project adopts a `GithubApi` trait for testability.
