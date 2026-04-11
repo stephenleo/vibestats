@@ -149,8 +149,14 @@ def test_tc3_profile_repo_input_is_required():
         )
     else:
         text = _load_text()
-        assert "required: true" in text, (
-            "Could not confirm 'profile-repo' input is marked required: true"
+        # Scope the check to the profile-repo block to avoid a false-pass when only
+        # `token` carries `required: true` (broad search would match token's value).
+        profile_repo_section = re.search(
+            r"profile-repo\s*:.*?(?=\n\S|\Z)", text, re.DOTALL
+        )
+        assert profile_repo_section and "required: true" in profile_repo_section.group(), (
+            "Could not confirm 'profile-repo' input is marked required: true "
+            "(fallback text check: search the profile-repo block)"
         )
 
 
