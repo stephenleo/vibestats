@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done)
+# last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done; epic 5 complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done)
+last_updated: 2026-04-12 (stories 5.1, 5.2, 5.3, 5.4, 5.5 done; epic 5 complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -98,7 +98,7 @@ development_status:
   # GitHub Issue: #5
   # Depends on: Epic 1 | Parallel with: Epic 3
   # ──────────────────────────────────────────────────────────────
-  epic-5: in-progress
+  epic-5: done
   5-1-implement-aggregate-py: done
   5-2-implement-generate-svg-py: done
   5-3-implement-update-readme-py: done
