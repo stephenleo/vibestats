@@ -1,4 +1,5 @@
 mod checkpoint;
+mod commands;
 mod config;
 mod github_api;
 mod hooks;
@@ -56,11 +57,7 @@ enum MachinesSubcommand {
 fn main() {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Sync { backfill } if !backfill => {
-            hooks::stop_hook();
-            std::process::exit(0);
-        }
-        Commands::Sync { backfill: _ } => println!("not yet implemented"), // backfill=true, Story 3.4
+        Commands::Sync { backfill } => commands::sync::run(backfill),
         Commands::Status => println!("not yet implemented"),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => println!("not yet implemented"),
