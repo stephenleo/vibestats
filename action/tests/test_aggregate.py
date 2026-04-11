@@ -181,6 +181,7 @@ class TestAggregateErrorExit(unittest.TestCase):
                 cwd=tmpdir,
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
 
             self.assertNotEqual(
@@ -209,6 +210,7 @@ class TestAggregateErrorExit(unittest.TestCase):
                 cwd=tmpdir,
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
 
             self.assertNotEqual(

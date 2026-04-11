@@ -69,3 +69,20 @@ that raised them. Revisit when the blocking rationale no longer applies.
   either a mocking framework (forbidden by story "no new crates" constraint)
   or extracting the business logic into pure functions that take trait objects.
   Revisit if/when the project adopts a `GithubApi` trait for testability.
+
+## Deferred from: code review of story 5-1-implement-aggregate-py (2026-04-11)
+
+- **`action/tests/fixtures/expected_output/data.json` is not referenced by any
+  test** [action/tests/fixtures/expected_output/data.json] — Tests assert
+  against the in-file `EXPECTED_DAYS` constant instead of loading the fixture.
+  The fixture is kept because story 5.1 task list explicitly requires it to
+  exist, but future work could either (a) wire the fixture into a test that
+  parses it and compares `days`, or (b) remove the dead file once the story
+  constraint is revisited.
+- **No file-size cap when reading per-machine `data.json` files**
+  [action/aggregate.py:73] — `aggregate()` reads every matched Hive partition
+  file into memory via `json.load`. In the production Actions context files
+  are machine-written and tiny (<1 KB), but a hostile write to
+  `vibestats-data` could OOM the runner. The repo is owner-controlled so this
+  is low risk; revisit only if the vibestats-data repo ever accepts writes
+  from unverified sources.

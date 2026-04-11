@@ -18,11 +18,20 @@ def load_purged_machines(root: pathlib.Path) -> set:
     if not registry_path.exists():
         return set()
     try:
-        with open(registry_path) as f:
+        with open(registry_path, encoding="utf-8") as f:
             registry = json.load(f)
-        return {m["machine_id"] for m in registry.get("machines", []) if m.get("status") == "purged"}
-    except Exception:
+    except (OSError, json.JSONDecodeError):
+        # Absent, unreadable, or malformed registry → treat as empty purged set.
         return set()
+    purged = set()
+    for machine in registry.get("machines", []) or []:
+        if not isinstance(machine, dict):
+            continue
+        if machine.get("status") == "purged":
+            machine_id = machine.get("machine_id")
+            if isinstance(machine_id, str):
+                purged.add(machine_id)
+    return purged
 
 
 def parse_date_from_path(path: pathlib.Path):
@@ -70,13 +79,13 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
             if date_key is None:
                 raise ValueError(f"Cannot parse date from path: {data_file}")
 
-            with open(data_file) as f:
+            with open(data_file, encoding="utf-8") as f:
                 record = json.load(f)
 
             days[date_key]["sessions"] += record["sessions"]
             days[date_key]["active_minutes"] += record["active_minutes"]
 
-    generated_at = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     return {
         "generated_at": generated_at,
@@ -90,7 +99,7 @@ def main():
     username = os.environ.get("GITHUB_REPOSITORY_OWNER") or \
                os.environ.get("GITHUB_REPOSITORY", "/").split("/")[0]
     result = aggregate(root, username)
-    with open("data.json", "w") as f:
+    with open("data.json", "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
     print(f"aggregate.py: wrote data.json with {len(result['days'])} day(s)")
 

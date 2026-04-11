@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (epic 4 done)
+# last_updated: 2026-04-11 (story 5.1 done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-11 (epic 4 done)
+last_updated: 2026-04-11 (story 5.1 done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -99,7 +99,7 @@ development_status:
   # Depends on: Epic 1 | Parallel with: Epic 3
   # ──────────────────────────────────────────────────────────────
   epic-5: backlog
-  5-1-implement-aggregate-py: backlog
+  5-1-implement-aggregate-py: done
   5-2-implement-generate-svg-py: backlog
   5-3-implement-update-readme-py: backlog
   5-4-implement-action-yml-composite-community-github-action: backlog

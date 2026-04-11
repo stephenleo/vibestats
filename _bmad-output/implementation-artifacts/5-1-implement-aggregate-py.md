@@ -1,6 +1,6 @@
 # Story 5.1: Implement aggregate.py
 
-Status: review
+Status: done
 
 <!-- GH Issue: #26 | Epic: #5 | PR must include: Closes #26 -->
 
@@ -286,6 +286,17 @@ None.
 - action/aggregate.py (modified — stub replaced with full implementation)
 - action/tests/test_aggregate.py (modified — removed @unittest.skip decorators, entered GREEN phase)
 
+### Review Findings
+
+- [x] [Review][Patch] Replace deprecated `datetime.datetime.utcnow()` with timezone-aware `datetime.datetime.now(datetime.timezone.utc)` [action/aggregate.py:79] — applied
+- [x] [Review][Patch] Add explicit `encoding="utf-8"` to all `open()` calls for cross-platform portability [action/aggregate.py:21,73,93] — applied
+- [x] [Review][Patch] Narrow `load_purged_machines` exception handling (catch `OSError` + `json.JSONDecodeError` only, validate entry shape) to preserve NFR8/NFR9 data boundary; broad `except Exception` could silently include purged machines if registry had a schema quirk [action/aggregate.py:20-25] — applied (blind+edge+auditor)
+- [x] [Review][Patch] Add `__pycache__/`, `*.py[cod]`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/` to `.gitignore` (untracked `action/tests/__pycache__` appeared after test runs) [.gitignore] — applied
+- [x] [Review][Patch] Add `timeout=30` to `subprocess.run` calls in error-exit tests to prevent indefinite hangs [action/tests/test_aggregate.py:179-184,207-212] — applied
+- [x] [Review][Defer] `action/tests/fixtures/expected_output/data.json` is unused by tests (tests compare against `EXPECTED_DAYS` constant); keep as story task requires the fixture to exist — deferred, no active defect
+- [x] [Review][Defer] `aggregate()` reads data files with no size cap; potential OOM risk if malicious machine writes a huge data.json to vibestats-data — deferred, out of story scope (owner-controlled repo)
+
 ## Change Log
 
 - 2026-04-11: Story 5.1 implemented — aggregate.py full implementation, all 21 tests passing (claude-sonnet-4-6)
+- 2026-04-11: Code review complete — 5 patches applied (deprecated utcnow, utf-8 encoding, narrowed exception handling, python .gitignore entries, subprocess timeouts); 21/21 tests still pass; status → done (claude-opus-4-6)
