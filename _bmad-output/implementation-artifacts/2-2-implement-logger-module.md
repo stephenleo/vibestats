@@ -1,6 +1,6 @@
 # Story 2.2: Implement Logger Module
 
-Status: review
+Status: done
 
 <!-- GH Issue: #14 | Epic: #2 | PR must include: Closes #14 -->
 
@@ -305,3 +305,4 @@ claude-sonnet-4-6
 
 - 2026-04-11: Story created — ready for dev implementation.
 - 2026-04-11: Story implemented — all tasks complete, 8 tests passing, status set to review.
+- 2026-04-11: Code review (Step 3) applied fixes — `cargo fmt` compliance; rotation derives rotated file name from the caller-supplied log path (no longer hard-coded to `vibestats.log.1`); cleaned self-contradictory rotation comment; `unique_test_dir` test helper now pre-cleans stale state from prior failed runs; added `test_rotation_preserves_file_stem` asserting the rotation fix; added `.truncate(true)` to three test filler file opens to satisfy `clippy::suspicious_open_options` under `--all-targets`. 9 tests passing; `cargo build`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check`, and `cargo test` all green. Status set to done.

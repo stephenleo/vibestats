@@ -54,7 +54,20 @@ fn epoch_to_datetime(secs: u64) -> (u64, u64, u64, u64, u64, u64) {
 
     // Determine the month.
     let leap = is_leap_year(year);
-    let month_days: [u64; 12] = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let month_days: [u64; 12] = [
+        31,
+        if leap { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
     let mut month: u64 = 1;
     for &md in &month_days {
         if days < md {
@@ -78,10 +91,7 @@ fn utc_timestamp() -> String {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     let (y, mo, d, h, min, s) = epoch_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        y, mo, d, h, min, s
-    )
+    format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", y, mo, d, h, min, s)
 }
 
 // ─── Rotation ─────────────────────────────────────────────────────────────────
@@ -91,14 +101,17 @@ const MAX_LOG_BYTES: u64 = 1_048_576; // 1 MB
 fn rotate_if_needed(log_path: &Path) {
     if let Ok(meta) = std::fs::metadata(log_path) {
         if meta.len() >= MAX_LOG_BYTES {
-            // Build the path for `vibestats.log.1` alongside the log file.
-            // We cannot use `.with_extension("log.1")` because `Path::with_extension`
-            // replaces only the last component, turning `vibestats.log` into
-            // `vibestats.log.1` correctly when the current extension is `log`.
-            // However, to be explicit and unambiguous we build the path manually.
-            let rotated = match log_path.parent() {
-                Some(parent) => parent.join("vibestats.log.1"),
-                None => return,
+            // Derive the rotated path by appending `.1` to the full file name
+            // (e.g. `vibestats.log` -> `vibestats.log.1`). This preserves the
+            // original file name rather than hard-coding `vibestats.log.1`,
+            // so the function is correct for any log path the caller supplies.
+            let rotated = match (log_path.parent(), log_path.file_name()) {
+                (Some(parent), Some(name)) => {
+                    let mut rotated_name = name.to_os_string();
+                    rotated_name.push(".1");
+                    parent.join(rotated_name)
+                }
+                _ => return,
             };
             let _ = std::fs::rename(log_path, rotated); // ignore errors
         }
@@ -168,8 +181,13 @@ mod tests {
 
     fn unique_test_dir(name: &str) -> PathBuf {
         // Use process ID + test name to avoid cross-test collisions.
-        std::env::temp_dir()
-            .join(format!("vibestats_test_{}_{}", name, std::process::id()))
+        // Also clean any leftover state from a previous failed run so
+        // tests that assert on file contents (append order, rotation)
+        // are not polluted by stale files.
+        let dir =
+            std::env::temp_dir().join(format!("vibestats_test_{}_{}", name, std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        dir
     }
 
     // ── AC #1: log entry format ───────────────────────────────────────────────
@@ -194,7 +212,10 @@ mod tests {
         // All other chars must be digits
         for (i, &c) in chars.iter().enumerate() {
             if ![4, 7, 10, 13, 16, 19].contains(&i) {
-                assert!(c.is_ascii_digit(), "expected digit at pos {i} in ts, got {c:?}");
+                assert!(
+                    c.is_ascii_digit(),
+                    "expected digit at pos {i} in ts, got {c:?}"
+                );
             }
         }
 
@@ -269,6 +290,7 @@ mod tests {
         {
             let mut f = fs::OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .write(true)
                 .open(&log_file)
                 .expect("should create log file");
@@ -305,6 +327,41 @@ mod tests {
     }
 
     #[test]
+    fn test_rotation_preserves_file_stem() {
+        // Verify rotation derives the rotated name from the caller-supplied
+        // log path rather than hard-coding `vibestats.log.1`. This uses a
+        // non-default file name (`custom.log`) to prove the point.
+        let dir = unique_test_dir("rotate_custom");
+        let _ = fs::create_dir_all(&dir);
+        let log_file = dir.join("custom.log");
+        let rotated_file = dir.join("custom.log.1");
+
+        {
+            let mut f = fs::OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(&log_file)
+                .expect("should create log file");
+            let filler = vec![b'x'; MAX_LOG_BYTES as usize];
+            f.write_all(&filler).expect("should write filler");
+        }
+
+        write_entry_to(&log_file, "INFO", "rotated custom");
+
+        assert!(
+            rotated_file.exists(),
+            "custom.log.1 should exist after rotation (rotated name must be derived from log path)"
+        );
+        assert!(
+            !dir.join("vibestats.log.1").exists(),
+            "must not create vibestats.log.1 when source log is custom.log"
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn test_no_rotation_below_1mb() {
         let dir = unique_test_dir("no_rotate");
         let _ = fs::create_dir_all(&dir);
@@ -315,6 +372,7 @@ mod tests {
         {
             let mut f = fs::OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .write(true)
                 .open(&log_file)
                 .expect("should create log file");
@@ -386,9 +444,11 @@ mod tests {
         // Should not panic, and should create the file.
         let _ = write_log_entry(&log_file, "INFO", "dir created");
 
-        assert!(log_file.exists(), "log file should be created even if parent was absent");
+        assert!(
+            log_file.exists(),
+            "log file should be created even if parent was absent"
+        );
 
         let _ = fs::remove_dir_all(&dir);
     }
-
 }
