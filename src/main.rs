@@ -1,5 +1,6 @@
 mod checkpoint;
 mod config;
+mod jsonl_parser;
 mod logger;
 
 use clap::{Parser, Subcommand};

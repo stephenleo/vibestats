@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (stories 2.1, 2.2, 2.3 merged; 2.4 and 2.5 ready to work)
+# last_updated: 2026-04-11 (stories 2.1, 2.2, 2.3 merged; 2.4 and 2.5 ready-for-dev)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -65,8 +65,8 @@ development_status:
   2-1-implement-config-module: done
   2-2-implement-logger-module: done
   2-3-implement-checkpoint-module: done
-  2-4-implement-jsonl-parser: backlog
-  2-5-implement-github-api-module: backlog
+  2-4-implement-jsonl-parser: review
+  2-5-implement-github-api-module: ready-for-dev
   epic-2-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────
