@@ -1,0 +1,18 @@
+# aggregate.yml — Copy this file to your vibestats-data/.github/workflows/ directory.
+# It runs the vibestats community action daily to aggregate your Claude Code session data
+# and update your GitHub profile heatmap automatically.
+name: Aggregate vibestats data
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Daily at 02:00 UTC
+  workflow_dispatch:        # Allow manual runs
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: stephenleo/vibestats@v1
+        with:
+          token: ${{ secrets.VIBESTATS_TOKEN }}
+          profile-repo: ${{ github.repository_owner }}/${{ github.repository_owner }}

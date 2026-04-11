@@ -39,7 +39,6 @@ def _load_workflow() -> dict:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — aggregate.yml not yet created (Story 5.5)")
 def test_tc1_only_schedule_and_workflow_dispatch_triggers() -> None:
     """[P0] AC2/AC3/R-005/NFR5: Parse aggregate.yml and assert the 'on' key contains
     ONLY 'schedule' and 'workflow_dispatch'. No 'push', 'pull_request', 'release',
@@ -75,7 +74,6 @@ def test_tc1_only_schedule_and_workflow_dispatch_triggers() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — aggregate.yml not yet created (Story 5.5)")
 def test_tc2_workflow_dispatch_trigger_present() -> None:
     """[P1] AC2/FR26: The 'workflow_dispatch' trigger must be present so users
     can run the workflow manually from the GitHub Actions UI."""
@@ -95,7 +93,6 @@ def test_tc2_workflow_dispatch_trigger_present() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — aggregate.yml not yet created (Story 5.5)")
 def test_tc3_step_uses_vibestats_v1_action() -> None:
     """[P1] AC1: The job step must use 'stephenleo/vibestats@v1'. This resolves
     to action.yml in the same repo via the Marketplace tag 'v1' (Story 8.3)."""
@@ -129,7 +126,6 @@ def test_tc3_step_uses_vibestats_v1_action() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — aggregate.yml not yet created (Story 5.5)")
 def test_tc4_token_input_references_vibestats_token_secret() -> None:
     """[P1] AC1/FR10: The step's 'with.token' must reference '${{ secrets.VIBESTATS_TOKEN }}'.
     This is the secret set by the installer (Story 6.1). Using the wrong secret name
