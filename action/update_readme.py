@@ -68,8 +68,11 @@ def main() -> None:
         print("vibestats: README already up to date — skipping commit")
         sys.exit(0)
 
-    # Replace content
-    updated_content = PATTERN.sub(new_block, content, count=1)
+    # Replace content. Use a lambda replacement so `new_block` is treated as a
+    # literal string — `re.sub` otherwise interprets backslash sequences (e.g.
+    # `\1`, `\g<1>`) in the replacement, which could corrupt output if the
+    # username ever contained such characters.
+    updated_content = PATTERN.sub(lambda _m: new_block, content, count=1)
 
     # Write updated README
     try:
