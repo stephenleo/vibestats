@@ -1,4 +1,5 @@
 mod config;
+mod logger;
 
 use clap::{Parser, Subcommand};
 
