@@ -1,6 +1,6 @@
 # Story 2.5: Implement GitHub API Module
 
-Status: review
+Status: done
 
 <!-- GH Issue: #17 | Epic: #2 | PR must include: Closes #17 -->
 
@@ -75,6 +75,13 @@ So that no other module makes direct HTTP calls to GitHub and the silent failure
   - [x] Test `with_retry` invokes `f` once on success, up to 3 times on retriable errors
   - [x] Run `cargo test` — must pass with 0 failures
   - [x] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
+
+### Review Findings
+
+- [x] [Review][Patch] `with_retry` used `last_err.unwrap()` in non-test code, violating Task 6's "no unwrap/expect in non-test code paths" contract [src/github_api.rs:111] — fixed by seeding `last_err` with a synthetic fallback error so the fallthrough cannot panic even if `max_attempts == 0`.
+- [x] [Review][Patch] `get_file_sha_inner` silently collapsed body-read and JSON-parse failures into `Ok(None)` [src/github_api.rs:199-213] — this would cause a subsequent PUT-without-sha against an existing file, trigger a 422 from GitHub, and mask the real underlying transient/server-side issue. Fixed by propagating both failures as `ureq::Error::Transport` (via `From<io::Error>`) so `with_retry` classifies them as retriable and the caller logs them.
+- [x] [Review][Defer] URL path/repo components are not percent-encoded in `get_file_sha_inner` / `put_file_inner` — callers (future `sync.rs`) control the Hive path and repo slug, which are composed from alphanumerics, `=`, `/`, and `-`. Risk is low, but a defensive escape pass would harden the module. Deferred to follow-up hardening.
+- [x] [Review][Defer] `test_retry_transport_error_exhausts_3_attempts` and `test_retry_succeeds_after_two_transport_errors` sleep ~3s of real time due to the hardcoded backoff delays. Not a correctness concern and the suite still finishes in ~3s, but the delay array could become an injectable parameter for faster tests. Deferred.
 
 ## Dev Notes
 

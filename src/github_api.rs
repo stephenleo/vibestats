@@ -83,7 +83,12 @@ where
 {
     let delays_secs = [1u64, 2]; // delays BEFORE attempts 1 and 2 (not before attempt 0)
     let max_attempts: usize = 3;
-    let mut last_err: Option<GithubApiError> = None;
+    // Seed with a synthetic "retry exhausted" error so we never rely on
+    // `unwrap()` in the fallthrough path. This is overwritten on every
+    // retriable failure; the seed only surfaces if `max_attempts == 0`.
+    let mut last_err: GithubApiError = Box::<dyn std::error::Error>::from(
+        "github_api: retry exhausted with no recorded error",
+    );
 
     for attempt in 0..max_attempts {
         // Sleep before retry (not before the first attempt)
@@ -97,7 +102,7 @@ where
             Err(e) => {
                 let (retriable, boxed) = classify(e);
                 if retriable {
-                    last_err = Some(boxed);
+                    last_err = boxed;
                     // continue to next attempt
                 } else {
                     // Non-retriable: 401, 404, other 4xx — fail immediately
@@ -107,8 +112,8 @@ where
         }
     }
 
-    // All 3 attempts exhausted — return last error
-    Err(last_err.unwrap())
+    // All attempts exhausted — return the last recorded error.
+    Err(last_err)
 }
 
 // ─── Constructor ──────────────────────────────────────────────────────────────
@@ -195,23 +200,28 @@ fn get_file_sha_inner(
 
     match response {
         Ok(r) => {
-            // 200: file exists — parse sha from response body
-            match r.into_string() {
-                Ok(body) => {
-                    let json: serde_json::Value = match serde_json::from_str(&body) {
-                        Ok(v) => v,
-                        Err(_) => {
-                            // Malformed JSON from GitHub — conservative fallback: treat as not found
-                            return Ok(None);
-                        }
-                    };
-                    Ok(json["sha"].as_str().map(|s| s.to_string()))
-                }
-                Err(_) => {
-                    // Could not read body — conservative fallback: treat as not found
-                    Ok(None)
-                }
-            }
+            // 200: file exists — parse sha from response body.
+            //
+            // Body read and JSON parse failures must NOT be collapsed into
+            // `Ok(None)`: a subsequent PUT-without-sha against an existing
+            // file would return 422 from GitHub and mask a real transport
+            // or server-side problem. Surface these as ureq Transport
+            // errors so the retry wrapper classifies them as retriable
+            // and the caller logs them.
+            let body = r.into_string().map_err(ureq::Error::from)?;
+
+            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+                // Malformed JSON is a server contract violation. Wrap in a
+                // synthetic io::Error so From<io::Error> yields a
+                // Transport variant that with_retry will classify as
+                // retriable.
+                ureq::Error::from(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("github_api: malformed JSON from Contents API: {}", e),
+                ))
+            })?;
+
+            Ok(json["sha"].as_str().map(|s| s.to_string()))
         }
         Err(ureq::Error::Status(404, _)) => {
             // File does not exist — first-time create path
