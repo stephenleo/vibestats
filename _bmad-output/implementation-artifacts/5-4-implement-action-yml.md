@@ -1,6 +1,6 @@
 # Story 5.4: Implement action.yml (composite community GitHub Action)
 
-Status: review
+Status: done
 
 <!-- GH Issue: #29 | Epic: #5 | PR must include: Closes #29 -->
 
@@ -327,3 +327,10 @@ None.
 ## Change Log
 
 - 2026-04-12: Implemented `action.yml` composite GitHub Action (8 steps: checkout×2, setup-python, aggregate.py, generate_svg.py, update_readme.py, commit, push with retry). Added branding fields for Marketplace. Activated 25 ATDD schema/unit tests (TDD green phase). All 80 tests pass.
+- 2026-04-12: Code review complete. Hardened `update_readme.py` step against GitHub Actions script injection by passing `inputs.profile-repo` via `env:` instead of direct `${{ }}` interpolation inside `run:` shell script. Status → done.
+
+### Review Findings
+
+- [x] [Review][Patch] Script injection via `${{ inputs.profile-repo }}` interpolated directly into bash [action.yml:51] — `USERNAME=$(echo "${{ inputs.profile-repo }}" | cut -d'/' -f1)` interpolates the input directly into the bash command before execution. A malicious `profile-repo` value containing backticks, `$(...)`, or unescaped quotes could execute arbitrary commands on the runner. Fixed by passing the value via the step's `env:` block (`PROFILE_REPO: ${{ inputs.profile-repo }}`) and using bash parameter expansion `${PROFILE_REPO%%/*}` to extract the username — purely bash-side, no command substitution, no injection vector. This is the standard mitigation documented in GitHub's "Security hardening for GitHub Actions" guidance.
+- [x] [Review][Defer] Push retry loop does not `git pull --rebase` between retries [action.yml:70-74] — deferred, the retry handles transient network errors per architecture spec; race conditions with concurrent profile-repo writers are out of scope for 5.4 and would only matter once multiple workflows write to the same profile-repo (unlikely for the personal profile-repo pattern).
+- [x] [Review][Defer] `update_readme.py` and `git add README.md` fail if profile-repo has no `README.md` [action.yml:54,62] — deferred, profile READMEs always exist by GitHub convention (the `username/username` repo's README is the user-visible profile). Failing loudly is acceptable per NFR13 if a user invokes the action against an empty profile-repo.

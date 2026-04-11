@@ -47,8 +47,10 @@ runs:
 
     - name: Run update_readme.py
       shell: bash
+      env:
+        PROFILE_REPO: ${{ inputs.profile-repo }}
       run: |
-        USERNAME=$(echo "${{ inputs.profile-repo }}" | cut -d'/' -f1)
+        USERNAME="${PROFILE_REPO%%/*}"
         python ${{ github.action_path }}/action/update_readme.py \
           --username "$USERNAME" \
           --readme-path _profile_repo/README.md
