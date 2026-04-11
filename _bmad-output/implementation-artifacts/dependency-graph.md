@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-11T18:00:00Z_
+_Last updated: 2026-04-11T20:00:00Z_
 
 ## Stories
 
@@ -9,9 +9,9 @@ _Last updated: 2026-04-11T18:00:00Z_
 | 1.2 | 1 | Initialize Rust binary project | done | #10 | #44 | merged | 1.1 | ✅ Yes (done) |
 | 1.3 | 1 | Initialize Astro site project | done | #11 | #46 | merged | 1.1 | ✅ Yes (done) |
 | 1.4 | 1 | Define and document all JSON and TOML schemas | done | #12 | #45 | merged | 1.1 | ✅ Yes (done) |
-| 2.1 | 2 | Implement config module | backlog | #13 | — | — | epic 1 complete | ✅ Yes |
-| 2.2 | 2 | Implement logger module | backlog | #14 | — | — | epic 1 complete | ✅ Yes |
-| 2.3 | 2 | Implement checkpoint module | backlog | #15 | — | — | epic 1 complete | ✅ Yes |
+| 2.1 | 2 | Implement config module | done | #13 | #48 | merged | epic 1 complete | ✅ Yes (done) |
+| 2.2 | 2 | Implement logger module | done | #14 | #49 | merged | epic 1 complete | ✅ Yes (done) |
+| 2.3 | 2 | Implement checkpoint module | done | #15 | #50 | merged | epic 1 complete | ✅ Yes (done) |
 | 2.4 | 2 | Implement JSONL parser | backlog | #16 | — | — | epic 1 complete | ✅ Yes |
 | 2.5 | 2 | Implement GitHub API module | backlog | #17 | — | — | epic 1 complete | ✅ Yes |
 | 3.1 | 3 | Implement core sync orchestration | backlog | #18 | — | — | epic 2 complete | ❌ No (epic 2 not complete) |
@@ -84,10 +84,12 @@ _Last updated: 2026-04-11T18:00:00Z_
 ## Notes
 
 - **Epic 1 complete** — all four PRs merged: #43 (1.1), #44 (1.2), #46 (1.3), #45 (1.4). Worktrees and remote branches cleaned up.
-- **Stories 2.1–2.5 are now "Ready to Work"** — Epic 2 stories can all be worked in parallel now that Epic 1 is complete.
-- **Stories 5.1–5.5 are now "Ready to Work"** — Epic 5 can begin in parallel with Epic 2 work.
-- **Story 7.1 is now "Ready to Work"** — Epic 7 can begin (7.1 is the first story; 7.2–7.4 depend on 7.1).
-- **Parallelization opportunities:** 2.1–2.5 (parallel), 5.1–5.5 (parallel), and 7.1 can all start now. Epics 2, 5, and 7 can proceed concurrently.
-- **Current bottleneck:** Epic 2 must fully complete before Epic 3 can start. Epic 3 story 3.1 is a serial bottleneck within that epic.
+- **Stories 2.1, 2.2, 2.3 done** — PRs #48, #49, #50 merged. Issues #13, #14, #15 closed as completed.
+- **Stories 2.4 and 2.5 are "Ready to Work"** — no remaining blockers; epic 1 is complete. Can be worked in parallel with each other.
+- **Stories 5.1–5.5 are "Ready to Work"** — Epic 5 can proceed in parallel with Epic 2.
+- **Story 7.1 is "Ready to Work"** — Epic 7 can begin (7.1 is the first story; 7.2–7.4 depend on 7.1).
+- **Parallelization opportunities:** 2.4 and 2.5 (parallel with each other), 5.1–5.5 (parallel), and 7.1 can all be worked now. Epics 2, 5, and 7 can proceed concurrently.
+- **Current bottleneck:** Epic 2 must fully complete (2.4 + 2.5 remaining) before Epic 3 can start. Epic 3 story 3.1 is a serial bottleneck within that epic.
+- **Worktrees:** No lingering worktrees for stories 2.1, 2.2, or 2.3 — main worktree is the only one present.
 - **GitHub auth:** `gh auth status` reports keyring token invalid. PR/issue status verified via GitHub MCP plugin. Run `gh auth login` to re-authenticate the CLI.
-- **`bad` label:** All story issues (#9–#41) and epic issues (#1–#8) already exist in the repo. No new issues need to be created.
+- **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
