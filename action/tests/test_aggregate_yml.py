@@ -1,10 +1,7 @@
-"""test_aggregate_yml.py — Acceptance tests for aggregate.yml (TDD RED PHASE).
+"""test_aggregate_yml.py — Acceptance tests for aggregate.yml.
 
 Story 5.5: Implement aggregate.yml (user vibestats-data workflow template)
 GH Issue: #30
-
-All tests are marked with pytest.mark.skip() — this is the TDD red phase.
-aggregate.yml does NOT exist yet. Tests will fail until the file is created.
 
 Test IDs follow the story task list:
   TC-1 (P0): Only 'schedule' and 'workflow_dispatch' triggers present — no push/PR
