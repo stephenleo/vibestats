@@ -77,7 +77,7 @@ development_status:
   epic-3: in-progress
   3-1-implement-core-sync-orchestration: done
   3-2-implement-stop-hook-integration: review
-  3-3-implement-sessionstart-hook-integration: in-progress
+  3-3-implement-sessionstart-hook-integration: review
   3-4-implement-vibestats-sync-and-vibestats-sync-backfill-commands: review
   epic-3-retrospective: optional
 
