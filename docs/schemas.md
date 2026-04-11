@@ -97,6 +97,8 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
 
 These files are stored on each machine and are never committed to any repository.
 
+> **Note:** `registry.json` is stored in the remote `vibestats-data` repository, not on the local machine. It is documented in [Section 4](#4-registryjson) below.
+
 ### `config.toml`
 
 **Path:** `~/.config/vibestats/config.toml`
@@ -143,9 +145,11 @@ auth_error = false
 
 ---
 
-### `registry.json`
+## 4. `registry.json`
 
 **Location:** Root of the user's `vibestats-data` GitHub repository (`registry.json`)
+
+This file is stored remotely in the `vibestats-data` repo, not on the local machine.
 
 ```json
 {
