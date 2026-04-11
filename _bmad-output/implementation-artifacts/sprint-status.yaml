@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-11 (story 3.4 done)
+# last_updated: 2026-04-11 (story 4.2 done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-11 (story 3.4 done)
+last_updated: 2026-04-11 (story 4.2 done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -88,7 +88,7 @@ development_status:
   # ──────────────────────────────────────────────────────────────
   epic-4: backlog
   4-1-implement-vibestats-status-command: backlog
-  4-2-implement-vibestats-machines-list-and-machines-remove: backlog
+  4-2-implement-vibestats-machines-list-and-machines-remove: done
   4-3-implement-vibestats-auth-command: backlog
   4-4-implement-vibestats-uninstall-command: backlog
   epic-4-retrospective: optional

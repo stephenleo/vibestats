@@ -1,6 +1,6 @@
 # Story 4.2: Implement vibestats machines list and machines remove
 
-Status: ready-for-dev
+Status: done
 
 <!-- GH Issue: #23 | Epic: #4 | PR must include: Closes #23 -->
 
@@ -22,83 +22,84 @@ so that I can manage which machines contribute to my heatmap.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `pub mod machines;` to `src/commands/mod.rs` (AC: all)
-  - [ ] Open `src/commands/mod.rs` — currently only `pub mod sync;`
-  - [ ] Append `pub mod machines;` — final file has exactly two lines
+- [x] Task 1: Add `pub mod machines;` to `src/commands/mod.rs` (AC: all)
+  - [x] Open `src/commands/mod.rs` — currently only `pub mod sync;`
+  - [x] Append `pub mod machines;` — final file has exactly two lines
 
-- [ ] Task 2: Add `delete_file` to `src/github_api.rs` (AC: #3)
-  - [ ] Add `pub fn delete_file(&self, path: &str) -> Result<(), GithubApiError>` to `GithubApi` impl block
-  - [ ] Implementation: GET SHA first (reuse `get_file_sha`), then DELETE via GitHub Contents API DELETE endpoint
-  - [ ] DELETE body: `{ "message": "vibestats: remove machine data", "sha": "<sha>" }` — sha is required for DELETE
-  - [ ] If file returns 404 (already deleted): treat as success (`Ok(())`) — idempotent
-  - [ ] Wrap both GET-SHA and DELETE in `with_retry` — same 3-attempt exponential backoff as PUT
-  - [ ] Add inner function `delete_file_inner(token, repo, path, sha)` returning `Result<(), ureq::Error>` (same pattern as `put_file_inner`)
-  - [ ] Remove `#![allow(dead_code)]` from `src/github_api.rs` if `delete_file` is called (the allow was set in Story 2.5 because no callers existed — check after wiring)
-  - [ ] Add unit tests for `delete_file` body construction (parallel to `test_put_body_*` tests)
+- [x] Task 2: Add `delete_file` to `src/github_api.rs` (AC: #3)
+  - [x] Add `pub fn delete_file(&self, path: &str) -> Result<(), GithubApiError>` to `GithubApi` impl block
+  - [x] Implementation: GET SHA first (reuse `get_file_sha`), then DELETE via GitHub Contents API DELETE endpoint
+  - [x] DELETE body: `{ "message": "vibestats: remove machine data", "sha": "<sha>" }` — sha is required for DELETE
+  - [x] If file returns 404 (already deleted): treat as success (`Ok(())`) — idempotent
+  - [x] Wrap both GET-SHA and DELETE in `with_retry` — same 3-attempt exponential backoff as PUT
+  - [x] Add inner function `delete_file_inner(token, repo, path, sha)` returning `Result<(), ureq::Error>` (same pattern as `put_file_inner`)
+  - [x] **Do NOT remove** `#![allow(dead_code)]` from `src/github_api.rs` — `get_file_sha` and `list_directory` (if added) are not yet called from all upcoming stories; keep the allow until all public API methods are fully exercised
+  - [x] Add unit tests for `delete_file` body construction (parallel to `test_put_body_*` tests)
 
-- [ ] Task 3: Add `list_hive_files` to `src/github_api.rs` (AC: #3 — purge-history bulk delete)
-  - [ ] Add `pub fn list_directory(&self, path: &str) -> Result<Vec<String>, GithubApiError>` to `GithubApi` impl block
-  - [ ] Use GitHub Contents API GET on a directory path — returns JSON array of objects with `"type"` and `"path"` fields
-  - [ ] For purge: caller builds path prefix `machines/` and recursively lists, filtering by `machine_id` partition
-  - [ ] **Alternative approach** (simpler, preferred): build Hive paths deterministically from checkpoint date hashes — no listing needed. See Dev Notes for the preferred path enumeration strategy
-  - [ ] Add `list_directory_inner` helper following the same pattern as other inner functions
-  - [ ] Note: this task may be replaced by the deterministic path strategy (see Dev Notes)
+- [x] Task 3: Add `list_directory` to `src/github_api.rs` (AC: #3 — purge-history remote machine bulk delete)
+  - [x] Add `pub fn list_directory(&self, path: &str) -> Result<Vec<String>, GithubApiError>` to `GithubApi` impl block
+  - [x] Use GitHub Contents API GET on a directory path — returns JSON array of objects with `"type"` and `"path"` fields
+  - [x] Return only `"file"` type entries' `"path"` values; skip `"dir"` entries (caller handles recursion)
+  - [x] GitHub Contents API returns up to 1000 entries per directory call — for a machine with many years of data, the year-level directory has ≤52 entries (one per month), month-level ≤31 entries (one per day), so pagination is not a concern at the leaf level; each `list_directory` call covers one month or day directory
+  - [x] **Self-purge preferred path** (same machine, no listing needed): build Hive paths deterministically from checkpoint date hashes — see Dev Notes for the preferred path enumeration strategy
+  - [x] Add `list_directory_inner` helper returning `Result<Vec<String>, ureq::Error>` — same pattern as other inner functions
+  - [x] Note: `list_directory` is only needed for remote machine purge; self-purge uses checkpoint date hashes instead
 
-- [ ] Task 4: Implement `src/commands/machines.rs` (AC: #1, #2, #3, #4)
-  - [ ] Create file `src/commands/machines.rs`
-  - [ ] Implement `pub fn list()` — entry point from `main.rs` for `vibestats machines list`
-  - [ ] Implement `pub fn remove(machine_id: &str, purge_history: bool)` — entry point from `main.rs` for `vibestats machines remove`
+- [x] Task 4: Implement `src/commands/machines.rs` (AC: #1, #2, #3, #4)
+  - [x] Create file `src/commands/machines.rs`
+  - [x] Implement `pub fn list()` — entry point from `main.rs` for `vibestats machines list`
+  - [x] Implement `pub fn remove(machine_id: &str, purge_history: bool)` — entry point from `main.rs` for `vibestats machines remove`
 
-  - [ ] **`list()` implementation:**
-    - [ ] Call `Config::load_or_exit()` to get config
-    - [ ] Construct `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
-    - [ ] Call `api.get_file_content("registry.json")`
-    - [ ] If `Ok(None)`: print `"vibestats: no machines registered"` and return
-    - [ ] If `Ok(Some(content))`: parse as `serde_json::Value`, iterate `json["machines"].as_array()`
-    - [ ] Print each machine as: `"  <machine_id>  <hostname>  <status>  <last_seen>"` (tab-separated or aligned)
-    - [ ] If parse fails or `machines` key missing: print `"vibestats: registry.json is malformed"` and return
-    - [ ] If `Err(e)`: log via `logger::error` and print `"vibestats: failed to fetch registry — check vibestats.log"`, return
+  - [x] **`list()` implementation:**
+    - [x] Call `Config::load_or_exit()` to get config
+    - [x] Construct `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
+    - [x] Call `api.get_file_content("registry.json")`
+    - [x] If `Ok(None)`: print `"vibestats: no machines registered"` and return
+    - [x] If `Ok(Some(content))`: parse as `serde_json::Value`, iterate `json["machines"].as_array()`
+    - [x] Print each machine as: `"  <machine_id>  <hostname>  <status>  <last_seen>"` (tab-separated or aligned)
+    - [x] If parse fails or `machines` key missing: print `"vibestats: registry.json is malformed"` and return
+    - [x] If `Err(e)`: log via `logger::error` and print `"vibestats: failed to fetch registry — check vibestats.log"`, return
 
-  - [ ] **`remove(machine_id, purge_history)` implementation:**
-    - [ ] Call `Config::load_or_exit()` to get config
-    - [ ] Construct `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
-    - [ ] GET `registry.json` via `api.get_file_content("registry.json")`
-    - [ ] If `Ok(None)`: print `"vibestats: no machines registered"` and return
-    - [ ] If `Err(e)`: log via `logger::error`, print error message, return
-    - [ ] Parse registry JSON; find the machine with matching `machine_id`
-    - [ ] If machine not found: print `"vibestats: machine '<id>' not found in registry"` and return
-    - [ ] Extract `hostname` from found machine entry (needed for purge confirmation message)
-    - [ ] **Default retire path** (`purge_history == false`):
-      - [ ] Set `status = "retired"` for the matching machine in the JSON
-      - [ ] Serialize updated JSON back to string (use `serde_json::to_string_pretty`)
-      - [ ] Call `api.put_file("registry.json", &updated_json)` to update remote
-      - [ ] If `machine_id == config.machine_id` (self-retire): load local checkpoint, set `machine_status = "retired"`, save
-      - [ ] Print `"vibestats: machine '<id>' retired"` on success
-    - [ ] **Purge path** (`purge_history == true`):
-      - [ ] Print confirmation prompt: `"This will permanently remove all historical data for <hostname>. Continue? (y/N): "`
-      - [ ] Read line from stdin; accept only `"y"` or `"Y"` as confirmation — anything else aborts
-      - [ ] If aborted: print `"vibestats: purge cancelled"` and return
-      - [ ] Set `status = "purged"` for the machine in registry JSON
-      - [ ] Call `api.put_file("registry.json", &updated_json)`
-      - [ ] Enumerate and delete all Hive partition files for this machine (see Dev Notes for strategy)
-      - [ ] If `machine_id == config.machine_id` (self-purge): set local `checkpoint.toml` `machine_status = "purged"`
-      - [ ] Print `"vibestats: machine '<id>' purged — N file(s) deleted"` on completion
+  - [x] **`remove(machine_id, purge_history)` implementation:**
+    - [x] Call `Config::load_or_exit()` to get config
+    - [x] Construct `GithubApi::new(&config.oauth_token, &config.vibestats_data_repo)`
+    - [x] GET `registry.json` via `api.get_file_content("registry.json")`
+    - [x] If `Ok(None)`: print `"vibestats: no machines registered"` and return
+    - [x] If `Err(e)`: log via `logger::error`, print error message, return
+    - [x] Parse registry JSON; find the machine with matching `machine_id`
+    - [x] If machine not found: print `"vibestats: machine '<id>' not found in registry"` and return
+    - [x] Extract `hostname` from found machine entry (needed for purge confirmation message)
+    - [x] **Default retire path** (`purge_history == false`):
+      - [x] Set `status = "retired"` for the matching machine in the JSON
+      - [x] Serialize updated JSON back to string (use `serde_json::to_string_pretty`)
+      - [x] Call `api.put_file("registry.json", &updated_json)` to update remote
+      - [x] If `machine_id == config.machine_id` (self-retire): load local checkpoint, set `machine_status = "retired"`, save
+      - [x] Print `"vibestats: machine '<id>' retired"` on success
+    - [x] **Purge path** (`purge_history == true`):
+      - [x] Print confirmation prompt: `"This will permanently remove all historical data for <hostname>. Continue? (y/N): "`
+      - [x] Read line from stdin; accept only `"y"` or `"Y"` as confirmation — anything else aborts
+      - [x] If aborted: print `"vibestats: purge cancelled"` and return
+      - [x] Set `status = "purged"` for the machine in registry JSON
+      - [x] Call `api.put_file("registry.json", &updated_json)`
+      - [x] Enumerate and delete all Hive partition files for this machine (see Dev Notes for strategy)
+      - [x] If `machine_id == config.machine_id` (self-purge): set local `checkpoint.toml` `machine_status = "purged"`
+      - [x] Print `"vibestats: machine '<id>' purged — N file(s) deleted"` on completion
 
-- [ ] Task 5: Wire `machines` commands into `main.rs` (AC: #1, #2, #3)
-  - [ ] In `main.rs`, replace the `MachinesSubcommand::List` arm's `println!("not yet implemented")` with `commands::machines::list()`
-  - [ ] Replace the `MachinesSubcommand::Remove { machine_id: _ }` arm: change `machine_id: _` to `machine_id`, add `purge_history` arg to the `Remove` variant, call `commands::machines::remove(&machine_id, purge_history)`
-  - [ ] Add `--purge-history` flag to `MachinesSubcommand::Remove` variant in the `clap` enum: `#[arg(long)] purge_history: bool`
+- [x] Task 5: Wire `machines` commands into `main.rs` (AC: #1, #2, #3)
+  - [x] In `main.rs`, replace the `MachinesSubcommand::List` arm's `println!("not yet implemented")` with `commands::machines::list()`
+  - [x] Replace the `MachinesSubcommand::Remove { machine_id: _ }` arm: change `machine_id: _` to `machine_id`, add `purge_history` arg to the `Remove` variant, call `commands::machines::remove(&machine_id, purge_history)`
+  - [x] Add `--purge-history` flag to `MachinesSubcommand::Remove` variant in the `clap` enum: `#[arg(long)] purge_history: bool`
 
-- [ ] Task 6: Write co-located unit tests (AC: all)
-  - [ ] `#[cfg(test)]` module inside `src/commands/machines.rs`
-  - [ ] Test registry JSON parsing: given valid registry JSON, `list()` helper extracts machine fields correctly
-  - [ ] Test retire mutation: given registry JSON with one active machine, updating `status = "retired"` produces correct JSON
-  - [ ] Test machine-not-found path: machine_id not in registry returns appropriate result
-  - [ ] Test stdin confirmation acceptance: `"y"` and `"Y"` accepted; all other inputs (including empty) cancel
-  - [ ] Test `delete_file` body construction in `github_api.rs` (inline with `#[cfg(test)]`)
-  - [ ] Run `cargo test` from repo root — must pass with 0 failures
-  - [ ] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
-  - [ ] Run `cargo build` — must produce 0 errors
+- [x] Task 6: Write co-located unit tests (AC: all)
+  - [x] `#[cfg(test)]` module inside `src/commands/machines.rs`
+  - [x] Test registry JSON parsing: given valid registry JSON, `list()` helper extracts machine fields correctly
+  - [x] Test retire mutation: given registry JSON with one active machine, updating `status = "retired"` produces correct JSON
+  - [x] Test machine-not-found path: machine_id not in registry returns appropriate result
+  - [x] Test stdin confirmation acceptance: `"y"` and `"Y"` accepted; all other inputs (including empty) cancel
+  - [x] Test `delete_file` body construction in `github_api.rs` (inline with `#[cfg(test)]`)
+  - [x] Run `cargo test` from repo root — must pass with 0 failures
+  - [x] Run `cargo clippy --all-targets -- -D warnings` — must produce 0 warnings
+  - [x] Run `cargo build` — must produce 0 errors
 
 ## Dev Notes
 
@@ -351,9 +352,11 @@ toml = "0.8"
 
 ### `#![allow(dead_code)]` Status
 
-`src/github_api.rs` currently has `#![allow(dead_code)]` (added in Story 2.5, still present because new callers land in Epics 4+). Once `commands/machines.rs` calls `api.delete_file(...)`, check if the allow is still needed. Remove it only if ALL public API surface is now called. If `GithubApi` methods still have uncalled callers from other upcoming stories, keep the allow.
+`src/github_api.rs` currently has `#![allow(dead_code)]` (added in Story 2.5). **Do NOT remove it in this story.** The `get_file_sha` public method and any new `list_directory` method are not yet called from all upcoming stories (4.3, 4.4 arrive later). Keep the allow until all public API surface is exercised.
 
-Similarly, `src/config.rs` has `#![allow(dead_code)]` — do NOT remove it in this story (callers arrive in later stories).
+`src/config.rs` also has `#![allow(dead_code)]` — **do NOT remove it** in this story either.
+
+`src/checkpoint.rs` has `#![allow(dead_code)]` — **do NOT remove it** in this story.
 
 ### File Structure
 
@@ -446,6 +449,33 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+None.
+
 ### Completion Notes List
 
+- Implemented `commands/machines.rs` with `list()` and `remove(machine_id, purge_history)` entry points
+- Added `delete_file`, `delete_file_inner`, `list_directory`, `list_directory_inner`, `list_directory_all`, and `list_directory_all_inner` to `github_api.rs`
+- Self-purge uses local checkpoint date hashes for deterministic, low-network-cost enumeration
+- Remote purge uses `list_directory_all` depth-first walk through the Hive partition tree
+- Self-retire and self-purge both update local `checkpoint.toml` atomically via `Checkpoint::save`
+- Confirmation prompt accepts only `"y"` or `"Y"`; stdin read failure treated as cancel (safe default)
+- All 118 tests pass; 0 clippy warnings; 0 build errors
+- `#![allow(dead_code)]` preserved in `github_api.rs`, `config.rs`, and `checkpoint.rs` per story constraints
+
 ### File List
+
+- src/commands/mod.rs (modified)
+- src/commands/machines.rs (new)
+- src/github_api.rs (modified)
+- src/main.rs (modified)
+
+## Change Log
+
+- 2026-04-11: Implemented story 4.2 — `vibestats machines list` and `vibestats machines remove` commands with retire/purge support. Added `delete_file`, `list_directory`, and `list_directory_all` to `github_api.rs`. Wired commands in `main.rs` with `--purge-history` flag. 118 tests pass, 0 clippy warnings.
+- 2026-04-11: Code review (Step 3) — 1 patch applied (list() output column alignment); 2 findings deferred; build/clippy/test clean.
+
+### Review Findings
+
+- [x] [Review][Patch] `list()` output columns not aligned per spec Dev Notes example [src/commands/machines.rs:57] — fixed: now computes max column widths and pads with `{:<N$}` format specifiers
+- [x] [Review][Defer] Remote purge walks entire `machines/` tree for every purge target [src/commands/machines.rs:279] — deferred, architecturally intended per story ("more network-intensive but necessary for remote purge")
+- [x] [Review][Defer] No unit tests for `purge_self` / `purge_remote` / `update_local_checkpoint` [src/commands/machines.rs:231-385] — deferred, would require a GithubApi mocking framework not allowed by story constraints

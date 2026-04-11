@@ -49,14 +49,32 @@ pub fn list() {
                                 println!("vibestats: no machines registered");
                                 return;
                             }
-                            for m in machines {
-                                let machine_id = m["machine_id"].as_str().unwrap_or("");
-                                let hostname = m["hostname"].as_str().unwrap_or("");
-                                let status = m["status"].as_str().unwrap_or("");
-                                let last_seen = m["last_seen"].as_str().unwrap_or("");
+                            // Extract fields first so we can compute column widths
+                            // for aligned output (matches spec Dev Notes example).
+                            let rows: Vec<(String, String, String, String)> = machines
+                                .iter()
+                                .map(|m| {
+                                    (
+                                        m["machine_id"].as_str().unwrap_or("").to_string(),
+                                        m["hostname"].as_str().unwrap_or("").to_string(),
+                                        m["status"].as_str().unwrap_or("").to_string(),
+                                        m["last_seen"].as_str().unwrap_or("").to_string(),
+                                    )
+                                })
+                                .collect();
+                            let w_id = rows.iter().map(|r| r.0.len()).max().unwrap_or(0);
+                            let w_host = rows.iter().map(|r| r.1.len()).max().unwrap_or(0);
+                            let w_status = rows.iter().map(|r| r.2.len()).max().unwrap_or(0);
+                            for (machine_id, hostname, status, last_seen) in &rows {
                                 println!(
-                                    "{}  {}  {}  {}",
-                                    machine_id, hostname, status, last_seen
+                                    "{:<w_id$}  {:<w_host$}  {:<w_status$}  {}",
+                                    machine_id,
+                                    hostname,
+                                    status,
+                                    last_seen,
+                                    w_id = w_id,
+                                    w_host = w_host,
+                                    w_status = w_status,
                                 );
                             }
                         }
