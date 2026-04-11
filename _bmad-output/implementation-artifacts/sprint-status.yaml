@@ -65,7 +65,7 @@ development_status:
   2-1-implement-config-module: done
   2-2-implement-logger-module: done
   2-3-implement-checkpoint-module: done
-  2-4-implement-jsonl-parser: review
+  2-4-implement-jsonl-parser: done
   2-5-implement-github-api-module: done
   epic-2-retrospective: optional
 
