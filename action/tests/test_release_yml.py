@@ -55,7 +55,6 @@ def _load_yaml() -> dict:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_prereq_release_yml_exists() -> None:
     """[P0] 8.1-SCHEMA-000: .github/workflows/release.yml must exist."""
     assert RELEASE_YML.exists(), (
@@ -64,14 +63,12 @@ def test_prereq_release_yml_exists() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_prereq_release_yml_not_empty() -> None:
     """[P0] 8.1-SCHEMA-001: release.yml must not be empty."""
     text = _load_text()
     assert text.strip(), "release.yml is empty — must contain a valid GitHub Actions workflow"
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_prereq_release_yml_parses_as_valid_yaml() -> None:
     """[P0] 8.1-SCHEMA-002: release.yml must parse as valid YAML without errors."""
     doc = _load_yaml()
@@ -85,7 +82,6 @@ def test_prereq_release_yml_parses_as_valid_yaml() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc1_trigger_is_tag_push_only() -> None:
     """[P1] 8.1-SCHEMA-010: release.yml trigger must be ONLY 'push.tags: [v*]'.
     No branch push, pull_request, schedule, or workflow_dispatch triggers allowed.
@@ -112,7 +108,6 @@ def test_tc1_trigger_is_tag_push_only() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc1_tag_pattern_matches_v_wildcard() -> None:
     """[P1] 8.1-SCHEMA-011: release.yml on.push.tags must include 'v*' pattern.
     Ensures tags like v0.1.0 and v1.0.0 trigger the release pipeline."""
@@ -133,7 +128,6 @@ def test_tc1_tag_pattern_matches_v_wildcard() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc2_matrix_targets_exact_set() -> None:
     """[P0] 8.1-SCHEMA-020: release.yml build job matrix must include EXACTLY the three
     required targets: aarch64-apple-darwin, x86_64-apple-darwin, x86_64-unknown-linux-gnu.
@@ -185,7 +179,6 @@ def test_tc2_matrix_targets_exact_set() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc3_matrix_fail_fast_true() -> None:
     """[P0] 8.1-SCHEMA-030: release.yml build job strategy must have fail-fast: true.
     Prevents a partial GitHub Release when one platform compilation fails (AC3, R-001).
@@ -216,7 +209,6 @@ def test_tc3_matrix_fail_fast_true() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc4_archive_name_uses_matrix_target_variable() -> None:
     """[P0] 8.1-SCHEMA-040: Archive step must produce vibestats-${{ matrix.target }}.tar.gz.
     The filename template must use the matrix.target variable — no hardcoded platform names.
@@ -238,7 +230,6 @@ def test_tc4_archive_name_uses_matrix_target_variable() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc4_archive_contains_vibestats_binary() -> None:
     """[P0] 8.1-SCHEMA-041: Archive command must package the 'vibestats' binary from
     target/<target>/release/. The binary name must be 'vibestats' (not 'vibestats.exe'
@@ -258,7 +249,6 @@ def test_tc4_archive_contains_vibestats_binary() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc5_no_action_uses_main_or_master_tag() -> None:
     """[P1] 8.1-SCHEMA-050: All 'uses:' action references must be pinned to version tags
     (e.g., @v4) — never @main or @master. Mutable tags cause pipeline breakage when
@@ -275,7 +265,6 @@ def test_tc5_no_action_uses_main_or_master_tag() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc5_required_actions_are_pinned() -> None:
     """[P1] 8.1-SCHEMA-051: Required actions (checkout, upload-artifact, download-artifact)
     must be pinned to a specific version (e.g., @v4) — not floating refs."""
@@ -305,7 +294,6 @@ def test_tc5_required_actions_are_pinned() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc6_cross_used_for_linux_target() -> None:
     """[P1] 8.1-SCHEMA-060: release.yml must use 'cross' for the Linux target
     (x86_64-unknown-linux-gnu). Native cargo build is insufficient for reliable
@@ -330,7 +318,6 @@ def test_tc6_cross_used_for_linux_target() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc7_release_step_uses_github_ref_name() -> None:
     """[P2] 8.1-SCHEMA-070: The GitHub Release creation step must use '${{ github.ref_name }}'
     for the tag/release name — no hardcoded version strings (e.g., 'v0.1.0').
@@ -350,7 +337,6 @@ def test_tc7_release_step_uses_github_ref_name() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc8_upload_artifact_step_present() -> None:
     """[P2] 8.1-SCHEMA-080: release.yml must include an upload step for build artifacts.
     The matrix build must upload each vibestats-<target>.tar.gz as a build artifact so
@@ -362,7 +348,6 @@ def test_tc8_upload_artifact_step_present() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc8_download_artifact_step_present() -> None:
     """[P2] 8.1-SCHEMA-081: release.yml release job must include a download-artifact step.
     The release job needs 'actions/download-artifact' to collect all three platform archives
@@ -374,7 +359,6 @@ def test_tc8_download_artifact_step_present() -> None:
     )
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc8_release_job_needs_build_job() -> None:
     """[P2] 8.1-SCHEMA-082: The release job must declare 'needs: build' (or equivalent).
     This dependency ensures all three platform builds complete successfully before the
@@ -403,7 +387,6 @@ def test_tc8_release_job_needs_build_job() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD red phase — release.yml not yet implemented (Story 8.1)")
 def test_tc9_release_job_has_contents_write_permission() -> None:
     """[P1] 8.1-SCHEMA-090: The release job must declare 'permissions: contents: write'.
     GitHub Actions defaults may be read-only; without this permission,

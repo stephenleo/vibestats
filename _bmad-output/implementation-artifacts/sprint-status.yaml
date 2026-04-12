@@ -136,7 +136,7 @@ development_status:
   # Depends on: All prior epics complete | Enables: Epic 6
   # ──────────────────────────────────────────────────────────────
   epic-8: backlog
-  8-1-implement-rust-binary-release-ci: backlog
+  8-1-implement-rust-binary-release-ci: review
   8-2-implement-cloudflare-pages-deploy-workflow: backlog
   8-3-configure-github-actions-marketplace-publication: backlog
   epic-8-retrospective: optional
