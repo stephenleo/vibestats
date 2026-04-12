@@ -84,3 +84,14 @@ jobs:
             vibestats-x86_64-apple-darwin/vibestats-x86_64-apple-darwin.tar.gz.sha256
             vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz
             vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz.sha256
+
+      - name: Update floating major-version tag
+        # Keeps stephenleo/vibestats@v1 pointing at the latest v1.x release,
+        # matching the pattern used by first-party Actions (e.g. actions/checkout@v4).
+        # REF_NAME passed via env: to avoid expression injection in run: blocks.
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          major="${REF_NAME%%.*}"   # v1.2.0 → v1
+          git tag "$major" "$REF_NAME" --force
+          git push origin "$major" --force
