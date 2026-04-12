@@ -27,6 +27,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: site/package-lock.json
 
+      - name: Copy install.sh to site public
+        run: cp install.sh site/public/install.sh
+
       - name: Install dependencies
         working-directory: site
         run: npm ci
