@@ -22,7 +22,6 @@ Run: python -m pytest action/tests/test_marketplace.py -v
 import pathlib
 import re
 
-import pytest
 import yaml
 
 # ---------------------------------------------------------------------------
