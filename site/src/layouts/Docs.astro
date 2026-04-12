@@ -1,0 +1,22 @@
+---
+import Base from './Base.astro';
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<Base title={title}>
+  <div class="docs-layout">
+    <nav class="sidebar">
+      <ul>
+        <li><a href="/docs/quickstart">Quickstart</a></li>
+        <li><a href="/docs/how-it-works">How it works</a></li>
+        <li><a href="/docs/cli-reference">CLI reference</a></li>
+        <li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+      </ul>
+    </nav>
+    <main>
+      <slot />
+    </main>
+  </div>
+</Base>

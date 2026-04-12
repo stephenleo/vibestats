@@ -1,6 +1,6 @@
 # Story 7.1: Build base layouts and shared Astro components
 
-Status: ready-for-dev
+Status: review
 
 <!-- GH Issue: #35 | Epic: #7 | PR must include: Closes #35 -->
 
@@ -20,45 +20,45 @@ so that all pages share consistent structure without duplicating markup.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `site/src/layouts/Base.astro` (AC: #1, #3)
-  - [ ] Create `site/src/layouts/` directory
-  - [ ] Implement `Base.astro` with a complete `<head>` section: charset, viewport, favicon links (already in `site/public/`), `<title>{title}</title>` prop, generator meta tag
-  - [ ] Import and render `Header.astro` and `Footer.astro` components (created in Task 3)
-  - [ ] Accept `title: string` as a prop via the frontmatter (`const { title } = Astro.props`)
-  - [ ] Use `<slot />` for page body content
-  - [ ] TypeScript strict — define an `interface Props { title: string }` in frontmatter
+- [x] Task 1: Create `site/src/layouts/Base.astro` (AC: #1, #3)
+  - [x] Create `site/src/layouts/` directory
+  - [x] Implement `Base.astro` with a complete `<head>` section: charset, viewport, favicon links (already in `site/public/`), `<title>{title}</title>` prop, generator meta tag
+  - [x] Import and render `Header.astro` and `Footer.astro` components (created in Task 3)
+  - [x] Accept `title: string` as a prop via the frontmatter (`const { title } = Astro.props`)
+  - [x] Use `<slot />` for page body content
+  - [x] TypeScript strict — define an `interface Props { title: string }` in frontmatter
 
-- [ ] Task 2: Create `site/src/layouts/Docs.astro` (AC: #1, #2, #3)
-  - [ ] Extend `Base.astro` — import and use it as the outer layout wrapper
-  - [ ] Accept `title: string` and pass it through to `Base.astro`
-  - [ ] Implement a two-column layout: sidebar + main content area
-  - [ ] Sidebar must link to all four docs pages (use relative or root-relative `/docs/` paths):
+- [x] Task 2: Create `site/src/layouts/Docs.astro` (AC: #1, #2, #3)
+  - [x] Extend `Base.astro` — import and use it as the outer layout wrapper
+  - [x] Accept `title: string` and pass it through to `Base.astro`
+  - [x] Implement a two-column layout: sidebar + main content area
+  - [x] Sidebar must link to all four docs pages (use relative or root-relative `/docs/` paths):
     - Quickstart → `/docs/quickstart`
     - How it works → `/docs/how-it-works`
     - CLI reference → `/docs/cli-reference`
     - Troubleshooting → `/docs/troubleshooting`
-  - [ ] Use `<slot />` for the main docs content
-  - [ ] TypeScript strict — define `interface Props { title: string }` in frontmatter
+  - [x] Use `<slot />` for the main docs content
+  - [x] TypeScript strict — define `interface Props { title: string }` in frontmatter
 
-- [ ] Task 3: Create `Header.astro` and `Footer.astro` shared components (AC: #1, #3)
-  - [ ] Create `site/src/components/Header.astro`:
+- [x] Task 3: Create `Header.astro` and `Footer.astro` shared components (AC: #1, #3)
+  - [x] Create `site/src/components/Header.astro`:
     - vibestats logo/wordmark (text-based `<a href="/">vibestats</a>` is acceptable for MVP)
     - Nav links: Home (`/`), Docs (`/docs/quickstart`), GitHub (`https://github.com/stephenleo/vibestats`)
     - GitHub link opens in new tab (`target="_blank" rel="noopener noreferrer"`)
-  - [ ] Create `site/src/components/Footer.astro`:
+  - [x] Create `site/src/components/Footer.astro`:
     - GitHub link: `https://github.com/stephenleo/vibestats`
     - License notice: "MIT License"
     - Keep minimal — single line or small footer block
 
-- [ ] Task 4: Update existing page stubs to use `Base.astro` layout (AC: #3)
-  - [ ] Update `site/src/pages/index.astro` to use `Base.astro` layout (pass `title="vibestats"`)
-  - [ ] Update `site/src/pages/u/index.astro` to use `Base.astro` layout (pass `title="vibestats dashboard"`)
-  - [ ] Both pages must continue to build without errors
+- [x] Task 4: Update existing page stubs to use `Base.astro` layout (AC: #3)
+  - [x] Update `site/src/pages/index.astro` to use `Base.astro` layout (pass `title="vibestats"`)
+  - [x] Update `site/src/pages/u/index.astro` to use `Base.astro` layout (pass `title="vibestats dashboard"`)
+  - [x] Both pages must continue to build without errors
 
-- [ ] Task 5: Verify `npm run build` and TypeScript check pass (AC: #3)
-  - [ ] Run `npm run build` inside `site/` — must complete with 0 errors
-  - [ ] Run `npm run check` inside `site/` — must report 0 TypeScript/Astro errors
-  - [ ] Confirm output includes at least 2 pages: `/index.html` and `/u/index.html`
+- [x] Task 5: Verify `npm run build` and TypeScript check pass (AC: #3)
+  - [x] Run `npm run build` inside `site/` — must complete with 0 errors
+  - [x] Run `npm run check` inside `site/` — must report 0 TypeScript/Astro errors
+  - [x] Confirm output includes at least 2 pages: `/index.html` and `/u/index.html`
 
 ## Dev Notes
 
@@ -259,6 +259,28 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+None.
+
 ### Completion Notes List
 
+- Implemented all 4 layouts/components: `Base.astro`, `Docs.astro`, `Header.astro`, `Footer.astro`
+- Updated `site/src/pages/index.astro` and `site/src/pages/u/index.astro` to use `Base.astro` layout
+- Added `@astrojs/check` and `typescript` as devDependencies (required for `npm run check` script)
+- `npm run build`: 2 pages built, 0 errors
+- `npm run check`: 0 errors, 0 warnings, 0 hints across 7 Astro files
+- Architecture spec confirms no tests at MVP for Astro
+
 ### File List
+
+- site/src/layouts/Base.astro (new)
+- site/src/layouts/Docs.astro (new)
+- site/src/components/Header.astro (new)
+- site/src/components/Footer.astro (new)
+- site/src/pages/index.astro (modified)
+- site/src/pages/u/index.astro (modified)
+- site/package.json (modified — added devDependencies for @astrojs/check and typescript)
+- site/package-lock.json (modified — updated lock file)
+
+### Change Log
+
+- 2026-04-12: Implemented story 7.1 — created Base.astro, Docs.astro layouts and Header.astro, Footer.astro shared components; updated page stubs to use Base.astro; build and TypeScript check pass with 0 errors
