@@ -170,38 +170,46 @@ download_and_install_binary() {
 }
 
 # ---------------------------------------------------------------------------
-# Step 6: Detect if this is a first install (no vibestats-data repo exists)
-# Returns 0 if first install is needed, 1 if vibestats-data already exists.
-# Also detects and exports USERNAME for use by subsequent functions.
+# Step 6: Detect whether this is a first-install or multi-machine install (AC #1)
+# Sets INSTALL_MODE to "multi-machine" or "first-install".
+# Sets GITHUB_USER to the authenticated GitHub username.
+# MUST use 'if' construct (not $? check) because set -euo pipefail aborts on
+# non-zero exit from _gh repo view when the repo does not exist.
 # ---------------------------------------------------------------------------
-detect_first_install() {
-  USERNAME=$(_gh api /user --jq '.login')
-  export USERNAME
+detect_install_mode() {
+  # Fetch the authenticated user; parse login via python to avoid relying on --jq
+  # (jq is not a guaranteed dependency; python3 is available on macOS and most Linux)
+  USER_JSON=$(_gh api /user)
+  GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+  export GITHUB_USER
 
-  if _gh repo view "${USERNAME}/vibestats-data" > /dev/null 2>&1; then
-    # Repo exists — multi-machine path
-    return 1
+  if _gh repo view "${GITHUB_USER}/vibestats-data" --json name > /dev/null 2>&1; then
+    echo "Existing vibestats-data repo detected. Running multi-machine setup."
+    INSTALL_MODE="multi-machine"
+  else
+    echo "No vibestats-data repo found. Running first-install setup."
+    INSTALL_MODE="first-install"
   fi
 
-  # Repo does not exist — first-install path
-  return 0
+  export INSTALL_MODE
 }
 
 # ---------------------------------------------------------------------------
 # Step 7: Create the vibestats-data private repo (AC #1, FR4)
-# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# Requires: GITHUB_USER exported by detect_install_mode (auto-detected if not set)
 # ---------------------------------------------------------------------------
 create_vibestats_data_repo() {
-  # Detect USERNAME if not already exported (e.g. when called directly in tests)
-  if [ -z "${USERNAME:-}" ]; then
-    USERNAME=$(_gh api /user --jq '.login')
-    export USERNAME
+  # Detect GITHUB_USER if not already exported (e.g. when called directly in tests)
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
   fi
 
   echo "Creating vibestats-data repository..."
-  _gh repo create "${USERNAME}/vibestats-data" --private \
+  _gh repo create "${GITHUB_USER}/vibestats-data" --private \
     || { echo "Error: Failed to create vibestats-data repository." >&2; exit 1; }
-  echo "Repository created: ${USERNAME}/vibestats-data"
+  echo "Repository created: ${GITHUB_USER}/vibestats-data"
 }
 
 # ---------------------------------------------------------------------------
@@ -233,13 +241,14 @@ WORKFLOW
 
 # ---------------------------------------------------------------------------
 # Step 9: Write aggregate.yml into vibestats-data/.github/workflows/ (AC #2, FR7)
-# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# Requires: GITHUB_USER exported by detect_install_mode (auto-detected if not set)
 # ---------------------------------------------------------------------------
 write_aggregate_workflow() {
-  # Detect USERNAME if not already exported
-  if [ -z "${USERNAME:-}" ]; then
-    USERNAME=$(_gh api /user --jq '.login')
-    export USERNAME
+  # Detect GITHUB_USER if not already exported
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
   fi
 
   echo "Writing aggregate workflow to vibestats-data..."
@@ -250,7 +259,7 @@ write_aggregate_workflow() {
   echo "Workflow content:"
   printf '%s\n' "$WORKFLOW_CONTENT"
 
-  _gh api "repos/${USERNAME}/vibestats-data/contents/.github/workflows/aggregate.yml" \
+  _gh api "repos/${GITHUB_USER}/vibestats-data/contents/.github/workflows/aggregate.yml" \
     --method PUT \
     --field message="Add vibestats aggregate workflow" \
     --field "content=${CONTENT}" \
@@ -262,13 +271,14 @@ write_aggregate_workflow() {
 # ---------------------------------------------------------------------------
 # Step 10: Generate and set VIBESTATS_TOKEN Actions secret (AC #3, FR10, NFR7)
 # SECURITY: VIBESTATS_TOKEN is NEVER written to disk or echoed to stdout.
-# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# Requires: GITHUB_USER exported by detect_install_mode (auto-detected if not set)
 # ---------------------------------------------------------------------------
 setup_vibestats_token() {
-  # Detect USERNAME if not already exported
-  if [ -z "${USERNAME:-}" ]; then
-    USERNAME=$(_gh api /user --jq '.login')
-    export USERNAME
+  # Detect GITHUB_USER if not already exported
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
   fi
 
   echo "Setting up VIBESTATS_TOKEN Actions secret..."
@@ -279,111 +289,136 @@ setup_vibestats_token() {
       --method POST \
       --field name="vibestats-$(date +%Y)" \
       --field expiration="never" \
-      --field repositories='["'"${USERNAME}"'"]' \
+      --field repositories='["'"${GITHUB_USER}"'"]' \
       --field permissions='{"contents":"write"}' \
       --jq '.token' \
-      | _gh secret set VIBESTATS_TOKEN --repo "${USERNAME}/vibestats-data"; then
+      | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data"; then
     echo "VIBESTATS_TOKEN secret set successfully."
   else
     # Fallback: enterprise may block fine-grained PAT creation
     echo "Warning: Fine-grained PAT creation blocked. Using gh auth token as VIBESTATS_TOKEN fallback."
     _gh auth token \
-      | _gh secret set VIBESTATS_TOKEN --repo "${USERNAME}/vibestats-data" \
+      | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data" \
       || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
     echo "VIBESTATS_TOKEN secret set via fallback."
   fi
 }
 
 # ---------------------------------------------------------------------------
-# Step 11: Store machine-side token in ~/.config/vibestats/config.toml (AC #4, NFR6)
-# Computes and exports MACHINE_ID for reuse by register_machine().
-# ---------------------------------------------------------------------------
-store_machine_token() {
-  echo "Storing machine token in ~/.config/vibestats/config.toml..."
-
-  # Compute deterministic machine ID (POSIX cksum — works on macOS and Linux)
-  HOSTNAME_LOWER=$(hostname | tr '[:upper:]' '[:lower:]' | sed 's/\..*$//' | sed 's/[^a-z0-9-]/-/g')
-  HASH=$(hostname | cksum | awk '{print $1}' | cut -c1-6)
-  MACHINE_ID="${HOSTNAME_LOWER}-${HASH}"
-  export MACHINE_ID
-
-  # Obtain machine-side token
-  LOCAL_TOKEN=$(_gh auth token) \
-    || { echo "Error: Failed to obtain machine token via 'gh auth token'. Ensure gh is authenticated." >&2; exit 1; }
-
-  # Detect USERNAME if not already exported
-  if [ -z "${USERNAME:-}" ]; then
-    USERNAME=$(_gh api /user --jq '.login')
-    export USERNAME
-  fi
-
-  # Create config directory and write config
-  mkdir -p "${HOME}/.config/vibestats"
-  cat > "${HOME}/.config/vibestats/config.toml" <<TOML
-oauth_token = "${LOCAL_TOKEN}"
-machine_id = "${MACHINE_ID}"
-vibestats_data_repo = "${USERNAME}/vibestats-data"
-TOML
-
-  # Immediately set secure permissions (NFR6)
-  chmod 600 "${HOME}/.config/vibestats/config.toml"
-
-  # Clear the token from memory
-  unset LOCAL_TOKEN
-
-  echo "Machine token stored at ~/.config/vibestats/config.toml"
-}
-
-# ---------------------------------------------------------------------------
-# Step 12: Register machine in vibestats-data/registry.json (AC #5, FR6)
-# Reuses MACHINE_ID exported by store_machine_token().
+# Step 11: Register this machine in registry.json via GitHub Contents API (AC #2)
+# Appends a new entry to the machines array; does NOT overwrite existing entries.
+# Writes config.toml with chmod 600 (NFR6).
+# Requires: GITHUB_USER exported by detect_install_mode (auto-detected if not set)
 # ---------------------------------------------------------------------------
 register_machine() {
+  # Detect GITHUB_USER if not already exported
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
+  fi
+
   echo "Registering machine in vibestats-data/registry.json..."
 
-  # Compute MACHINE_ID if not already set (e.g. when called directly in tests)
-  if [ -z "${MACHINE_ID:-}" ]; then
-    HOSTNAME_LOWER=$(hostname | tr '[:upper:]' '[:lower:]' | sed 's/\..*$//' | sed 's/[^a-z0-9-]/-/g')
-    HASH=$(hostname | cksum | awk '{print $1}' | cut -c1-6)
-    MACHINE_ID="${HOSTNAME_LOWER}-${HASH}"
-    export MACHINE_ID
+  # --- Generate machine_id ---
+  HOSTNAME_VAL="$(hostname)"
+  case "$(uname -s)" in
+    Darwin)
+      SUFFIX=$(system_profiler SPHardwareDataType 2>/dev/null \
+        | awk '/Hardware UUID/{print $3}' \
+        | tr -d '-' \
+        | cut -c1-6 \
+        | tr '[:upper:]' '[:lower:]')
+      # Fallback if system_profiler unavailable
+      if [ -z "$SUFFIX" ]; then
+        SUFFIX="$(date +%s | cut -c-6)"
+      fi
+      ;;
+    Linux)
+      SUFFIX=$(cut -c1-6 /etc/machine-id 2>/dev/null || uuidgen | tr -d '-' | cut -c1-6 | tr '[:upper:]' '[:lower:]')
+      ;;
+    *)
+      SUFFIX="$(date +%s | cut -c-6)"
+      ;;
+  esac
+  MACHINE_ID="${HOSTNAME_VAL}-${SUFFIX}"
+
+  # --- Fetch existing registry.json (handle 404 = first machine) ---
+  REGISTRY_RESPONSE=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" 2>/dev/null || echo "NOT_FOUND")
+  if [ "$REGISTRY_RESPONSE" = "NOT_FOUND" ]; then
+    CURRENT_JSON='{"machines": []}'
+    SHA=""
+  else
+    ENCODED=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" --jq .content)
+    case "$(uname -s)" in
+      Darwin) CURRENT_JSON=$(echo "$ENCODED" | base64 -D) ;;
+      Linux)  CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
+      *)      CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
+    esac
+    SHA=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" --jq .sha)
   fi
 
-  # Detect USERNAME if not already exported
-  if [ -z "${USERNAME:-}" ]; then
-    USERNAME=$(_gh api /user --jq '.login')
-    export USERNAME
+  # --- Build updated JSON (Python 3 stdlib only — no jq required) ---
+  TIMESTAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  NEW_JSON=$(python3 -c "
+import sys, json
+data = json.loads(sys.argv[1])
+data['machines'].append({
+  'machine_id': sys.argv[2],
+  'hostname': sys.argv[3],
+  'status': 'active',
+  'last_seen': sys.argv[4]
+})
+print(json.dumps(data, indent=2))
+" "$CURRENT_JSON" "$MACHINE_ID" "$HOSTNAME_VAL" "$TIMESTAMP")
+
+  # --- Base64-encode for Contents API PUT ---
+  case "$(uname -s)" in
+    Darwin) ENCODED_NEW=$(echo "$NEW_JSON" | base64) ;;
+    Linux)  ENCODED_NEW=$(echo "$NEW_JSON" | base64 -w 0) ;;
+    *)      ENCODED_NEW=$(echo "$NEW_JSON" | base64 -w 0) ;;
+  esac
+
+  # --- PUT updated registry.json ---
+  if [ -n "$SHA" ]; then
+    _gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" \
+      --method PUT \
+      --field "message=chore: register machine ${MACHINE_ID}" \
+      --field "content=${ENCODED_NEW}" \
+      --field "sha=${SHA}"
+  else
+    _gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" \
+      --method PUT \
+      --field "message=chore: register machine ${MACHINE_ID}" \
+      --field "content=${ENCODED_NEW}"
   fi
 
-  LAST_SEEN=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  HOSTNAME_VAL=$(hostname)
+  # --- Write config.toml with 600 permissions (NFR6) ---
+  CONFIG_DIR="${HOME}/.config/vibestats"
+  CONFIG_FILE="${CONFIG_DIR}/config.toml"
+  mkdir -p "$CONFIG_DIR"
+  OAUTH_TOKEN=$(_gh auth token)
+  cat > "$CONFIG_FILE" <<EOF
+oauth_token = "${OAUTH_TOKEN}"
+machine_id = "${MACHINE_ID}"
+vibestats_data_repo = "${GITHUB_USER}/vibestats-data"
+EOF
+  chmod 600 "$CONFIG_FILE"
 
-  # Build registry.json payload (Bash 3.2 safe — no jq required)
-  REGISTRY_JSON='{"machines":[{"machine_id":"'"${MACHINE_ID}"'","hostname":"'"${HOSTNAME_VAL}"'","status":"active","last_seen":"'"${LAST_SEEN}"'"}]}'
+  # Clear the token from memory
+  unset OAUTH_TOKEN
 
-  echo "Registry entry: ${REGISTRY_JSON}"
-
-  # Base64-encode with line-wrap removal (macOS base64 wraps at 76 chars)
-  CONTENT=$(printf '%s' "$REGISTRY_JSON" | base64 | tr -d '\n')
-
-  _gh api "repos/${USERNAME}/vibestats-data/contents/registry.json" \
-    --method PUT \
-    --field message="Register machine ${MACHINE_ID}" \
-    --field "content=${CONTENT}" \
-    || { echo "Error: Failed to register machine in registry.json." >&2; exit 1; }
-
-  echo "Machine registered: ${MACHINE_ID}"
+  echo "Machine registered: ${MACHINE_ID} (${HOSTNAME_VAL})"
 }
 
 # ---------------------------------------------------------------------------
 # First-install path: runs all first-install setup steps in sequence.
-# Called when detect_first_install() returns 0.
+# Called when INSTALL_MODE is "first-install".
 # ---------------------------------------------------------------------------
 first_install_path() {
   create_vibestats_data_repo
   write_aggregate_workflow
   setup_vibestats_token
-  store_machine_token
   register_machine
 }
 
@@ -398,13 +433,18 @@ main() {
   check_gh_auth
   download_and_install_binary
 
-  if detect_first_install; then
-    create_vibestats_data_repo
-    write_aggregate_workflow
-    setup_vibestats_token
-  fi
-  store_machine_token
-  register_machine
+  # Step 6: Detect install mode (first-install or multi-machine)
+  detect_install_mode
+
+  # Step 7: Branch based on install mode
+  case "$INSTALL_MODE" in
+    multi-machine)
+      register_machine
+      ;;
+    first-install)
+      first_install_path
+      ;;
+  esac
 
   echo "=== Installation complete! ==="
   echo "Run 'vibestats --help' to get started."

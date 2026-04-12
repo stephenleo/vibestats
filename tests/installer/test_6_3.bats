@@ -41,7 +41,6 @@ teardown() {
 #   - gh secret set VIBESTATS_TOKEN
 # ---------------------------------------------------------------------------
 @test "[P0] multi-machine path: vibestats-data exists → repo creation skipped, workflow write skipped, VIBESTATS_TOKEN not set" {
-  skip "RED: detect_install_mode() and register_machine() not yet implemented in install.sh"
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -119,7 +118,6 @@ STUB
 # machine_id, hostname, status=active, last_seen ISO 8601 UTC
 # ---------------------------------------------------------------------------
 @test "[P0] registry.json entry has all required fields: machine_id, hostname, status=active, last_seen ISO 8601 UTC" {
-  skip "RED: register_machine() not yet implemented in install.sh"
 
   # Capture the JSON that would be PUT to the Contents API
   REGISTRY_PUT_BODY="${BATS_TMPDIR}/registry_put_body.json"
@@ -210,7 +208,6 @@ print('All registry.json fields valid')
 # P1 — AC #1: vibestats-data detection uses correct repo name (user/vibestats-data)
 # ---------------------------------------------------------------------------
 @test "[P1] vibestats-data repo detection uses correct repo name (username/vibestats-data not hardcoded org)" {
-  skip "RED: detect_install_mode() not yet implemented in install.sh"
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -249,7 +246,6 @@ STUB
 # P1 — AC #1: detect_install_mode sets INSTALL_MODE=multi-machine when repo exists
 # ---------------------------------------------------------------------------
 @test "[P1] detect_install_mode sets INSTALL_MODE=multi-machine when vibestats-data repo exists" {
-  skip "RED: detect_install_mode() not yet implemented in install.sh"
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -283,7 +279,6 @@ STUB
 # P1 — AC #1: detect_install_mode sets INSTALL_MODE=first-install when repo does not exist
 # ---------------------------------------------------------------------------
 @test "[P1] detect_install_mode sets INSTALL_MODE=first-install when vibestats-data repo does not exist" {
-  skip "RED: detect_install_mode() not yet implemented in install.sh"
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -318,7 +313,6 @@ STUB
 # P1 — AC #2 (R-005): register_machine appends new entry without overwriting existing machines
 # ---------------------------------------------------------------------------
 @test "[P1] register_machine appends new entry without overwriting existing machines" {
-  skip "RED: register_machine() not yet implemented in install.sh"
 
   REGISTRY_PUT_BODY="${BATS_TMPDIR}/registry_put_body.json"
   export REGISTRY_PUT_BODY
@@ -413,7 +407,6 @@ print(f'OK: {len(machines)} machines found, old-machine preserved')
 # P1 — NFR6: config.toml written with 600 permissions
 # ---------------------------------------------------------------------------
 @test "[P1] register_machine writes config.toml with 600 permissions" {
-  skip "RED: register_machine() not yet implemented in install.sh"
 
   REGISTRY_PUT_BODY="${BATS_TMPDIR}/registry_put_body.json"
   export REGISTRY_PUT_BODY
