@@ -40,7 +40,7 @@ Claude Code sessions
       <strong>GitHub Actions aggregates daily</strong> — A scheduled cron workflow in <code>vibestats-data</code> runs <code>stephenleo/vibestats@v1</code> daily. It runs <code>aggregate.py</code> to combine data across machines, <code>generate_svg.py</code> to produce a heatmap SVG, and <code>update_readme.py</code> to embed the heatmap in your GitHub profile README.
     </li>
     <li>
-      <strong>Profile README is updated</strong> — The <code>update_readme.py</code> script patches the <code><!-- vibestats-start --></code> / <code><!-- vibestats-end --></code> section in your <code>username/username</code> profile README with the freshly generated <code>heatmap.svg</code>.
+      <strong>Profile README is updated</strong> — The <code>update_readme.py</code> script patches the <code>&lt;!-- vibestats-start --&gt;</code> / <code>&lt;!-- vibestats-end --&gt;</code> section in your <code>username/username</code> profile README with the freshly generated <code>heatmap.svg</code>.
     </li>
     <li>
       <strong>Dashboard served client-side</strong> — <code>vibestats.dev/[username]</code> fetches <code>data.json</code> from your <code>username/username/vibestats/</code> folder and renders an interactive cal-heatmap in the browser — no server required.
