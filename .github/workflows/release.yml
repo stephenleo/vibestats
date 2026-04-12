@@ -45,11 +45,21 @@ jobs:
           tar czf vibestats-${{ matrix.target }}.tar.gz \
             -C target/${{ matrix.target }}/release vibestats
 
+      - name: Generate checksum
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            shasum -a 256 vibestats-${{ matrix.target }}.tar.gz > vibestats-${{ matrix.target }}.tar.gz.sha256
+          else
+            sha256sum vibestats-${{ matrix.target }}.tar.gz > vibestats-${{ matrix.target }}.tar.gz.sha256
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: vibestats-${{ matrix.target }}
-          path: vibestats-${{ matrix.target }}.tar.gz
+          path: |
+            vibestats-${{ matrix.target }}.tar.gz
+            vibestats-${{ matrix.target }}.tar.gz.sha256
 
   release:
     name: Create GitHub Release
@@ -68,5 +78,8 @@ jobs:
           name: ${{ github.ref_name }}
           files: |
             vibestats-aarch64-apple-darwin/vibestats-aarch64-apple-darwin.tar.gz
+            vibestats-aarch64-apple-darwin/vibestats-aarch64-apple-darwin.tar.gz.sha256
             vibestats-x86_64-apple-darwin/vibestats-x86_64-apple-darwin.tar.gz
+            vibestats-x86_64-apple-darwin/vibestats-x86_64-apple-darwin.tar.gz.sha256
             vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz
+            vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz.sha256
