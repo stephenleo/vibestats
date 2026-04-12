@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (story 7.1 atdd-done)
+# last_updated: 2026-04-12 (story 7.2 review)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (story 7.1 atdd-done)
+last_updated: 2026-04-12 (story 7.2 review)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -124,10 +124,10 @@ development_status:
   # Depends on: Epic 1 | Parallel with: Epic 4
   # ──────────────────────────────────────────────────────────────
   epic-7: in-progress
-  7-1-build-base-layouts-and-shared-astro-components: atdd-done
-  7-2-build-per-user-dashboard-u-index-astro-cal-heatmap: backlog
-  7-3-build-documentation-pages: backlog
-  7-4-build-landing-page: backlog
+  7-1-build-base-layouts-and-shared-astro-components: done
+  7-2-build-per-user-dashboard-u-index-astro-cal-heatmap: review
+  7-3-build-documentation-pages: review
+  7-4-build-landing-page: review
   epic-7-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────
