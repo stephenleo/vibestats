@@ -5,6 +5,7 @@ lastSaved: '2026-04-12'
 epic6Completed: '2026-04-12'
 epic7Completed: '2026-04-12'
 epic8Completed: '2026-04-12'
+epic9Completed: '2026-04-12'
 ---
 
 # Test Design Progress — Epic 5: GitHub Actions Pipeline
@@ -227,3 +228,82 @@ Execution strategy: all P0–P2 shell unit tests run on every PR (<7 min using b
 - R-005 (DATA): registry.json schema — JSON field assertion + timestamp format validation mandatory
 
 **Gate threshold:** P0 100% pass rate, R-001 to R-005 mitigations complete before Epic 6 stories marked done.
+
+---
+
+# Test Design Progress — Epic 9: Post-Sprint Quality & Technical Debt
+
+## Step 1: Mode Detection
+
+**Mode selected:** Epic-Level (Phase 4)
+**Trigger:** `sprint-status.yaml` exists at `_bmad-output/implementation-artifacts/sprint-status.yaml`
+**Argument provided:** "Epic 9 Post-Sprint Quality & Technical Debt"
+**Completed:** 2026-04-12
+
+---
+
+## Step 2: Context Loaded
+
+**Stack detected:** backend (Cargo.toml present; no playwright.config or browser test files)
+**Config flags:**
+- `tea_use_playwright_utils: false` (no browser tests in this epic — shell/Rust/Python tests only)
+- `tea_use_pactjs_utils: false`
+- `tea_pact_mcp: none`
+- `tea_browser_automation: auto`
+- `test_artifacts: _bmad-output/test-artifacts`
+- `test_stack_type: auto` → resolved to `backend/multi` (Rust + Bash + Python)
+
+**Artifacts loaded:**
+- Epic 9 definition (`epic-9.md`) with 9 stories and priority classification
+- All 9 story files (9.1–9.9) with acceptance criteria and tasks
+- Sprint status (all Epic 1–8 done; Epic 9 backlog)
+- Existing test coverage: `tests/installer/test_6_1.bats` through `test_6_4.bats`; `action/tests/` (Python: aggregate, generate_svg, update_readme, action_yml, aggregate_yml, deploy_site_yml, release_yml, marketplace); `src/` (Rust modules with #![allow(dead_code)] still present in 6 files)
+- Architecture and deferred-work context
+
+**Key gaps confirmed:**
+- `test_6_2.bats` has pre-existing failures (pre-launch blocker, Story 9.3)
+- 6 Rust source files still have `#![allow(dead_code)]` suppressors (Story 9.5)
+- `install.sh` has inline `trap 'rm -rf "$TMPDIR_WORK"' EXIT` at line 137 (Story 9.4)
+- `aggregate.yml` has no `concurrency:` block (Story 9.7)
+- `update_readme.py` has no empty-string validation for `--username` (Story 9.9)
+- 10 story files show `Status: review` while sprint-status shows `done` (Story 9.1)
+
+**Knowledge fragments loaded:** risk-governance.md, probability-impact.md, test-levels-framework.md, test-priorities-matrix.md
+
+---
+
+## Step 3: Risk Assessment
+
+10 risks identified across OPS, TECH, SEC, BUS, DATA categories.
+4 high-priority risks (score ≥6): R-001 through R-004.
+All high-priority risks have mitigation plans, owners, and timelines assigned.
+
+See `test-design-epic-9.md` for full risk matrix.
+
+---
+
+## Step 4: Coverage Plan
+
+30 test scenarios across P0–P3:
+- P0: 8 tests (bats regression, clippy clean, suppressor removal, code review completeness, release binary verification)
+- P1: 12 tests (artifact hygiene checks, EXIT trap pattern, v1 tag verification, concurrency schema test, Python validation tests)
+- P2: 7 tests (dependency-graph check, hooks module, architecture doc review, Cloudflare Pages, Bash 3.2 compatibility)
+- P3: 3 tests (binary smoke, deferred-work entry, combined Python regression)
+
+Execution strategy: per-story verification tests run immediately after each story completes; full regression suites (bats, cargo test, pytest) run before release tag push.
+
+---
+
+## Step 5: Output Generated
+
+**Output file:** `_bmad-output/test-artifacts/test-design-epic-9.md`
+**Mode used:** sequential (epic-level, single document)
+**Checklist validated:** all epic-level checklist items satisfied
+
+**Key risks requiring pre-merge action:**
+- R-001 (OPS): release.yml never run in production — pre-release checklist + rustls fallback ready
+- R-002 (TECH): dead_code suppressor removal may expose unused symbols in hooks/sync
+- R-003 (SEC): code reviews may surface P0/P1 auth/uninstall security issues
+- R-004 (BUS): test_6_2.bats root cause may be production regression in install.sh
+
+**Gate threshold:** P0 100% pass rate, R-001 to R-004 mitigations complete before Epic 9 stories marked done; bats suite 0 failures + cargo clippy 0 warnings + v0.1.0 release with 3 binary assets required for epic close.

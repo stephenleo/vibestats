@@ -6,42 +6,24 @@ interface Props {
 const { title } = Astro.props;
 ---
 <Base title={title}>
-  <div class="docs-layout">
-    <nav class="sidebar" aria-label="Docs navigation">
-      <ul>
-        <li><a href="/docs/quickstart">Quickstart</a></li>
-        <li><a href="/docs/how-it-works">How it works</a></li>
-        <li><a href="/docs/cli-reference">CLI reference</a></li>
-        <li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+  <div class="max-w-4xl mx-auto px-4 py-12 flex gap-10 items-start">
+
+    <!-- Sidebar -->
+    <nav aria-label="Docs navigation" class="hidden sm:block w-44 shrink-0 sticky top-20">
+      <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Documentation</p>
+      <ul class="space-y-1">
+        <li><a href="/docs/quickstart"      class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Quickstart</a></li>
+        <li><a href="/docs/how-it-works"    class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">How it works</a></li>
+        <li><a href="/docs/cli-reference"   class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">CLI reference</a></li>
+        <li><a href="/docs/troubleshooting" class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Troubleshooting</a></li>
       </ul>
     </nav>
-    <main>
+
+    <!-- Content -->
+    <main class="min-w-0 flex-1 docs-content max-w-none">
       <slot />
     </main>
+
   </div>
 </Base>
 
-<style>
-  .docs-layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 2rem;
-    align-items: start;
-  }
-
-  .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .sidebar li {
-    margin: 0.25rem 0;
-  }
-
-  @media (max-width: 640px) {
-    .docs-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
