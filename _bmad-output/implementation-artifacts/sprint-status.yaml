@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (story 6.4 code review complete, marked done)
+# last_updated: 2026-04-12 (story 6.4 merged via PR #79; epic-6 complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (story 6.4 code review complete, marked done)
+last_updated: 2026-04-12 (story 6.4 merged via PR #79; epic-6 complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -111,7 +111,7 @@ development_status:
   # GitHub Issue: #6
   # Depends on: Epic 8 (binary release available) — runs LAST
   # ──────────────────────────────────────────────────────────────
-  epic-6: in-progress
+  epic-6: done
   6-1-implement-dependency-detection-and-gh-authentication: done
   6-2-implement-first-install-path: done
   6-3-implement-multi-machine-install-path: done
