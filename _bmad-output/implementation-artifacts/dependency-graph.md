@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-12T00:37:53Z_
+_Last updated: 2026-04-12T07:30:00Z_
 
 ## Stories
 
@@ -27,17 +27,17 @@ _Last updated: 2026-04-12T00:37:53Z_
 | 5.3 | 5 | Implement update_readme.py | done | #28 | #66 | merged | epic 1 complete | ✅ Yes (done) |
 | 5.4 | 5 | Implement action.yml (composite community GitHub Action) | done | #29 | #68 | merged | epic 1 complete | ✅ Yes (done) |
 | 5.5 | 5 | Implement aggregate.yml (user vibestats-data workflow template) | done | #30 | #67 | merged | epic 1 complete | ✅ Yes (done) |
-| 6.1 | 6 | Implement dependency detection and gh authentication | backlog | #31 | — | — | epic 8 complete | ❌ No (epic 8 not complete) |
-| 6.2 | 6 | Implement first-install path | backlog | #32 | — | — | 6.1 | ❌ No (epic 8 not complete, 6.1 not merged) |
-| 6.3 | 6 | Implement multi-machine install path | backlog | #33 | — | — | 6.1 | ❌ No (epic 8 not complete, 6.1 not merged) |
-| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | backlog | #34 | — | — | 6.1, 6.2, 6.3 | ❌ No (epic 8 not complete, 6.1/6.2/6.3 not merged) |
+| 6.1 | 6 | Implement dependency detection and gh authentication | backlog | #31 | — | — | epic 8 complete | ✅ Yes |
+| 6.2 | 6 | Implement first-install path | backlog | #32 | — | — | 6.1 | ❌ No (6.1 not merged) |
+| 6.3 | 6 | Implement multi-machine install path | backlog | #33 | — | — | 6.1 | ❌ No (6.1 not merged) |
+| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | backlog | #34 | — | — | 6.1, 6.2, 6.3 | ❌ No (6.1/6.2/6.3 not merged) |
 | 7.1 | 7 | Build base layouts and shared Astro components | done | #35 | #69 | merged | epic 1 complete | ✅ Yes (done) |
-| 7.2 | 7 | Build per-user dashboard (u/index.astro + cal-heatmap) | backlog | #36 | — | — | 7.1 | ✅ Yes |
-| 7.3 | 7 | Build documentation pages | backlog | #37 | — | — | 7.1 | ✅ Yes |
-| 7.4 | 7 | Build landing page | backlog | #38 | — | — | 7.1 | ✅ Yes |
-| 8.1 | 8 | Implement Rust binary release CI | backlog | #39 | — | — | epics 1–7 complete | ❌ No (epics 1–7 not complete) |
-| 8.2 | 8 | Implement Cloudflare Pages deploy workflow | backlog | #40 | — | — | epics 1–7 complete | ❌ No (epics 1–7 not complete) |
-| 8.3 | 8 | Configure GitHub Actions Marketplace publication | backlog | #41 | — | — | epics 1–7 complete | ❌ No (epics 1–7 not complete) |
+| 7.2 | 7 | Build per-user dashboard (u/index.astro + cal-heatmap) | done | #36 | #71 | merged | 7.1 | ✅ Yes (done) |
+| 7.3 | 7 | Build documentation pages | done | #37 | #72 | merged | 7.1 | ✅ Yes (done) |
+| 7.4 | 7 | Build landing page | done | #38 | #70 | merged | 7.1 | ✅ Yes (done) |
+| 8.1 | 8 | Implement Rust binary release CI | done | #39 | #73 | merged | epics 1–7 complete | ✅ Yes (done) |
+| 8.2 | 8 | Implement Cloudflare Pages deploy workflow | done | #40 | #74 | merged | epics 1–7 complete | ✅ Yes (done) |
+| 8.3 | 8 | Configure GitHub Actions Marketplace publication | done | #41 | #75 | merged | epics 1–7 complete | ✅ Yes (done) |
 
 ## Dependency Chains
 
@@ -102,7 +102,15 @@ _Last updated: 2026-04-12T00:37:53Z_
 - **Story 5.5 done** — PR #67 merged 2026-04-11T23:56:08Z. Worktree cleaned up; remote branch auto-deleted by GitHub on merge.
 - **Epic 5 complete** — All stories (5.1–5.5) done.
 - **Story 7.1 done** — PR #69 merged 2026-04-12T00:37:53Z. Worktree and remote branch cleaned up.
-- **Stories 7.2, 7.3, 7.4 now unblocked** — All three are Ready to Work since 7.1 is merged; they can run in parallel.
-- **Current bottleneck:** Epic 7 stories 7.2–7.4 are all unblocked and ready. Epic 8 blocked until all prior epics complete (epic 7 still in-progress). Epic 6 blocked until Epic 8 complete.
+- **Story 7.2 done** — PR #71 merged 2026-04-12T01:13:29Z.
+- **Story 7.3 done** — PR #72 merged 2026-04-12T01:14:22Z.
+- **Story 7.4 done** — PR #70 merged 2026-04-12T01:15:26Z.
+- **Epic 7 complete** — All stories (7.1–7.4) done.
+- **Story 8.1 done** — PR #73 merged 2026-04-12T07:15:17Z.
+- **Story 8.2 done** — PR #74 merged 2026-04-12T07:16:27Z.
+- **Story 8.3 done** — PR #75 merged 2026-04-12T07:17:43Z.
+- **Epic 8 complete** — All stories (8.1–8.3) done.
+- **Story 6.1 now unblocked** — Epic 8 is complete; 6.1 is Ready to Work. Stories 6.2, 6.3, 6.4 still blocked on 6.1.
+- **Current bottleneck:** Only Epic 6 (Bash Installer) remains. Story 6.1 is Ready to Work; 6.2, 6.3, 6.4 blocked until 6.1 merges. All other epics complete.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
