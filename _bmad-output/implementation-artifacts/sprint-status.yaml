@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (post-merge cleanup 7.2 7.3 7.4 epic-7; epic-6 now unblocked)
+# last_updated: 2026-04-12 (story 6.1 done; code review passed, all patches applied)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (post-merge cleanup 7.2 7.3 7.4 epic-7; epic-6 now unblocked)
+last_updated: 2026-04-12 (story 6.1 review; install.sh implemented, all 10 bats tests pass)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -111,8 +111,8 @@ development_status:
   # GitHub Issue: #6
   # Depends on: Epic 8 (binary release available) — runs LAST
   # ──────────────────────────────────────────────────────────────
-  epic-6: backlog
-  6-1-implement-dependency-detection-and-gh-authentication: backlog
+  epic-6: in-progress
+  6-1-implement-dependency-detection-and-gh-authentication: done
   6-2-implement-first-install-path: backlog
   6-3-implement-multi-machine-install-path: backlog
   6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: backlog

@@ -138,6 +138,10 @@ download_and_install_binary() {
     case "$(uname -s)" in
       Darwin) shasum -a 256 -c "${CHECKSUM}" ;;
       Linux)  sha256sum -c "${CHECKSUM}" ;;
+      *)
+        echo "Error: Cannot verify checksum — unsupported OS for checksum tool." >&2
+        exit 1
+        ;;
     esac
   )
 
