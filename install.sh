@@ -442,6 +442,9 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     settings = {}
 
+if not isinstance(settings, dict):
+    settings = {}
+
 if 'hooks' not in settings:
     settings['hooks'] = {}
 
@@ -467,6 +470,7 @@ settings['hooks']['SessionStart'] = session_hooks
 
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
+    f.write('\n')
 PYEOF
   echo "Claude Code hooks configured in ~/.claude/settings.json"
 }

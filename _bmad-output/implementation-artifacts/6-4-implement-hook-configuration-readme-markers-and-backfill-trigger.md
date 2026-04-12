@@ -1,6 +1,6 @@
 # Story 6.4: Implement hook configuration, README markers, and backfill trigger
 
-Status: review
+Status: done
 
 <!-- GH Issue: #34 | Epic: #6 | PR must include: Closes #34 -->
 

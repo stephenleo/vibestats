@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (stories 6.2 and 6.3 merged via PRs #77 and #78; both marked done; story 6.4 now unblocked)
+# last_updated: 2026-04-12 (story 6.4 code review complete, marked done)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (stories 6.2 and 6.3 merged via PRs #77 and #78; both marked done)
+last_updated: 2026-04-12 (story 6.4 code review complete, marked done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -115,7 +115,7 @@ development_status:
   6-1-implement-dependency-detection-and-gh-authentication: done
   6-2-implement-first-install-path: done
   6-3-implement-multi-machine-install-path: done
-  6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: review
+  6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: done
   epic-6-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────
