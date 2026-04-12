@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (epic-1 retrospective complete)
+# last_updated: 2026-04-12 (epic-2 retrospective complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (epic-1 retrospective complete)
+last_updated: 2026-04-12 (epic-2 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
   2-3-implement-checkpoint-module: done
   2-4-implement-jsonl-parser: done
   2-5-implement-github-api-module: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   # ──────────────────────────────────────────────────────────────
   # EPIC 3: Rust Binary — Sync Engine
