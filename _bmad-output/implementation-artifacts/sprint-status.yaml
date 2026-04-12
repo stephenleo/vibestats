@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (epic-7 retrospective complete)
+# last_updated: 2026-04-12 (epic-8 retrospective complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (epic-7 retrospective complete)
+last_updated: 2026-04-12 (epic-8 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -139,4 +139,4 @@ development_status:
   8-1-implement-rust-binary-release-ci: done
   8-2-implement-cloudflare-pages-deploy-workflow: done
   8-3-configure-github-actions-marketplace-publication: done
-  epic-8-retrospective: optional
+  epic-8-retrospective: done
