@@ -17,6 +17,10 @@
 
 INSTALL_SH="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/install.sh"
 
+# ---------------------------------------------------------------------------
+# Fixture helpers
+# ---------------------------------------------------------------------------
+
 setup() {
   # Isolate from real $HOME — required for every test
   export HOME
@@ -29,34 +33,52 @@ teardown() {
   rm -rf "$HOME"
 }
 
-# ---------------------------------------------------------------------------
-# AC #1 — vibestats-data does not exist → gh repo create --private called
-# P1 — Story 6.2, FR4
-# ---------------------------------------------------------------------------
-@test "[P1] vibestats-data does not exist → gh repo create --private called" {
-  # _gh repo view returns non-zero (repo not found), then _gh repo create should be called
-  cat > "${HOME}/stub_env.sh" <<STUB
+# Write the default _gh() stub to ${HOME}/stub_env.sh.
+# Default behaviour:
+#   auth token              → echo "ghp_FAKE_MACHINE_TOKEN"
+#   api /user               → echo "testuser"   (matches --jq '.login' usage)
+#   repo view               → return 1          (repo does NOT exist — first-install)
+#   repo create             → log + return 0
+#   api repos/*             → log + return 0    (Contents API PUT)
+#   api /user/personal_*   → echo token JSON
+#   secret set              → log + return 0
+#   *                       → log + return 0
+#
+# Callers can add test-specific overrides AFTER sourcing the stub file, or pass
+# an optional extra_cases string that is injected before the catch-all case.
+# $1 (optional): path to write stub (default: ${HOME}/stub_env.sh)
+# $2 (optional): additional case blocks to inject before the catch-all
+make_gh_stub() {
+  local stub_file="${1:-${HOME}/stub_env.sh}"
+  local extra_cases="${2:-}"
+
+  cat > "$stub_file" <<STUB
 _gh() {
   case "\$1 \$2" in
     "auth token")
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      # Return only the login field to match --jq '.login' usage in install.sh
+      echo "testuser"
       ;;
     "repo view")
-      # vibestats-data does not exist
       return 1
       ;;
     "repo create")
-      echo "repo create called: \$*" >> "${HOME}/gh_calls.log"
+      echo "gh repo create: \$*" >> "${HOME}/gh_calls.log"
+      return 0
+      ;;
+    "api repos"*)
+      echo "gh api repos: \$*" >> "${HOME}/gh_calls.log"
+      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
       return 0
       ;;
     "api /user/personal_access_tokens"*)
       echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
       ;;
     "secret set")
-      echo "secret set called: \$*" >> "${HOME}/gh_calls.log"
+      echo "gh secret set: \$*" >> "${HOME}/gh_calls.log"
       return 0
       ;;
     *)
@@ -66,7 +88,16 @@ _gh() {
   esac
 }
 export -f _gh
+${extra_cases}
 STUB
+}
+
+# ---------------------------------------------------------------------------
+# AC #1 — vibestats-data does not exist → gh repo create --private called
+# P1 — Story 6.2, FR4
+# ---------------------------------------------------------------------------
+@test "[P1] vibestats-data does not exist → gh repo create --private called" {
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -84,29 +115,7 @@ STUB
 # P1 — Story 6.2, FR4
 # ---------------------------------------------------------------------------
 @test "[P1] gh repo create called with --private flag" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "repo view")
-      return 1
-      ;;
-    "repo create")
-      echo "gh repo create args: \$*" >> "${HOME}/gh_calls.log"
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -124,44 +133,7 @@ STUB
 # P1 — Story 6.2, FR7
 # ---------------------------------------------------------------------------
 @test "[P1] aggregate.yml written calling stephenleo/vibestats@v1" {
-  # Stub _gh api to accept Content PUT calls for the workflow file.
-  # The function should produce a workflow YAML referencing stephenleo/vibestats@v1.
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "repo view")
-      return 1
-      ;;
-    "repo create")
-      return 0
-      ;;
-    "api repos"*)
-      # Capture the JSON body written via --input - (stdin) for workflow file creation
-      echo "gh api repos called with: \$*" >> "${HOME}/gh_calls.log"
-      # Read stdin if piped
-      cat >> "${HOME}/gh_workflow_stdin.log" 2>/dev/null || true
-      return 0
-      ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
-      ;;
-    "secret set")
-      return 0
-      ;;
-    *)
-      echo "gh \$* called" >> "${HOME}/gh_calls.log"
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -170,7 +142,7 @@ STUB
   " 2>&1
 
   [ "$status" -eq 0 ]
-  # The workflow content passed to gh api must reference stephenleo/vibestats@v1
+  # The workflow content echoed during write_aggregate_workflow must reference stephenleo/vibestats@v1
   [[ "$output" == *"stephenleo/vibestats@v1"* ]] || grep -rq "stephenleo/vibestats@v1" "${HOME}/" 2>/dev/null
 }
 
@@ -179,42 +151,11 @@ STUB
 # P1 — Story 6.2, FR7, FR25, FR26
 # ---------------------------------------------------------------------------
 @test "[P1] aggregate.yml workflow content includes cron and workflow_dispatch triggers" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "repo view")
-      return 1
-      ;;
-    "repo create")
-      return 0
-      ;;
-    "api repos"*)
-      return 0
-      ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
-      ;;
-    "secret set")
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
     source '${INSTALL_SH}'
-    # Export the workflow content so we can inspect it
     generate_aggregate_workflow_content
   " 2>&1
 
@@ -231,6 +172,9 @@ STUB
   # Use a sentinel token value to detect if it is written anywhere
   SENTINEL_TOKEN="ghp_SENTINEL_VIBESTATS_TOKEN_DETECT_ME"
 
+  # Inject a custom PAT case returning the sentinel; use a single-quoted heredoc
+  # marker so the outer shell does NOT expand $SENTINEL_TOKEN inside the function body.
+  # We expand it only in the echo line we want to return from the stub.
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
   case "\$1 \$2" in
@@ -238,7 +182,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     "repo view")
       return 1
@@ -250,11 +194,10 @@ _gh() {
       return 0
       ;;
     "api /user/personal_access_tokens"*)
-      # Return a sentinel PAT that we will scan for in files afterward
+      # Return the sentinel PAT so we can scan for it in files afterward
       echo '{"token":"${SENTINEL_TOKEN}"}'
       ;;
     "secret set")
-      # Record that secret set was called but do NOT write the token value to a file
       echo "gh secret set called" >> "${HOME}/gh_calls.log"
       return 0
       ;;
@@ -272,11 +215,10 @@ STUB
     setup_vibestats_token
   " 2>&1
 
-  # The sentinel must NOT appear in any file in $HOME (other than our own stub)
-  # Remove the stub first to avoid false positives
+  # Remove the stub to avoid false positives before scanning
   rm -f "${HOME}/stub_env.sh"
 
-  # Scan all files under $HOME for the sentinel token value
+  # Scan all remaining files under $HOME for the sentinel token value
   found=$(grep -rl "${SENTINEL_TOKEN}" "${HOME}/" 2>/dev/null || true)
   [ -z "$found" ]
 
@@ -289,38 +231,7 @@ STUB
 # P1 — Story 6.2, FR10
 # ---------------------------------------------------------------------------
 @test "[P1] gh secret set called with VIBESTATS_TOKEN for vibestats-data repo" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "repo view")
-      return 1
-      ;;
-    "repo create")
-      return 0
-      ;;
-    "api repos"*)
-      return 0
-      ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
-      ;;
-    "secret set")
-      echo "gh secret set: \$*" >> "${HOME}/gh_calls.log"
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -338,14 +249,17 @@ STUB
 # P1 — Story 6.2, R-002, NFR6, FR39
 # ---------------------------------------------------------------------------
 @test "[P1] gh auth token result stored in ~/.config/vibestats/config.toml" {
-  cat > "${HOME}/stub_env.sh" <<STUB
+  # Override auth token to return a recognisable value
+  make_gh_stub "${HOME}/stub_env.sh" 'AUTH_TOKEN_OVERRIDE="ghp_FAKE_MACHINE_TOKEN_12345"'
+  # Patch the stub to return our specific token value
+  cat > "${HOME}/stub_env.sh" <<'STUB'
 _gh() {
-  case "\$1 \$2" in
+  case "$1 $2" in
     "auth token")
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     *)
       return 0
@@ -371,14 +285,14 @@ STUB
 # P0 — Story 6.2, R-002, NFR6
 # ---------------------------------------------------------------------------
 @test "[P0] ~/.config/vibestats/config.toml created with permissions 600" {
-  cat > "${HOME}/stub_env.sh" <<STUB
+  cat > "${HOME}/stub_env.sh" <<'STUB'
 _gh() {
-  case "\$1 \$2" in
+  case "$1 $2" in
     "auth token")
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     *)
       return 0
@@ -444,33 +358,9 @@ STUB
 # P0 — Story 6.2, R-005, FR6
 # ---------------------------------------------------------------------------
 @test "[P0] registry.json entry contains machine_id field" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos/testuser/vibestats-data/contents/registry.json"*)
-      # Simulate empty registry (first install — file does not exist yet)
-      return 1
-      ;;
-    "api repos"*)
-      # Capture PUT body to a log file for inspection
-      echo "gh api put called: \$*" >> "${HOME}/gh_calls.log"
-      # Read and save the JSON body passed via stdin (--input -)
-      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  # register_machine performs a direct PUT — no prior GET. Use the default stub
+  # so all api repos/* calls succeed and the PUT body is captured for inspection.
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -479,7 +369,6 @@ STUB
   " 2>&1
 
   [ "$status" -eq 0 ]
-  # registry.json content must include machine_id
   [[ "$output" == *"machine_id"* ]] || grep -q "machine_id" "${HOME}/gh_api_body.log" 2>/dev/null
 }
 
@@ -488,30 +377,7 @@ STUB
 # P0 — Story 6.2, R-005, FR6
 # ---------------------------------------------------------------------------
 @test "[P0] registry.json entry contains hostname field" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos/testuser/vibestats-data/contents/registry.json"*)
-      return 1
-      ;;
-    "api repos"*)
-      echo "gh api put called: \$*" >> "${HOME}/gh_calls.log"
-      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -528,30 +394,7 @@ STUB
 # P0 — Story 6.2, R-005, FR6
 # ---------------------------------------------------------------------------
 @test "[P0] registry.json entry has status field set to active" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos/testuser/vibestats-data/contents/registry.json"*)
-      return 1
-      ;;
-    "api repos"*)
-      echo "gh api put called: \$*" >> "${HOME}/gh_calls.log"
-      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -568,30 +411,7 @@ STUB
 # P0 — Story 6.2, R-005, FR6
 # ---------------------------------------------------------------------------
 @test "[P0] registry.json entry has last_seen ISO 8601 UTC timestamp" {
-  cat > "${HOME}/stub_env.sh" <<STUB
-_gh() {
-  case "\$1 \$2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos/testuser/vibestats-data/contents/registry.json"*)
-      return 1
-      ;;
-    "api repos"*)
-      echo "gh api put called: \$*" >> "${HOME}/gh_calls.log"
-      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
-      return 0
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_gh_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -617,7 +437,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     "repo view")
       return 1
@@ -655,7 +475,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     "api /user/personal_access_tokens"*)
       echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
@@ -693,10 +513,9 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo '{"login":"testuser"}'
+      echo "testuser"
       ;;
     "repo view")
-      # vibestats-data does not exist → first-install path
       return 1
       ;;
     "repo create")
@@ -730,10 +549,8 @@ STUB
   " 2>&1
 
   [ "$status" -eq 0 ]
-  # All major steps must have been called
   [ -f "${HOME}/gh_calls.log" ]
   grep -q "repo create" "${HOME}/gh_calls.log"
   grep -q "secret set" "${HOME}/gh_calls.log"
-  # config.toml must be created
   [ -f "${HOME}/.config/vibestats/config.toml" ]
 }
