@@ -2,5 +2,286 @@
 import Base from '../../layouts/Base.astro';
 ---
 <Base title="vibestats dashboard">
-  <!-- Per-user dashboard: implementation in Epic 7 -->
+  <main class="dashboard">
+    <header class="dash-header">
+      <h1 id="dash-title">vibestats dashboard</h1>
+      <p id="dash-subtitle" class="subtitle"></p>
+    </header>
+
+    <div id="loading-state" class="state-msg">Loading...</div>
+    <div id="error-state" class="state-msg error" hidden></div>
+
+    <section id="dashboard-content" hidden>
+      <div id="year-toggle" class="year-toggle" aria-label="Select year"></div>
+      <div id="cal-heatmap"></div>
+    </section>
+  </main>
 </Base>
+
+<script>
+  import CalHeatmap from 'cal-heatmap';
+  import Tooltip from 'cal-heatmap/plugins/Tooltip';
+  import 'cal-heatmap/cal-heatmap.css';
+
+  // ── Types ──────────────────────────────────────────────────────────────────
+  interface DayEntry {
+    sessions: number;
+    active_minutes: number;
+  }
+
+  interface VibestatsData {
+    generated_at: string;
+    username: string;
+    days: Record<string, DayEntry>;
+  }
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const loadingEl = document.getElementById('loading-state') as HTMLElement;
+  const errorEl = document.getElementById('error-state') as HTMLElement;
+  const contentEl = document.getElementById('dashboard-content') as HTMLElement;
+  const titleEl = document.getElementById('dash-title') as HTMLElement;
+  const subtitleEl = document.getElementById('dash-subtitle') as HTMLElement;
+  const yearToggleEl = document.getElementById('year-toggle') as HTMLElement;
+
+  // ── Username discovery ─────────────────────────────────────────────────────
+  // GitHub usernames: 1–39 chars, alphanumerics or hyphens, may not start with
+  // a hyphen.  Validating client-side prevents path-traversal-style segments
+  // (e.g. `foo%2F..%2Fevil`) from reaching the fetch URL.
+  const GH_USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
+  const rawSegment = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
+  const username = GH_USERNAME_RE.test(rawSegment) ? rawSegment : '';
+
+  if (username) {
+    document.title = `vibestats — @${username} dashboard`;
+    titleEl.textContent = `@${username}`;
+    subtitleEl.textContent = 'Claude Code activity heatmap';
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let calInstance: CalHeatmap | null = null;
+  let vibestatsData: VibestatsData | null = null;
+
+  // ── Error helper ───────────────────────────────────────────────────────────
+  function showError(msg: string): void {
+    loadingEl.hidden = true;
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+  }
+
+  // ── Render heatmap for a given year ───────────────────────────────────────
+  function renderHeatmap(selectedYear: string): void {
+    if (!vibestatsData) return;
+
+    // Destroy previous instance
+    if (calInstance) {
+      calInstance.destroy();
+      calInstance = null;
+    }
+
+    // Filter days to selected year and convert to cal-heatmap data array
+    const calData = Object.entries(vibestatsData.days)
+      .filter(([date]) => date.startsWith(selectedYear))
+      .map(([date, v]) => ({ date, value: v.sessions }));
+
+    // Compute max sessions for this year to set the quantize scale domain
+    const maxSessions = calData.reduce((m, d) => Math.max(m, d.value), 1);
+
+    const cal = new CalHeatmap();
+    cal.paint(
+      {
+        itemSelector: '#cal-heatmap',
+        data: {
+          source: calData,
+          x: (datum) => +new Date(datum['date'] as string),
+          y: 'value',
+          defaultValue: 0,
+        },
+        date: { start: new Date(`${selectedYear}-01-01`) },
+        range: 12,
+        domain: {
+          type: 'month',
+          label: { text: 'MMM' },
+          gutter: 4,
+        },
+        subDomain: {
+          type: 'day',
+          radius: 2,
+          width: 12,
+          height: 12,
+          gutter: 2,
+        },
+        scale: {
+          color: {
+            type: 'quantize',
+            range: ['#ebedf0', '#fef3e8', '#fed7aa', '#fb923c', '#f97316'],
+            domain: [0, maxSessions],
+          },
+        },
+      },
+      [
+        [
+          Tooltip,
+          {
+            text: (_timestamp: number, value: number | null, dayjsDate: { format: (fmt: string) => string }) => {
+              const dateKey = dayjsDate.format('YYYY-MM-DD');
+              const dayData = vibestatsData?.days[dateKey];
+              if (!dayData || value === null || value === 0) {
+                return `No activity on ${dayjsDate.format('MMM D, YYYY')}`;
+              }
+              return `${dayjsDate.format('MMM D, YYYY')}: ${dayData.sessions} session${dayData.sessions === 1 ? '' : 's'}, ~${dayData.active_minutes} min`;
+            },
+          },
+        ],
+      ]
+    );
+
+    calInstance = cal;
+  }
+
+  // ── Year toggle ────────────────────────────────────────────────────────────
+  function renderYearToggle(years: string[], selectedYear: string): void {
+    // Clear existing buttons using safe DOM removal
+    while (yearToggleEl.firstChild) {
+      yearToggleEl.removeChild(yearToggleEl.firstChild);
+    }
+
+    for (const year of years) {
+      const btn = document.createElement('button');
+      btn.textContent = year;
+      btn.className = 'year-btn' + (year === selectedYear ? ' active' : '');
+      btn.setAttribute('aria-pressed', String(year === selectedYear));
+      btn.addEventListener('click', () => {
+        // Update active state without re-fetching
+        for (const b of yearToggleEl.querySelectorAll('.year-btn')) {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        }
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        renderHeatmap(year);
+      });
+      yearToggleEl.appendChild(btn);
+    }
+  }
+
+  // ── Main: fetch data.json and boot dashboard ───────────────────────────────
+  async function init(): Promise<void> {
+    if (!username) {
+      // Either no segment in URL or it failed the GitHub-username regex check.
+      // Show the standard error so the message stays consistent.
+      const display = rawSegment || 'unknown';
+      showError(`No vibestats data found for @${display}`);
+      return;
+    }
+
+    const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json`;
+
+    let data: VibestatsData;
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        showError(`No vibestats data found for @${username}`);
+        return;
+      }
+      data = (await resp.json()) as VibestatsData;
+    } catch {
+      showError(`No vibestats data found for @${username}`);
+      return;
+    }
+
+    // Schema sanity check — guards against malformed JSON or schema drift.
+    if (!data || typeof data.days !== 'object' || data.days === null) {
+      showError(`No vibestats data found for @${username}`);
+      return;
+    }
+
+    vibestatsData = data;
+
+    // Extract unique years descending
+    const years = [
+      ...new Set(Object.keys(data.days).map(d => d.slice(0, 4))),
+    ].sort((a, b) => b.localeCompare(a));
+
+    if (years.length === 0) {
+      showError(`No vibestats data found for @${username}`);
+      return;
+    }
+
+    const currentYear = String(new Date().getFullYear());
+    const defaultYear = years.includes(currentYear) ? currentYear : years[0];
+
+    // Show content section
+    loadingEl.hidden = true;
+    contentEl.hidden = false;
+
+    renderYearToggle(years, defaultYear);
+    renderHeatmap(defaultYear);
+  }
+
+  init();
+</script>
+
+<style>
+  .dashboard {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .dash-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .dash-header h1 {
+    font-size: 1.75rem;
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .state-msg {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+  }
+
+  .state-msg.error {
+    color: #dc2626;
+  }
+
+  .year-toggle {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .year-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+  }
+
+  .year-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  .year-btn.active {
+    background: #f97316;
+    border-color: #f97316;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  #cal-heatmap {
+    overflow-x: auto;
+  }
+</style>

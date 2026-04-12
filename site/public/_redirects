@@ -7,7 +7,10 @@
 /install.sh   /install.sh   200
 /_astro/*     /_astro/:splat  200
 /u            /u/index.html  200
+/u/           /u/index.html  200
 /u/*          /u/:splat      200
 
-# Catch-all: map vibestats.app/<username> to the per-user dashboard shell.
-/:username    /u/index.html  200
+# Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
+# Using /u/ (not /u/index.html) avoids Cloudflare's trailing-slash canonical
+# redirect, which would otherwise change the browser URL from /<username> to /u/.
+/:username    /u/  200

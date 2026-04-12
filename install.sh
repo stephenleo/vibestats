@@ -543,6 +543,39 @@ run_backfill() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 15: Trigger initial aggregate workflow run (AC #4)
+# Dispatches aggregate.yml in vibestats-data so the SVG heatmap and data.json
+# are generated immediately rather than waiting for the 02:00 UTC daily cron.
+# GitHub takes a few seconds to index a newly-committed workflow file, so we
+# retry up to 5 times with increasing delays before giving up.
+# Non-fatal: warns with a manual fallback URL if all retries fail.
+# ---------------------------------------------------------------------------
+trigger_initial_aggregate() {
+  echo "Triggering initial aggregate workflow run..."
+
+  # Detect GITHUB_USER if not already exported
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
+  fi
+
+  for i in 1 2 3 4 5; do
+    if _gh api "repos/${GITHUB_USER}/vibestats-data/actions/workflows/aggregate.yml/dispatches" \
+        --method POST \
+        --field ref=main 2>/dev/null; then
+      echo "Aggregate workflow triggered — your heatmap will be ready in a few minutes."
+      return 0
+    fi
+    echo "Workflow not ready yet, retrying in ${i}s..."
+    sleep "$i"
+  done
+
+  echo "Warning: Could not trigger aggregate workflow automatically."
+  echo "  Run it manually at: https://github.com/${GITHUB_USER}/vibestats-data/actions/workflows/aggregate.yml"
+}
+
+# ---------------------------------------------------------------------------
 # Main entrypoint
 # ---------------------------------------------------------------------------
 main() {
@@ -566,10 +599,11 @@ main() {
       ;;
   esac
 
-  # Steps 12–14: shared final steps (always run)
+  # Steps 12–15: shared final steps (always run)
   configure_hooks
   inject_readme_markers
   run_backfill
+  trigger_initial_aggregate
 
   echo "=== Installation complete! ==="
   echo "Run 'vibestats --help' to get started."
