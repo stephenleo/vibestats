@@ -7,7 +7,7 @@ const { title } = Astro.props;
 ---
 <Base title={title}>
   <div class="docs-layout">
-    <nav class="sidebar">
+    <nav class="sidebar" aria-label="Docs navigation">
       <ul>
         <li><a href="/docs/quickstart">Quickstart</a></li>
         <li><a href="/docs/how-it-works">How it works</a></li>
@@ -20,3 +20,28 @@ const { title } = Astro.props;
     </main>
   </div>
 </Base>
+
+<style>
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .sidebar li {
+    margin: 0.25rem 0;
+  }
+
+  @media (max-width: 640px) {
+    .docs-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
