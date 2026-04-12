@@ -5,8 +5,8 @@ GH Issue: #40
 
 Test IDs follow: 8.2-UNIT-{SEQ}
 
-TDD Phase: RED — all tests marked pytest.mark.skip until deploy-site.yml is
-implemented in .github/workflows/.
+TDD Phase: GREEN — deploy-site.yml implemented in .github/workflows/; all
+tests pass.
 
 Run: python -m pytest action/tests/test_deploy_site_yml.py -v
 
@@ -30,8 +30,6 @@ Coverage targets from test-design-epic-8.md (P0 + P1 + P2):
 
 import pathlib
 import re
-
-import pytest
 
 # ---------------------------------------------------------------------------
 # Path resolution
