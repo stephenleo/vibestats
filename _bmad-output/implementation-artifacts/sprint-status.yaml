@@ -115,7 +115,7 @@ development_status:
   6-1-implement-dependency-detection-and-gh-authentication: done
   6-2-implement-first-install-path: done
   6-3-implement-multi-machine-install-path: done
-  6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: backlog
+  6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: review
   epic-6-retrospective: optional
 
   # ──────────────────────────────────────────────────────────────

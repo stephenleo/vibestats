@@ -359,13 +359,15 @@ STUB
   " 2>&1
 
   [ "$status" -eq 0 ]
+  # Save output from inject_readme_markers before running the spy log check
+  INJECT_OUTPUT="$output"
 
   # Assert PUT was NOT called (idempotency)
   run grep "UNEXPECTED_PUT" "${GH_SPY_LOG}"
   [ "$status" -ne 0 ]
 
   # Output should mention markers already present
-  [[ "$output" == *"already present"* ]]
+  [[ "$INJECT_OUTPUT" == *"already present"* ]]
 }
 
 # ---------------------------------------------------------------------------
