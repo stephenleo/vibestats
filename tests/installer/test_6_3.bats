@@ -1,15 +1,12 @@
 #!/usr/bin/env bats
 # Story 6.3: Implement multi-machine install path
-# ATDD Red Phase — tests assert expected behaviour; will fail until install.sh is implemented.
+# TDD GREEN PHASE — all tests pass; implementation in install.sh is complete.
 #
 # Run: bats tests/installer/test_6_3.bats
 #
 # Test framework: bats-core
 # Mocking strategy: override _gh() helper as a shell function to mock gh CLI calls.
 # All tests use a temp $HOME to prevent mutation of the developer's real config.
-#
-# TDD RED PHASE: All tests are prefixed with skip until detect_install_mode() and
-# register_machine() functions exist in install.sh.
 #
 # AC Coverage:
 #   AC #1 (FR5): detect existing vibestats-data repo → skip repo creation, workflow write, VIBESTATS_TOKEN
