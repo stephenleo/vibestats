@@ -5,10 +5,9 @@ GH Issue: #41 | Epic: #8
 
 Test IDs follow: 8.3-UNIT-{SEQ}
 
-TDD Phase: RED — tests written for expected behaviour before implementation.
-Remove pytest.mark.skip when:
-  - TC-1: CONTRIBUTING.md versioning section has been authored (Task 2)
-  - TC-2, TC-3: action.yml name/description already non-empty (Story 5.4 done)
+TDD Phase: GREEN — all tests active (pytest.mark.skip removed).
+  - TC-1: CONTRIBUTING.md versioning section authored in Task 2
+  - TC-2, TC-3: action.yml name/description confirmed non-empty (Story 5.4 done)
 
 Do NOT duplicate assertions already present in test_action_yml.py:
   - branding.icon presence  (5.4-UNIT-007a)
@@ -51,9 +50,6 @@ def _load_contributing_md() -> str:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(
-    reason="[RED] CONTRIBUTING.md versioning section not yet authored (Story 8.3 Task 2)"
-)
 def test_tc1_contributing_md_has_versioning_section() -> None:
     """[P2] 8.3-UNIT-001a: CONTRIBUTING.md must contain a versioning section heading.
 
@@ -72,9 +68,6 @@ def test_tc1_contributing_md_has_versioning_section() -> None:
     )
 
 
-@pytest.mark.skip(
-    reason="[RED] CONTRIBUTING.md versioning section not yet authored (Story 8.3 Task 2)"
-)
 def test_tc1_contributing_md_has_v1_backward_compat_language() -> None:
     """[P2] 8.3-UNIT-001b: CONTRIBUTING.md versioning section must reference v1 backward-compatibility.
 
