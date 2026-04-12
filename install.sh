@@ -346,11 +346,10 @@ register_machine() {
   # --- Fetch existing registry.json (handle 404 = first machine) ---
   # Single API call — parse content and sha from the same response to avoid
   # race conditions and redundant network round-trips.
-  REGISTRY_RESPONSE=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" 2>/dev/null || echo "NOT_FOUND")
-  if [ "$REGISTRY_RESPONSE" = "NOT_FOUND" ]; then
-    CURRENT_JSON='{"machines": []}'
-    SHA=""
-  else
+  # Branch on exit code, not captured output: gh api writes the error JSON body
+  # to stdout on non-2xx responses, so the "|| echo NOT_FOUND" sentinel pattern
+  # would produce "<error-json>\nNOT_FOUND", making the equality check fail.
+  if REGISTRY_RESPONSE=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" 2>/dev/null); then
     ENCODED=$(echo "$REGISTRY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['content'])")
     SHA=$(echo "$REGISTRY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['sha'])")
     case "$(uname -s)" in
@@ -358,6 +357,9 @@ register_machine() {
       Linux)  CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
       *)      CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
     esac
+  else
+    CURRENT_JSON='{"machines": []}'
+    SHA=""
   fi
 
   # --- Build updated JSON (Python 3 stdlib only — no jq required) ---
