@@ -168,8 +168,9 @@ No UX design document — vibestats has no bespoke UI beyond the Astro site and 
 | 6 | Bash Installer | [#6](https://github.com/stephenleo/vibestats/issues/6) | #31, #32, #33, #34 |
 | 7 | vibestats.dev Astro Site | [#7](https://github.com/stephenleo/vibestats/issues/7) | #35, #36, #37, #38 |
 | 8 | CI/CD & Distribution | [#8](https://github.com/stephenleo/vibestats/issues/8) | #39, #40, #41 |
+| 9 | Post-Sprint Quality & Technical Debt | [#80](https://github.com/stephenleo/vibestats/issues/80) | #81, #82, #83, #84, #85, #86, #87, #88, #89 |
 
-**Implementation order (dependency sequence):** Epic 1 → Epic 2 → Epic 3 + Epic 5 (parallel) → Epic 4 + Epic 7 (parallel) → Epic 8 → Epic 6
+**Implementation order (dependency sequence):** Epic 1 → Epic 2 → Epic 3 + Epic 5 (parallel) → Epic 4 + Epic 7 (parallel) → Epic 8 → Epic 6 → Epic 9
 
 ---
 
