@@ -6,6 +6,7 @@
 /_astro/*     /_astro/:splat  200
 
 # Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
-# /u.html is a standalone file (not a directory index), so Cloudflare won't
-# add a trailing-slash canonical redirect — the browser URL stays /<username>.
-/:username    /u.html  200
+# Target is /u (the clean URL), not /u.html.  Rewriting to /u.html would
+# trigger Cloudflare's clean-URL redirect (*.html → *), sending the browser
+# to /u, which re-matches /:username — causing an infinite redirect loop.
+/:username    /u  200
