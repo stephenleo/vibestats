@@ -1,14 +1,13 @@
-"""Schema/unit tests for .github/workflows/release.yml — TDD Red Phase.
+"""Schema/unit tests for .github/workflows/release.yml — TDD Green Phase.
 
 Story 8.1: Implement Rust binary release CI
 GH Issue: #39
 
 Test IDs follow: 8.1-SCHEMA-{SEQ}
 
-TDD Phase: RED — all tests marked with pytest.mark.skip.
-          Remove pytest.mark.skip decorators after release.yml is implemented (green phase).
+TDD Phase: GREEN — release.yml is implemented; all 17 tests are active and passing.
 
-Run: python -m pytest action/tests/test_release_yml.py -v
+Run: python3 -m pytest action/tests/test_release_yml.py -v
 
 Tests assert structural and schema properties of release.yml required for:
 - AC1 (R-001, R-002): matrix build with fail-fast and correct targets
@@ -22,6 +21,7 @@ import pathlib
 import re
 
 import pytest
+import yaml
 
 # ---------------------------------------------------------------------------
 # Path resolution
@@ -44,8 +44,6 @@ def _load_text() -> str:
 
 def _load_yaml() -> dict:
     """Parse release.yml as a Python dict using PyYAML."""
-    import yaml  # type: ignore[import]
-
     with RELEASE_YML.open(encoding="utf-8") as fh:
         return yaml.safe_load(fh)
 
