@@ -1,0 +1,37 @@
+---
+import Docs from '../../layouts/Docs.astro';
+---
+<Docs title="Troubleshooting — vibestats">
+  <h1>Troubleshooting</h1>
+  <p>Solutions to the most common vibestats issues.</p>
+
+  <h2>Token expiry fix</h2>
+  <p>If <code>vibestats status</code> reports an authentication error, your GitHub OAuth token has expired or been revoked.</p>
+  <p><strong>Fix:</strong> Re-authenticate by running:</p>
+  <pre><code>vibestats auth</code></pre>
+  <p>This launches the <code>gh auth login</code> flow and saves the new token to <code>~/.config/vibestats/config.toml</code>.</p>
+
+  <h2>Hook not firing</h2>
+  <p>If your stats are not updating after Claude Code sessions, the Stop or SessionStart hooks may be missing from <code>~/.claude/settings.json</code>.</p>
+  <p><strong>Fix:</strong> Check that your <code>~/.claude/settings.json</code> contains both hooks:</p>
+  <ul>
+    <li>A <strong>Stop</strong> hook that runs <code>vibestats sync</code> with <code>async: true</code>.</li>
+    <li>A <strong>SessionStart</strong> hook that runs <code>vibestats sync</code>.</li>
+  </ul>
+  <p>If either hook is missing, re-run the installer:</p>
+  <pre><code>curl -sSf https://vibestats.dev/install.sh | bash</code></pre>
+  <p>Or add the hooks manually by editing <code>~/.claude/settings.json</code> to include the required hook configuration.</p>
+
+  <h2>Missing machine data</h2>
+  <p>If a machine's data is not appearing in your dashboard, it may not have synced yet.</p>
+  <p><strong>Fix:</strong> First, check the machine's status:</p>
+  <pre><code>vibestats status</code></pre>
+  <p>If the machine appears in the list but data is stale, force an immediate sync:</p>
+  <pre><code>vibestats sync</code></pre>
+  <p>If the machine is not listed at all, ensure vibestats is installed on that machine and that the hooks are configured correctly (see <em>Hook not firing</em> above).</p>
+
+  <h2>How to trigger a manual backfill</h2>
+  <p>If historical data is missing — for example, after a fresh install or if data was accidentally deleted — you can push your full Claude Code history to <code>vibestats-data</code> with a backfill:</p>
+  <pre><code>vibestats sync --backfill</code></pre>
+  <p>This walks all JSONL files under <code>~/.claude/projects/</code> and pushes complete history. It is safe to run multiple times; existing data is not duplicated.</p>
+</Docs>
