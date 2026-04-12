@@ -1,16 +1,11 @@
-# Pass-through rules: keep static assets and known routes untouched.
-# These MUST come before the /:username catch-all below, otherwise the
-# rewrite would swallow favicons, Astro's _astro/ bundles, and the /u
-# dashboard shell itself.
+# Pass-through rules: keep static assets untouched.
+# These MUST come before the /:username catch-all below.
 /favicon.ico  /favicon.ico  200
 /favicon.svg  /favicon.svg  200
 /install.sh   /install.sh   200
 /_astro/*     /_astro/:splat  200
-/u            /u/index.html  200
-/u/           /u/index.html  200
-/u/*          /u/:splat      200
 
 # Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
-# Using /u/ (not /u/index.html) avoids Cloudflare's trailing-slash canonical
-# redirect, which would otherwise change the browser URL from /<username> to /u/.
-/:username    /u/  200
+# /u.html is a standalone file (not a directory index), so Cloudflare won't
+# add a trailing-slash canonical redirect — the browser URL stays /<username>.
+/:username    /u.html  200
