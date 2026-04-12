@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (story 6.4 merged via PR #79; epic-6 complete)
+# last_updated: 2026-04-12 (epic-6 retrospective complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (story 6.4 merged via PR #79; epic-6 complete)
+last_updated: 2026-04-12 (epic-6 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -116,7 +116,7 @@ development_status:
   6-2-implement-first-install-path: done
   6-3-implement-multi-machine-install-path: done
   6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: done
-  epic-6-retrospective: optional
+  epic-6-retrospective: done
 
   # ──────────────────────────────────────────────────────────────
   # EPIC 7: vibestats.dev Astro Site
