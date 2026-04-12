@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (epic-9 post-sprint quality epic created)
+last_updated: 2026-04-12 (story 9-3 ready-for-dev)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -148,10 +148,10 @@ development_status:
   # Recommended order: 9.1 → 9.2 → 9.3 → 9.5 → 9.4 → 9.6 → 9.7 → 9.8 → 9.9
   # (9.3 must complete before 9.6; 9.5 recommended before 9.6)
   # ──────────────────────────────────────────────────────────────
-  epic-9: backlog
-  9-1-artifact-hygiene-fix-stale-story-statuses-and-missing-records: backlog
-  9-2-retrospective-code-reviews-for-stories-4-3-and-4-4: backlog
-  9-3-fix-test-6-2-bats-pre-existing-failures: backlog
+  epic-9: in-progress
+  9-1-artifact-hygiene-fix-stale-story-statuses-and-missing-records: ready-for-dev
+  9-2-retrospective-code-reviews-for-stories-4-3-and-4-4: ready-for-dev
+  9-3-fix-test-6-2-bats-pre-existing-failures: ready-for-dev
   9-4-bash-installer-refactor-exit-trap-to-composable-cleanup: backlog
   9-5-rust-remove-dead-code-suppressors-and-verify-lint-clean: backlog
   9-6-first-release-push-v0-1-0-tag-and-create-v1-floating-tag: backlog

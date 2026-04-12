@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://vibestats.app',
+  site: 'https://vibestats.dev',
   trailingSlash: 'never',
   compressHTML: false,
   vite: {
