@@ -76,6 +76,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          make_latest: true
           files: |
             vibestats-aarch64-apple-darwin/vibestats-aarch64-apple-darwin.tar.gz
             vibestats-aarch64-apple-darwin/vibestats-aarch64-apple-darwin.tar.gz.sha256
