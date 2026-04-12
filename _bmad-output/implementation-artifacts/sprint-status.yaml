@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (story 8.1 review)
+# last_updated: 2026-04-12 (post-merge cleanup 8.1 8.2 8.3)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (story 8.1 review)
+last_updated: 2026-04-12 (post-merge cleanup 8.1 8.2 8.3)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -135,8 +135,8 @@ development_status:
   # GitHub Issue: #8
   # Depends on: All prior epics complete | Enables: Epic 6
   # ──────────────────────────────────────────────────────────────
-  epic-8: in-progress
+  epic-8: done
   8-1-implement-rust-binary-release-ci: done
-  8-2-implement-cloudflare-pages-deploy-workflow: backlog
-  8-3-configure-github-actions-marketplace-publication: backlog
+  8-2-implement-cloudflare-pages-deploy-workflow: done
+  8-3-configure-github-actions-marketplace-publication: done
   epic-8-retrospective: optional
