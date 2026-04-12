@@ -1,6 +1,6 @@
 # Story 8.3: Configure GitHub Actions Marketplace publication
 
-Status: review
+Status: done
 
 <!-- GH Issue: #41 | Epic: #8 | PR must include: Closes #41 -->
 
