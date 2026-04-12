@@ -1,18 +1,45 @@
 ---
 ---
-<header>
-  <a href="/">vibestats</a>
-  <nav>
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/docs/quickstart">Docs</a></li>
-      <li>
-        <a
-          href="https://github.com/stephenleo/vibestats"
-          target="_blank"
-          rel="noopener noreferrer"
-        >GitHub</a>
-      </li>
-    </ul>
-  </nav>
+<header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
+  <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+
+    <a href="/" class="font-semibold text-slate-900 dark:text-white tracking-tight hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
+      vibestats
+    </a>
+
+    <nav class="flex items-center gap-6">
+      <a href="/" class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
+      <a href="/docs/quickstart" class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Docs</a>
+      <a
+        href="https://github.com/stephenleo/vibestats"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+      >GitHub</a>
+
+      <button
+        id="theme-toggle"
+        type="button"
+        aria-label="Toggle dark mode"
+        class="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      >
+        <!-- Sun icon (shown in dark mode) -->
+        <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <!-- Moon icon (shown in light mode) -->
+        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
 </header>
+
+<script>
+  const btn = document.getElementById('theme-toggle');
+  btn?.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+</script>
