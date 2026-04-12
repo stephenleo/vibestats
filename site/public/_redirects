@@ -4,6 +4,7 @@
 # dashboard shell itself.
 /favicon.ico  /favicon.ico  200
 /favicon.svg  /favicon.svg  200
+/install.sh   /install.sh   200
 /_astro/*     /_astro/:splat  200
 /u            /u/index.html  200
 /u/*          /u/:splat      200
