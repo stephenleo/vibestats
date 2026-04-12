@@ -27,11 +27,18 @@ teardown() {
 # P1 — Story 6.1, FR2
 # ---------------------------------------------------------------------------
 @test "[P1] gh not installed → brew install gh called on Darwin" {
-  # Override _gh to simulate gh not found; stub uname and brew
+  # Override _gh to simulate gh not found initially; stub uname and brew.
+  # After brew() runs it creates a sentinel file; command() returns success
+  # for the post-install PATH check once the sentinel exists.
   cat > "${HOME}/stub_env.sh" <<'STUB'
+GH_INSTALLED_FLAG="${HOME}/gh_installed.flag"
 command() {
   if [ "$1" = "-v" ] && [ "$2" = "gh" ]; then
-    return 1  # gh not found
+    if [ -f "$GH_INSTALLED_FLAG" ]; then
+      echo "/usr/local/bin/gh"
+      return 0  # gh now on PATH after install
+    fi
+    return 1  # gh not found initially
   fi
   builtin command "$@"
 }
@@ -44,6 +51,7 @@ uname() {
 }
 brew() {
   echo "brew install gh called with: $*" >> "${HOME}/brew_calls.log"
+  touch "$GH_INSTALLED_FLAG"  # simulate gh now on PATH after brew install
 }
 export -f command uname brew
 STUB
@@ -64,10 +72,17 @@ STUB
 # P1 — Story 6.1, FR2
 # ---------------------------------------------------------------------------
 @test "[P1] gh not installed → apt-get install gh called on Linux" {
+  # After apt-get() runs it creates a sentinel file; command() returns success
+  # for the post-install PATH check once the sentinel exists.
   cat > "${HOME}/stub_env.sh" <<'STUB'
+GH_INSTALLED_FLAG="${HOME}/gh_installed.flag"
 command() {
   if [ "$1" = "-v" ] && [ "$2" = "gh" ]; then
-    return 1  # gh not found
+    if [ -f "$GH_INSTALLED_FLAG" ]; then
+      echo "/usr/bin/gh"
+      return 0  # gh now on PATH after install
+    fi
+    return 1  # gh not found initially
   fi
   builtin command "$@"
 }
@@ -80,6 +95,7 @@ uname() {
 }
 apt-get() {
   echo "apt-get $* called" >> "${HOME}/aptget_calls.log"
+  touch "$GH_INSTALLED_FLAG"  # simulate gh now on PATH after apt-get install
 }
 sudo() {
   # Pass through to the command being sudo'd

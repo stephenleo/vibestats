@@ -49,6 +49,14 @@ install_gh_if_missing() {
       ;;
   esac
 
+  # Verify gh is now accessible on PATH (brew may install to /opt/homebrew/bin
+  # which is not always in PATH in non-interactive shells).
+  if ! command -v gh > /dev/null 2>&1; then
+    echo "Error: gh was installed but is not accessible on \$PATH." >&2
+    echo "Add the install location to your PATH and re-run the installer." >&2
+    exit 1
+  fi
+
   echo "gh installed successfully."
 }
 
