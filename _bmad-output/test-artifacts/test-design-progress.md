@@ -2,6 +2,7 @@
 stepsCompleted: ['step-01-detect-mode', 'step-02-load-context', 'step-03-risk-and-testability', 'step-04-coverage-plan', 'step-05-generate-output']
 lastStep: 'step-05-generate-output'
 lastSaved: '2026-04-12'
+epic6Completed: '2026-04-12'
 epic7Completed: '2026-04-12'
 epic8Completed: '2026-04-12'
 ---
@@ -152,3 +153,77 @@ Execution strategy: all schema tests on every PR (<2 min); P3 manual integration
 - R-004 (SEC): incorrect Cloudflare secret references — secret name schema test mandatory
 
 **Gate threshold:** P0 100% pass rate, R-001 to R-004 mitigations complete before Epic 8 stories marked done.
+
+---
+
+# Test Design Progress — Epic 6: Bash Installer
+
+## Step 1: Mode Detection
+
+**Mode selected:** Epic-Level (Phase 4)
+**Trigger:** `sprint-status.yaml` exists at `_bmad-output/implementation-artifacts/sprint-status.yaml`
+**Argument provided:** "Epic 6 (Bash Installer)"
+**Completed:** 2026-04-12
+
+---
+
+## Step 2: Context Loaded
+
+**Stack detected:** backend (Cargo.toml present; no playwright.config or browser test files)
+**Config flags:**
+- `tea_use_playwright_utils: true` (configured but no browser tests for this epic — shell unit tests only)
+- `tea_use_pactjs_utils: false`
+- `tea_pact_mcp: none`
+- `tea_browser_automation: auto`
+- `test_artifacts: _bmad-output/test-artifacts`
+- `test_stack_type: auto` → resolved to `backend/shell`
+
+**Artifacts loaded:**
+- Epic 6 stories (6.1–6.4) with acceptance criteria from `epics.md`
+- PRD functional requirements (FR1–FR11, FR38–FR39) and NFRs (NFR6, NFR7, NFR16)
+- Architecture document (Bash Installer section, Authentication & Security section)
+- Sprint status (Epic 6: backlog — all stories)
+- `install.sh` (stub: `echo "TODO: implement installer" && exit 1`)
+
+**Existing test coverage gap:** No shell tests exist for `install.sh`. Epic 6 is the last epic in implementation order; all dependencies (Epics 1–8) are `done`.
+
+**Knowledge fragments loaded:** risk-governance.md, probability-impact.md, test-levels-framework.md, test-priorities-matrix.md
+
+---
+
+## Step 3: Risk Assessment
+
+10 risks identified across SEC, OPS, DATA, BUS, TECH categories.
+5 high-priority risks (score ≥6): R-001 through R-005.
+All high-priority risks have mitigation plans, owners, and timelines assigned.
+
+See `test-design-epic-6.md` for full risk matrix.
+
+---
+
+## Step 4: Coverage Plan
+
+27 test scenarios across P0–P3:
+- P0: 8 tests (token security, permissions, failure handling, multi-machine detection, registry schema)
+- P1: 11 tests (gh install, version check, auth, platform detection, first-install steps, hook config)
+- P2: 6 tests (idempotency, README markers, warning paths, edge cases)
+- P3: 2 tests (checksum smoke, full E2E end-to-end)
+
+Execution strategy: all P0–P2 shell unit tests run on every PR (<7 min using bats-core with mocked `gh` CLI); P3 E2E tests pre-release only.
+
+---
+
+## Step 5: Output Generated
+
+**Output file:** `_bmad-output/test-artifacts/test-design-epic-6.md`
+**Mode used:** sequential (epic-level, single document)
+**Checklist validated:** all epic-level checklist items satisfied
+
+**Key risks requiring pre-merge action:**
+- R-001 (SEC): VIBESTATS_TOKEN written to disk — file-scan assertion mandatory
+- R-002 (SEC): config.toml permissions — `stat` assertion on both macOS and Linux mandatory
+- R-003 (OPS): silent continuation past failure — `set -euo pipefail` lint + failure injection mandatory
+- R-004 (BUS): first-install path on existing install — `gh repo view` mock + call-spy mandatory
+- R-005 (DATA): registry.json schema — JSON field assertion + timestamp format validation mandatory
+
+**Gate threshold:** P0 100% pass rate, R-001 to R-005 mitigations complete before Epic 6 stories marked done.

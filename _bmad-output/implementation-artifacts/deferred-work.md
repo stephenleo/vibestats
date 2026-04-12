@@ -119,3 +119,12 @@ that raised them. Revisit when the blocking rationale no longer applies.
   Revisit only if onboarding ever needs to support an empty profile-repo —
   in that case, install.sh (Epic 6) should create a stub README before the
   first action run.
+
+## Deferred from: code review of story 6-1-implement-dependency-detection-and-gh-authentication (2026-04-12)
+
+- **EXIT trap override in `download_and_install_binary`** [install.sh:129] —
+  `trap 'rm -rf "$TMPDIR_WORK"' EXIT` replaces any previously registered EXIT
+  trap. When stories 6.2-6.4 add additional cleanup steps to `install.sh`,
+  this pattern will silently discard their traps. Revisit when composing
+  multiple cleanup handlers — consider a `cleanup()` function that accumulates
+  commands, or use `trap "$(trap -p EXIT | ...) ; rm -rf ..." EXIT` to chain.
