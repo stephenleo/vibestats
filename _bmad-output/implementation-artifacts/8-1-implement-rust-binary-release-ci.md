@@ -1,6 +1,6 @@
 # Story 8.1: Implement Rust binary release CI
 
-Status: review
+Status: done
 
 <!-- GH Issue: #39 | Epic: #8 | PR must include: Closes #39 -->
 
