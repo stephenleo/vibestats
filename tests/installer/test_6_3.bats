@@ -354,15 +354,8 @@ _gh() {
           echo '{"content": {"sha": "newsha999"}}'
           return 0
           ;;
-        *"registry.json"*"--jq .sha"*)
-          echo "existingsha123"
-          ;;
-        *"registry.json"*"--jq .content"*)
-          # Return base64-encoded existing registry
-          echo "${EXISTING_ENCODED}"
-          ;;
         *"registry.json"*)
-          # GET without jq — return JSON with content and sha
+          # GET — return full JSON with content and sha (parsed by python3 in install.sh)
           echo "{\"content\": \"${EXISTING_ENCODED}\", \"sha\": \"existingsha123\"}"
           ;;
       esac

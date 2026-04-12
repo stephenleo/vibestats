@@ -344,18 +344,20 @@ register_machine() {
   MACHINE_ID="${HOSTNAME_VAL}-${SUFFIX}"
 
   # --- Fetch existing registry.json (handle 404 = first machine) ---
+  # Single API call — parse content and sha from the same response to avoid
+  # race conditions and redundant network round-trips.
   REGISTRY_RESPONSE=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" 2>/dev/null || echo "NOT_FOUND")
   if [ "$REGISTRY_RESPONSE" = "NOT_FOUND" ]; then
     CURRENT_JSON='{"machines": []}'
     SHA=""
   else
-    ENCODED=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" --jq .content)
+    ENCODED=$(echo "$REGISTRY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['content'])")
+    SHA=$(echo "$REGISTRY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['sha'])")
     case "$(uname -s)" in
       Darwin) CURRENT_JSON=$(echo "$ENCODED" | base64 -D) ;;
       Linux)  CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
       *)      CURRENT_JSON=$(echo "$ENCODED" | base64 -d) ;;
     esac
-    SHA=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/registry.json" --jq .sha)
   fi
 
   # --- Build updated JSON (Python 3 stdlib only — no jq required) ---

@@ -1,6 +1,6 @@
 # Story 6.3: Implement multi-machine install path
 
-Status: review
+Status: done
 
 <!-- GH Issue: #33 | Epic: #6 | PR must include: Closes #33 -->
 
@@ -367,6 +367,12 @@ None — implementation proceeded without blockers.
 - `install.sh` (modified — added `detect_install_mode()`, `register_machine()`, updated `main()`)
 - `tests/installer/test_6_3.bats` (modified — removed skip statements, tests now GREEN)
 
+### Review Findings
+
+- [x] [Review][Patch] Redundant API calls in `register_machine()`: registry.json GET was called 3 times (existence check, `--jq .content`, `--jq .sha`) creating a race condition and unnecessary network round-trips. Fixed to parse content and sha from the single initial GET response using python3. [install.sh:227-238]
+- [x] [Review][Defer] EXIT trap in `download_and_install_binary()` overwrites any prior EXIT trap — fragile if future functions add traps. [install.sh:137] — deferred, pre-existing (Story 6.1)
+
 ## Change Log
 
 - 2026-04-12: Story 6.3 implemented — `detect_install_mode()` and `register_machine()` added to `install.sh`; `main()` updated to branch on `$INSTALL_MODE`; all 7 bats tests GREEN; status set to review.
+- 2026-04-12: Code review complete — 1 patch applied (redundant API calls), 1 deferred (pre-existing trap issue), 4 dismissed as noise; status set to done.
