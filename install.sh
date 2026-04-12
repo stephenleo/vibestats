@@ -170,6 +170,224 @@ download_and_install_binary() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 6: Detect if this is a first install (no vibestats-data repo exists)
+# Returns 0 if first install is needed, 1 if vibestats-data already exists.
+# Also detects and exports USERNAME for use by subsequent functions.
+# ---------------------------------------------------------------------------
+detect_first_install() {
+  USERNAME=$(_gh api /user --jq '.login')
+  export USERNAME
+
+  if _gh repo view "${USERNAME}/vibestats-data" > /dev/null 2>&1; then
+    # Repo exists — multi-machine path
+    return 1
+  fi
+
+  # Repo does not exist — first-install path
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# Step 7: Create the vibestats-data private repo (AC #1, FR4)
+# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# ---------------------------------------------------------------------------
+create_vibestats_data_repo() {
+  # Detect USERNAME if not already exported (e.g. when called directly in tests)
+  if [ -z "${USERNAME:-}" ]; then
+    USERNAME=$(_gh api /user --jq '.login')
+    export USERNAME
+  fi
+
+  echo "Creating vibestats-data repository..."
+  _gh repo create "${USERNAME}/vibestats-data" --private \
+    || { echo "Error: Failed to create vibestats-data repository." >&2; exit 1; }
+  echo "Repository created: ${USERNAME}/vibestats-data"
+}
+
+# ---------------------------------------------------------------------------
+# Step 8: Generate aggregate workflow YAML content (AC #2, FR7)
+# Echoes the workflow YAML to stdout for embedding or processing.
+# ---------------------------------------------------------------------------
+generate_aggregate_workflow_content() {
+  cat <<'WORKFLOW'
+# aggregate.yml — Copy this file to your vibestats-data/.github/workflows/ directory.
+# It runs the vibestats community action daily to aggregate your Claude Code session data
+# and update your GitHub profile heatmap automatically.
+name: Aggregate vibestats data
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Daily at 02:00 UTC
+  workflow_dispatch:        # Allow manual runs
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: stephenleo/vibestats@v1
+        with:
+          token: ${{ secrets.VIBESTATS_TOKEN }}
+          profile-repo: ${{ github.repository_owner }}/${{ github.repository_owner }}
+WORKFLOW
+}
+
+# ---------------------------------------------------------------------------
+# Step 9: Write aggregate.yml into vibestats-data/.github/workflows/ (AC #2, FR7)
+# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# ---------------------------------------------------------------------------
+write_aggregate_workflow() {
+  # Detect USERNAME if not already exported
+  if [ -z "${USERNAME:-}" ]; then
+    USERNAME=$(_gh api /user --jq '.login')
+    export USERNAME
+  fi
+
+  echo "Writing aggregate workflow to vibestats-data..."
+
+  WORKFLOW_CONTENT=$(generate_aggregate_workflow_content)
+  CONTENT=$(printf '%s' "$WORKFLOW_CONTENT" | base64 | tr -d '\n')
+
+  echo "Workflow content:"
+  printf '%s\n' "$WORKFLOW_CONTENT"
+
+  _gh api "repos/${USERNAME}/vibestats-data/contents/.github/workflows/aggregate.yml" \
+    --method PUT \
+    --field message="Add vibestats aggregate workflow" \
+    --field "content=${CONTENT}" \
+    || { echo "Error: Failed to write aggregate.yml to vibestats-data." >&2; exit 1; }
+
+  echo "Workflow written: vibestats-data/.github/workflows/aggregate.yml"
+}
+
+# ---------------------------------------------------------------------------
+# Step 10: Generate and set VIBESTATS_TOKEN Actions secret (AC #3, FR10, NFR7)
+# SECURITY: VIBESTATS_TOKEN is NEVER written to disk or echoed to stdout.
+# Requires: USERNAME exported by detect_first_install (auto-detected if not set)
+# ---------------------------------------------------------------------------
+setup_vibestats_token() {
+  # Detect USERNAME if not already exported
+  if [ -z "${USERNAME:-}" ]; then
+    USERNAME=$(_gh api /user --jq '.login')
+    export USERNAME
+  fi
+
+  echo "Setting up VIBESTATS_TOKEN Actions secret..."
+
+  # Attempt to generate a fine-grained PAT and pipe directly to gh secret set.
+  # The token value is never stored in a variable that could be written to disk.
+  if _gh api /user/personal_access_tokens \
+      --method POST \
+      --field name="vibestats-$(date +%Y)" \
+      --field expiration="never" \
+      --field repositories='["'"${USERNAME}"'"]' \
+      --field permissions='{"contents":"write"}' \
+      --jq '.token' \
+      | _gh secret set VIBESTATS_TOKEN --repo "${USERNAME}/vibestats-data"; then
+    echo "VIBESTATS_TOKEN secret set successfully."
+  else
+    # Fallback: enterprise may block fine-grained PAT creation
+    echo "Warning: Fine-grained PAT creation blocked. Using gh auth token as VIBESTATS_TOKEN fallback."
+    _gh auth token \
+      | _gh secret set VIBESTATS_TOKEN --repo "${USERNAME}/vibestats-data" \
+      || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
+    echo "VIBESTATS_TOKEN secret set via fallback."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Step 11: Store machine-side token in ~/.config/vibestats/config.toml (AC #4, NFR6)
+# Computes and exports MACHINE_ID for reuse by register_machine().
+# ---------------------------------------------------------------------------
+store_machine_token() {
+  echo "Storing machine token in ~/.config/vibestats/config.toml..."
+
+  # Compute deterministic machine ID (POSIX cksum — works on macOS and Linux)
+  HOSTNAME_LOWER=$(hostname | tr '[:upper:]' '[:lower:]' | sed 's/\..*$//' | sed 's/[^a-z0-9-]/-/g')
+  HASH=$(hostname | cksum | awk '{print $1}' | cut -c1-6)
+  MACHINE_ID="${HOSTNAME_LOWER}-${HASH}"
+  export MACHINE_ID
+
+  # Obtain machine-side token
+  LOCAL_TOKEN=$(_gh auth token) \
+    || { echo "Error: Failed to obtain machine token via 'gh auth token'. Ensure gh is authenticated." >&2; exit 1; }
+
+  # Detect USERNAME if not already exported
+  if [ -z "${USERNAME:-}" ]; then
+    USERNAME=$(_gh api /user --jq '.login')
+    export USERNAME
+  fi
+
+  # Create config directory and write config
+  mkdir -p "${HOME}/.config/vibestats"
+  cat > "${HOME}/.config/vibestats/config.toml" <<TOML
+oauth_token = "${LOCAL_TOKEN}"
+machine_id = "${MACHINE_ID}"
+vibestats_data_repo = "${USERNAME}/vibestats-data"
+TOML
+
+  # Immediately set secure permissions (NFR6)
+  chmod 600 "${HOME}/.config/vibestats/config.toml"
+
+  # Clear the token from memory
+  unset LOCAL_TOKEN
+
+  echo "Machine token stored at ~/.config/vibestats/config.toml"
+}
+
+# ---------------------------------------------------------------------------
+# Step 12: Register machine in vibestats-data/registry.json (AC #5, FR6)
+# Reuses MACHINE_ID exported by store_machine_token().
+# ---------------------------------------------------------------------------
+register_machine() {
+  echo "Registering machine in vibestats-data/registry.json..."
+
+  # Compute MACHINE_ID if not already set (e.g. when called directly in tests)
+  if [ -z "${MACHINE_ID:-}" ]; then
+    HOSTNAME_LOWER=$(hostname | tr '[:upper:]' '[:lower:]' | sed 's/\..*$//' | sed 's/[^a-z0-9-]/-/g')
+    HASH=$(hostname | cksum | awk '{print $1}' | cut -c1-6)
+    MACHINE_ID="${HOSTNAME_LOWER}-${HASH}"
+    export MACHINE_ID
+  fi
+
+  # Detect USERNAME if not already exported
+  if [ -z "${USERNAME:-}" ]; then
+    USERNAME=$(_gh api /user --jq '.login')
+    export USERNAME
+  fi
+
+  LAST_SEEN=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  HOSTNAME_VAL=$(hostname)
+
+  # Build registry.json payload (Bash 3.2 safe — no jq required)
+  REGISTRY_JSON='{"machines":[{"machine_id":"'"${MACHINE_ID}"'","hostname":"'"${HOSTNAME_VAL}"'","status":"active","last_seen":"'"${LAST_SEEN}"'"}]}'
+
+  echo "Registry entry: ${REGISTRY_JSON}"
+
+  # Base64-encode with line-wrap removal (macOS base64 wraps at 76 chars)
+  CONTENT=$(printf '%s' "$REGISTRY_JSON" | base64 | tr -d '\n')
+
+  _gh api "repos/${USERNAME}/vibestats-data/contents/registry.json" \
+    --method PUT \
+    --field message="Register machine ${MACHINE_ID}" \
+    --field "content=${CONTENT}" \
+    || { echo "Error: Failed to register machine in registry.json." >&2; exit 1; }
+
+  echo "Machine registered: ${MACHINE_ID}"
+}
+
+# ---------------------------------------------------------------------------
+# First-install path: runs all first-install setup steps in sequence.
+# Called when detect_first_install() returns 0.
+# ---------------------------------------------------------------------------
+first_install_path() {
+  create_vibestats_data_repo
+  write_aggregate_workflow
+  setup_vibestats_token
+  store_machine_token
+  register_machine
+}
+
+# ---------------------------------------------------------------------------
 # Main entrypoint
 # ---------------------------------------------------------------------------
 main() {
@@ -179,6 +397,14 @@ main() {
   check_gh_version
   check_gh_auth
   download_and_install_binary
+
+  if detect_first_install; then
+    create_vibestats_data_repo
+    write_aggregate_workflow
+    setup_vibestats_token
+  fi
+  store_machine_token
+  register_machine
 
   echo "=== Installation complete! ==="
   echo "Run 'vibestats --help' to get started."
