@@ -6,8 +6,7 @@ import Docs from '../../layouts/Docs.astro';
   <p>vibestats tracks your Claude Code usage across machines and surfaces it as a public heatmap on your GitHub profile and on <code>vibestats.dev</code>.</p>
 
   <h2>Architecture</h2>
-  <pre>
-Claude Code sessions
+  <pre>Claude Code sessions
         │
         ▼  Stop/SessionStart hooks
   Rust binary (vibestats)
@@ -25,8 +24,7 @@ Claude Code sessions
         │     └──► profile README (&lt;!-- vibestats-start/end --&gt;)
         │
         └──► username/username/vibestats/data.json
-              └──► vibestats.dev/[username] (client-side dashboard)
-  </pre>
+              └──► vibestats.dev/[username] (client-side dashboard)</pre>
 
   <h2>Data flow explained</h2>
   <ol>
