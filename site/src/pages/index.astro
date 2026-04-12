@@ -15,21 +15,41 @@ import Base from '../layouts/Base.astro';
       <h2>Install</h2>
       <div class="install-block">
         <pre><code id="install-cmd">curl -sSf https://vibestats.dev/install.sh | bash</code></pre>
-        <button id="copy-btn">Copy</button>
+        <button id="copy-btn" type="button" aria-live="polite">Copy</button>
       </div>
       <script>
-        const btn = document.getElementById('copy-btn') as HTMLButtonElement;
-        btn.addEventListener('click', () => {
-          navigator.clipboard.writeText('curl -sSf https://vibestats.dev/install.sh | bash');
-          btn.textContent = 'Copied!';
-          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-        });
+        const btn = document.getElementById('copy-btn');
+        const cmdEl = document.getElementById('install-cmd');
+        if (btn instanceof HTMLButtonElement && cmdEl) {
+          let resetTimer: number | undefined;
+          btn.addEventListener('click', async () => {
+            const cmd = cmdEl.textContent ?? '';
+            try {
+              await navigator.clipboard.writeText(cmd);
+              btn.textContent = 'Copied!';
+            } catch {
+              btn.textContent = 'Copy failed';
+            }
+            if (resetTimer !== undefined) {
+              window.clearTimeout(resetTimer);
+            }
+            resetTimer = window.setTimeout(() => {
+              btn.textContent = 'Copy';
+            }, 2000);
+          });
+        }
       </script>
     </section>
 
     <section class="heatmap-example">
       <h2>See it in action</h2>
-      <img src="/heatmap-example.svg" alt="Example vibestats heatmap" />
+      <img
+        src="/heatmap-example.svg"
+        alt="Example vibestats heatmap"
+        width="664"
+        height="114"
+        loading="lazy"
+      />
     </section>
 
     <section class="why">
