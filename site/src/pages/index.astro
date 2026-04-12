@@ -2,7 +2,149 @@
 import Base from '../layouts/Base.astro';
 ---
 <Base title="vibestats">
-  <h1>vibestats</h1>
-  <p>Claude Code usage stats, rendered as a GitHub-style heatmap.</p>
-  <p>Visit <code>/&lt;username&gt;</code> to view a user dashboard.</p>
+  <main>
+    <section class="hero">
+      <h1>Track your Claude Code sessions</h1>
+      <p class="sub-headline">
+        Automatically capture every session and render a GitHub-style heatmap
+        on your profile — zero manual commands.
+      </p>
+    </section>
+
+    <section class="install">
+      <h2>Install</h2>
+      <div class="install-block">
+        <pre><code id="install-cmd">curl -sSf https://vibestats.dev/install.sh | bash</code></pre>
+        <button id="copy-btn" type="button" aria-live="polite">Copy</button>
+      </div>
+      <script>
+        const btn = document.getElementById('copy-btn');
+        const cmdEl = document.getElementById('install-cmd');
+        if (btn instanceof HTMLButtonElement && cmdEl) {
+          let resetTimer: number | undefined;
+          btn.addEventListener('click', async () => {
+            const cmd = cmdEl.textContent ?? '';
+            try {
+              await navigator.clipboard.writeText(cmd);
+              btn.textContent = 'Copied!';
+            } catch {
+              btn.textContent = 'Copy failed';
+            }
+            if (resetTimer !== undefined) {
+              window.clearTimeout(resetTimer);
+            }
+            resetTimer = window.setTimeout(() => {
+              btn.textContent = 'Copy';
+            }, 2000);
+          });
+        }
+      </script>
+    </section>
+
+    <section class="heatmap-example">
+      <h2>See it in action</h2>
+      <img
+        src="/heatmap-example.svg"
+        alt="Example vibestats heatmap"
+        width="664"
+        height="114"
+        loading="lazy"
+      />
+    </section>
+
+    <section class="why">
+      <h2>Why vibestats?</h2>
+      <ul>
+        <li><strong>Zero effort</strong> — hooks fire silently on every session; no manual commands needed.</li>
+        <li><strong>Cross-machine</strong> — all your machines, one repository; data is always in sync.</li>
+        <li><strong>GitHub profile</strong> — heatmap embeds directly in your README and links to your interactive dashboard.</li>
+      </ul>
+    </section>
+  </main>
 </Base>
+
+<style>
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sub-headline {
+    font-size: 1.125rem;
+    color: #555;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  section {
+    margin-bottom: 3rem;
+  }
+
+  .install-block {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  pre {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+  }
+
+  code {
+    font-family: monospace;
+    font-size: 0.95rem;
+  }
+
+  #copy-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #888;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  #copy-btn:hover {
+    background: #f0f0f0;
+  }
+
+  .heatmap-example img {
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .why ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .why ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    font-size: 1rem;
+  }
+
+  .why ul li:last-child {
+    border-bottom: none;
+  }
+</style>
