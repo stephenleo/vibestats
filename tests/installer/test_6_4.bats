@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Story 6.4: Implement hook configuration, README markers, and backfill trigger
-# ATDD Red Phase — tests assert expected behaviour; will fail until install.sh is implemented.
+# TDD GREEN PHASE — all 9 tests pass; implementation in install.sh is complete.
 #
 # Run: bats tests/installer/test_6_4.bats
 #
@@ -35,7 +35,7 @@ teardown() {
 # P1 — AC #1 (FR8): Stop hook written to ~/.claude/settings.json
 # Assert: hooks.Stop[0].hooks[0].command == "vibestats sync" and async == true
 # ---------------------------------------------------------------------------
-@test "[P1] configure_hooks: Stop hook with command=vibestats sync and async=true written to settings.json" {
+@test "[P1][6.4-UNIT-001] configure_hooks: Stop hook with command=vibestats sync and async=true written to settings.json" {
 
   run bash --noprofile --norc -c "
     source '${INSTALL_SH}'
@@ -67,7 +67,7 @@ print('Stop hook valid')
 # P1 — AC #1 (FR8): SessionStart hook written to ~/.claude/settings.json
 # Assert: hooks.SessionStart[0].hooks[0].command == "vibestats sync"
 # ---------------------------------------------------------------------------
-@test "[P1] configure_hooks: SessionStart hook with command=vibestats sync written to settings.json" {
+@test "[P1][6.4-UNIT-002] configure_hooks: SessionStart hook with command=vibestats sync written to settings.json" {
 
   run bash --noprofile --norc -c "
     source '${INSTALL_SH}'
@@ -99,7 +99,7 @@ print('SessionStart hook valid')
 # P1 — AC #1 (R-008): idempotency — running configure_hooks twice produces
 # exactly one Stop matcher and one SessionStart matcher
 # ---------------------------------------------------------------------------
-@test "[P1] configure_hooks: idempotent — running twice produces exactly one Stop and one SessionStart entry" {
+@test "[P1][6.4-UNIT-003] configure_hooks: idempotent — running twice produces exactly one Stop and one SessionStart entry" {
 
   run bash --noprofile --norc -c "
     source '${INSTALL_SH}'
@@ -129,7 +129,7 @@ print(f'Idempotency verified: Stop={stop_count}, SessionStart={session_count}')
 # P1 — AC #1 (R-008): configure_hooks does not clobber unrelated existing hooks
 # Pre-seed settings.json with a pre-existing hook key; assert still present after
 # ---------------------------------------------------------------------------
-@test "[P1] configure_hooks: does not clobber existing unrelated hooks in settings.json" {
+@test "[P1][6.4-UNIT-004] configure_hooks: does not clobber existing unrelated hooks in settings.json" {
 
   # Pre-seed settings.json with an unrelated hook
   mkdir -p "${HOME}/.claude"
@@ -179,7 +179,10 @@ print('Pre-existing hooks preserved and vibestats hooks added')
 # Mock _gh api returning sample README content and SHA; assert PUT body contains
 # <!-- vibestats-start -->, <!-- vibestats-end -->, SVG img URL, and dashboard link
 # ---------------------------------------------------------------------------
-@test "[P2] inject_readme_markers: markers + SVG img + dashboard link written to profile README" {
+@test "[P2][6.4-UNIT-005] inject_readme_markers: markers + SVG img + dashboard link written to profile README" {
+  # Given: a profile README exists with no vibestats markers
+  # When:  inject_readme_markers() runs with a mocked _gh() returning the README
+  # Then:  PUT body contains vibestats-start/end markers, SVG URL, and dashboard link
 
   # Build a base64-encoded README (platform-aware)
   SAMPLE_README="# Hello World
@@ -267,7 +270,10 @@ STUB
 # P2 — AC #2 (R-009): inject_readme_markers prints warning (not error) and
 # continues with exit 0 when profile repo returns 404 / non-zero exit
 # ---------------------------------------------------------------------------
-@test "[P2] inject_readme_markers: warning (not error) and continues when profile repo returns 404" {
+@test "[P2][6.4-UNIT-006] inject_readme_markers: warning (not error) and continues when profile repo returns 404" {
+  # Given: profile repo does not exist (_gh returns non-zero for README GET)
+  # When:  inject_readme_markers() runs
+  # Then:  function exits 0 and prints a Warning: message (not an error)
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -305,7 +311,11 @@ STUB
 # P2 — AC #2 (R-009): inject_readme_markers is idempotent — no second PUT
 # when markers already present in the README
 # ---------------------------------------------------------------------------
-@test "[P2] inject_readme_markers: idempotent — no second PUT when markers already present" {
+@test "[P2][6.4-UNIT-007] inject_readme_markers: idempotent — no second PUT when markers already present" {
+  # Given: profile README already contains vibestats-start/end markers
+  # When:  inject_readme_markers() runs
+  # Then:  no PUT is issued and output says "already present"
+  # Note:  $output must be saved before second `run` call — bats overwrites $output on each run
 
   # Build a README that already has vibestats markers (base64 encoded)
   SAMPLE_README="# Hello World
@@ -374,7 +384,7 @@ STUB
 # P2 — AC #3 (FR11): run_backfill calls vibestats sync --backfill
 # Spy on the binary call; assert sync --backfill appears in spy log
 # ---------------------------------------------------------------------------
-@test "[P2] run_backfill: vibestats sync --backfill is called as final step" {
+@test "[P2][6.4-UNIT-008] run_backfill: vibestats sync --backfill is called as final step" {
 
   BINARY_SPY_LOG="${BATS_TMPDIR}/binary_calls.log"
   export BINARY_SPY_LOG
@@ -405,7 +415,7 @@ STUB
 # P2 — AC #3 (FR11): run_backfill non-zero exit from binary prints warning
 # but installer function exits 0 (backfill failure is non-fatal)
 # ---------------------------------------------------------------------------
-@test "[P2] run_backfill: non-zero exit from binary prints warning but installer exits 0" {
+@test "[P2][6.4-UNIT-009] run_backfill: non-zero exit from binary prints warning but installer exits 0" {
 
   BINARY_SPY_LOG="${BATS_TMPDIR}/binary_calls.log"
   export BINARY_SPY_LOG
