@@ -2,7 +2,7 @@
 
 **GH Issue:** #40
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
