@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-12T08:00:00Z_
+_Last updated: 2026-04-12T09:40:00Z_
 
 ## Stories
 
@@ -27,10 +27,10 @@ _Last updated: 2026-04-12T08:00:00Z_
 | 5.3 | 5 | Implement update_readme.py | done | #28 | #66 | merged | epic 1 complete | ✅ Yes (done) |
 | 5.4 | 5 | Implement action.yml (composite community GitHub Action) | done | #29 | #68 | merged | epic 1 complete | ✅ Yes (done) |
 | 5.5 | 5 | Implement aggregate.yml (user vibestats-data workflow template) | done | #30 | #67 | merged | epic 1 complete | ✅ Yes (done) |
-| 6.1 | 6 | Implement dependency detection and gh authentication | ready-for-dev | #31 | — | — | epic 8 complete | ✅ Yes |
-| 6.2 | 6 | Implement first-install path | backlog | #32 | — | — | 6.1 | ❌ No (6.1 not merged) |
-| 6.3 | 6 | Implement multi-machine install path | backlog | #33 | — | — | 6.1 | ❌ No (6.1 not merged) |
-| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | backlog | #34 | — | — | 6.1, 6.2, 6.3 | ❌ No (6.1/6.2/6.3 not merged) |
+| 6.1 | 6 | Implement dependency detection and gh authentication | done | #31 | #76 | merged | epic 8 complete | ✅ Yes (done) |
+| 6.2 | 6 | Implement first-install path | backlog | #32 | — | — | 6.1 | ✅ Yes |
+| 6.3 | 6 | Implement multi-machine install path | backlog | #33 | — | — | 6.1 | ✅ Yes |
+| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | backlog | #34 | — | — | 6.1, 6.2, 6.3 | ❌ No (6.2/6.3 not merged) |
 | 7.1 | 7 | Build base layouts and shared Astro components | done | #35 | #69 | merged | epic 1 complete | ✅ Yes (done) |
 | 7.2 | 7 | Build per-user dashboard (u/index.astro + cal-heatmap) | done | #36 | #71 | merged | 7.1 | ✅ Yes (done) |
 | 7.3 | 7 | Build documentation pages | done | #37 | #72 | merged | 7.1 | ✅ Yes (done) |
@@ -110,8 +110,8 @@ _Last updated: 2026-04-12T08:00:00Z_
 - **Story 8.2 done** — PR #74 merged 2026-04-12T07:16:27Z.
 - **Story 8.3 done** — PR #75 merged 2026-04-12T07:17:43Z.
 - **Epic 8 complete** — All stories (8.1–8.3) done.
-- **Story 6.1 now unblocked** — Epic 8 is complete; 6.1 is Ready to Work. Stories 6.2, 6.3, 6.4 still blocked on 6.1.
-- **Story 6.1 in progress** — Story file created; worktree exists at `.worktrees/story-6.1-implement-dependency-detection-and-gh-authentication`. No PR opened yet.
-- **Current bottleneck:** Only Epic 6 (Bash Installer) remains. Story 6.1 is ready-for-dev (worktree active, no PR yet); 6.2, 6.3, 6.4 blocked until 6.1 merges. All other epics complete.
+- **Story 6.1 done** — PR #76 merged 2026-04-12T09:28:17Z. Issue #31 closed. Remote branch deleted. Worktree already cleaned up.
+- **Stories 6.2 and 6.3 now unblocked** — 6.1 is done/merged; both 6.2 and 6.3 are Ready to Work (can be implemented in parallel).
+- **Current bottleneck:** Only Epic 6 (Bash Installer) remains. Stories 6.2 and 6.3 are ready to work (parallel); story 6.4 blocked until 6.2 and 6.3 both merge.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
