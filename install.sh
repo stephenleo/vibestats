@@ -308,7 +308,8 @@ store_machine_token() {
   export MACHINE_ID
 
   # Obtain machine-side token
-  LOCAL_TOKEN=$(_gh auth token)
+  LOCAL_TOKEN=$(_gh auth token) \
+    || { echo "Error: Failed to obtain machine token via 'gh auth token'. Ensure gh is authenticated." >&2; exit 1; }
 
   # Detect USERNAME if not already exported
   if [ -z "${USERNAME:-}" ]; then

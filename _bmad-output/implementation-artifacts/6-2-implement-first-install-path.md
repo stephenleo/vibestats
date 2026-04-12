@@ -1,6 +1,6 @@
 # Story 6.2: Implement first-install path
 
-Status: review
+Status: done
 
 <!-- GH Issue: #32 | Epic: #6 | PR must include: Closes #32 -->
 
@@ -388,6 +388,11 @@ Security: VIBESTATS_TOKEN never written to disk — piped directly from gh api t
 |------|--------|--------|
 | 2026-04-12 | Story created | BMad Create-Story |
 | 2026-04-12 | Implemented first-install path functions in install.sh | Dev Agent |
+
+### Review Findings
+
+- [x] [Review][Patch] Add explicit error message when `gh auth token` fails in `store_machine_token` [install.sh:311] -- fixed, `set -e` exit now accompanied by descriptive stderr message
+- [x] [Review][Defer] EXIT trap in `download_and_install_binary` could interfere with later function failures [install.sh:137] -- deferred, pre-existing from story 6.1
 
 ## File List
 

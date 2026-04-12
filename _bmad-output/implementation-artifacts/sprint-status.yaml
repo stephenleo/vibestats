@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (story 6.1 review; install.sh implemented, all 10 bats tests pass)
+last_updated: 2026-04-12 (story 6.2 code review done; 1 patch applied, 1 deferred)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -113,7 +113,7 @@ development_status:
   # ──────────────────────────────────────────────────────────────
   epic-6: in-progress
   6-1-implement-dependency-detection-and-gh-authentication: done
-  6-2-implement-first-install-path: backlog
+  6-2-implement-first-install-path: done
   6-3-implement-multi-machine-install-path: backlog
   6-4-implement-hook-configuration-readme-markers-and-backfill-trigger: backlog
   epic-6-retrospective: optional
