@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (epic-4 retrospective complete)
+# last_updated: 2026-04-12 (epic-7 retrospective complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (epic-4 retrospective complete)
+last_updated: 2026-04-12 (epic-7 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -128,7 +128,7 @@ development_status:
   7-2-build-per-user-dashboard-u-index-astro-cal-heatmap: done
   7-3-build-documentation-pages: done
   7-4-build-landing-page: done
-  epic-7-retrospective: optional
+  epic-7-retrospective: done
 
   # ──────────────────────────────────────────────────────────────
   # EPIC 8: CI/CD & Distribution
