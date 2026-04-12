@@ -1,5 +1,5 @@
 # generated: 2026-04-10
-# last_updated: 2026-04-12 (epic-6 retrospective complete)
+# last_updated: 2026-04-12 (epic-1 retrospective complete)
 # project: vibestats
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-12 (epic-6 retrospective complete)
+last_updated: 2026-04-12 (epic-1 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -54,7 +54,7 @@ development_status:
   1-2-initialize-rust-binary-project: done
   1-3-initialize-astro-site-project: done
   1-4-define-and-document-all-json-and-toml-schemas: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # ──────────────────────────────────────────────────────────────
   # EPIC 2: Rust Binary — Foundation Modules
