@@ -8,10 +8,11 @@ Test IDs follow: 8.3-UNIT-{SEQ}
 TDD Phase: GREEN — all tests active (pytest.mark.skip removed).
   - TC-1: CONTRIBUTING.md versioning section authored in Task 2
   - TC-2, TC-3: action.yml name/description confirmed non-empty (Story 5.4 done)
+  - TC-4: action.yml branding values non-empty (R-005, NFR17, test-design-epic-8.md P1)
 
 Do NOT duplicate assertions already present in test_action_yml.py:
-  - branding.icon presence  (5.4-UNIT-007a)
-  - branding.color presence  (5.4-UNIT-007b)
+  - branding.icon KEY presence  (5.4-UNIT-007a) — TC-4 asserts VALUE non-empty
+  - branding.color KEY presence  (5.4-UNIT-007b) — TC-4 asserts VALUE non-empty
   - runs.using == 'composite'  (5.4-UNIT-002)
   - inputs.token / inputs.profile-repo keys  (5.4-UNIT-003)
 
@@ -124,5 +125,49 @@ def test_tc3_action_yml_description_is_non_empty() -> None:
     )
     assert description.strip(), (
         "action.yml 'description' must be a non-empty string "
+        "(required for GitHub Marketplace listing, NFR17)."
+    )
+
+
+# ---------------------------------------------------------------------------
+# TC-4 (P1): action.yml branding values are non-empty strings
+# (R-005, NFR17 — Story 5.4 asserts branding key presence; this asserts non-empty values)
+# ---------------------------------------------------------------------------
+
+
+def test_tc4_action_yml_branding_icon_is_non_empty() -> None:
+    """[P1] 8.3-UNIT-004a: action.yml 'branding.icon' must be a non-empty string.
+
+    The GitHub Actions Marketplace requires a non-empty 'branding.icon' for listing.
+    Story 5.4 (5.4-UNIT-007a) asserts the key exists; this test asserts the VALUE
+    is a non-empty string — required by R-005 and NFR17 (test-design-epic-8.md P1).
+    """
+    parsed = _load_action_yml()
+    branding = parsed.get("branding", {})
+    icon = branding.get("icon")
+    assert isinstance(icon, str), (
+        f"action.yml 'branding.icon' must be a string, got {type(icon).__name__!r}"
+    )
+    assert icon.strip(), (
+        "action.yml 'branding.icon' must be a non-empty string "
+        "(required for GitHub Marketplace listing, NFR17)."
+    )
+
+
+def test_tc4_action_yml_branding_color_is_non_empty() -> None:
+    """[P1] 8.3-UNIT-004b: action.yml 'branding.color' must be a non-empty string.
+
+    The GitHub Actions Marketplace requires a non-empty 'branding.color' for listing.
+    Story 5.4 (5.4-UNIT-007b) asserts the key exists; this test asserts the VALUE
+    is a non-empty string — required by R-005 and NFR17 (test-design-epic-8.md P1).
+    """
+    parsed = _load_action_yml()
+    branding = parsed.get("branding", {})
+    color = branding.get("color")
+    assert isinstance(color, str), (
+        f"action.yml 'branding.color' must be a string, got {type(color).__name__!r}"
+    )
+    assert color.strip(), (
+        "action.yml 'branding.color' must be a non-empty string "
         "(required for GitHub Marketplace listing, NFR17)."
     )
