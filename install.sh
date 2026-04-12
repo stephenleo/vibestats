@@ -425,6 +425,122 @@ first_install_path() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 12: Configure Claude Code hooks in ~/.claude/settings.json (AC #1, FR8)
+# Writes Stop and SessionStart hooks; idempotent — safe to run multiple times.
+# Uses python3 stdlib only (no jq required).
+# ---------------------------------------------------------------------------
+configure_hooks() {
+  CLAUDE_SETTINGS="${HOME}/.claude/settings.json"
+  mkdir -p "${HOME}/.claude"
+  python3 - "$CLAUDE_SETTINGS" <<'PYEOF'
+import sys, json
+
+settings_path = sys.argv[1]
+try:
+    with open(settings_path, 'r') as f:
+        settings = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    settings = {}
+
+if not isinstance(settings, dict):
+    settings = {}
+
+if 'hooks' not in settings:
+    settings['hooks'] = {}
+
+# Configure Stop hook
+stop_hooks = settings['hooks'].get('Stop', [])
+vibestats_stop_present = any(
+    any(h.get('command') == 'vibestats sync' for h in matcher.get('hooks', []))
+    for matcher in stop_hooks
+)
+if not vibestats_stop_present:
+    stop_hooks.append({'hooks': [{'type': 'command', 'command': 'vibestats sync', 'async': True}]})
+settings['hooks']['Stop'] = stop_hooks
+
+# Configure SessionStart hook
+session_hooks = settings['hooks'].get('SessionStart', [])
+vibestats_session_present = any(
+    any(h.get('command') == 'vibestats sync' for h in matcher.get('hooks', []))
+    for matcher in session_hooks
+)
+if not vibestats_session_present:
+    session_hooks.append({'hooks': [{'type': 'command', 'command': 'vibestats sync'}]})
+settings['hooks']['SessionStart'] = session_hooks
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+    f.write('\n')
+PYEOF
+  echo "Claude Code hooks configured in ~/.claude/settings.json"
+}
+
+# ---------------------------------------------------------------------------
+# Step 13: Inject vibestats README markers into profile README (AC #2, FR9)
+# Adds <!-- vibestats-start/end --> block with SVG embed and dashboard link.
+# Graceful: prints warning (not error) when profile repo is inaccessible.
+# Idempotent: skips if markers already present.
+# Requires: GITHUB_USER (auto-detected if not set).
+# ---------------------------------------------------------------------------
+inject_readme_markers() {
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
+  fi
+
+  # Single GET — parse content and SHA from same response (avoid race + extra API call)
+  README_RESPONSE=$(_gh api "repos/${GITHUB_USER}/${GITHUB_USER}/contents/README.md" 2>/dev/null || echo "NOT_FOUND")
+  if [ "$README_RESPONSE" = "NOT_FOUND" ]; then
+    echo "Warning: Could not access ${GITHUB_USER}/${GITHUB_USER}/README.md. Please add vibestats markers manually. See https://vibestats.dev/docs/quickstart for instructions."
+    return 0
+  fi
+
+  SHA=$(echo "$README_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['sha'])")
+  ENCODED=$(echo "$README_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['content'])")
+  README_CONTENT=$(echo "$ENCODED" | python3 -c "import sys, base64; print(base64.b64decode(sys.stdin.read().replace('\n','')).decode())")
+
+  # Idempotency check
+  if echo "$README_CONTENT" | grep -q '<!-- vibestats-start -->'; then
+    echo "vibestats README markers already present — skipping."
+    return 0
+  fi
+
+  MARKER_BLOCK="<!-- vibestats-start -->
+[![vibestats](https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_USER}/main/vibestats/heatmap.svg)](https://vibestats.dev/${GITHUB_USER})
+
+[View interactive dashboard →](https://vibestats.dev/${GITHUB_USER})
+<!-- vibestats-end -->"
+
+  UPDATED_CONTENT="${README_CONTENT}
+${MARKER_BLOCK}"
+
+  ENCODED_NEW=$(printf '%s' "$UPDATED_CONTENT" | base64 | tr -d '\n')
+
+  _gh api "repos/${GITHUB_USER}/${GITHUB_USER}/contents/README.md" \
+    --method PUT \
+    --field message="Add vibestats heatmap markers" \
+    --field "content=${ENCODED_NEW}" \
+    --field "sha=${SHA}"
+
+  echo "vibestats markers added to ${GITHUB_USER}/${GITHUB_USER}/README.md"
+}
+
+# ---------------------------------------------------------------------------
+# Step 14: Run post-install backfill (AC #3, FR11)
+# Calls vibestats sync --backfill as the final step.
+# Non-fatal: prints warning if binary exits non-zero, but installer exits 0.
+# ---------------------------------------------------------------------------
+run_backfill() {
+  echo "Running post-install backfill (vibestats sync --backfill)..."
+  if ! "${HOME}/.local/bin/vibestats" sync --backfill; then
+    echo "Warning: Backfill completed with errors. Run 'vibestats sync --backfill' manually to retry."
+  else
+    echo "Backfill complete."
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main entrypoint
 # ---------------------------------------------------------------------------
 main() {
@@ -447,6 +563,11 @@ main() {
       first_install_path
       ;;
   esac
+
+  # Steps 12–14: shared final steps (always run)
+  configure_hooks
+  inject_readme_markers
+  run_backfill
 
   echo "=== Installation complete! ==="
   echo "Run 'vibestats --help' to get started."
