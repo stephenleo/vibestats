@@ -23,16 +23,6 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: source install.sh functions into test scope without executing main()
-# ---------------------------------------------------------------------------
-_source_install_functions() {
-  # Source install.sh but prevent main() from running
-  # We achieve this by overriding main() before sourcing and unoverriding after
-  # shellcheck disable=SC1090
-  source "$INSTALL_SH" 2>/dev/null || true
-}
-
-# ---------------------------------------------------------------------------
 # AC #1 — gh not installed → brew install gh called on Darwin (macOS)
 # P1 — Story 6.1, FR2
 # ---------------------------------------------------------------------------
@@ -165,18 +155,20 @@ STUB
 # P1 — Story 6.1, FR3
 # ---------------------------------------------------------------------------
 @test "[P1] gh not authenticated → gh auth login called" {
-  cat > "${HOME}/stub_env.sh" <<'STUB'
+  # Use a state file to simulate: first auth status call returns 1 (not authed),
+  # after auth login is called the second auth status call returns 0 (authed).
+  cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
-  case "$1 $2" in
+  case "\$1 \$2" in
     "auth status")
-      return 1  # not authenticated
+      if [ -f "${HOME}/gh_logged_in.flag" ]; then
+        return 0  # authenticated after login
+      fi
+      return 1  # not authenticated initially
       ;;
     "auth login")
       echo "gh auth login called" >> "${HOME}/gh_calls.log"
-      return 0
-      ;;
-    "auth status")
-      # Second call after login succeeds
+      touch "${HOME}/gh_logged_in.flag"
       return 0
       ;;
     *)
@@ -193,6 +185,7 @@ STUB
     check_gh_auth
   " 2>&1
 
+  [ "$status" -eq 0 ]
   [ -f "${HOME}/gh_calls.log" ]
   grep -q "gh auth login called" "${HOME}/gh_calls.log"
 }
