@@ -60,7 +60,6 @@ def _load_yaml() -> dict:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_preflight_deploy_site_yml_exists() -> None:
     """[P0] 8.2-UNIT-000: deploy-site.yml must exist at .github/workflows/.
 
@@ -78,7 +77,6 @@ def test_preflight_deploy_site_yml_exists() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc1_only_workflow_dispatch_trigger() -> None:
     """[P0] 8.2-UNIT-001: deploy-site.yml 'on' key must contain ONLY workflow_dispatch.
 
@@ -113,7 +111,6 @@ def test_tc1_only_workflow_dispatch_trigger() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc2_cloudflare_api_token_secret_name() -> None:
     """[P0] 8.2-UNIT-002a: CLOUDFLARE_API_TOKEN must be referenced by exact name.
 
@@ -126,7 +123,6 @@ def test_tc2_cloudflare_api_token_secret_name() -> None:
     )
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc2_cloudflare_account_id_secret_name() -> None:
     """[P0] 8.2-UNIT-002b: CLOUDFLARE_ACCOUNT_ID must be referenced by exact name.
 
@@ -139,7 +135,6 @@ def test_tc2_cloudflare_account_id_secret_name() -> None:
     )
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc2_no_hardcoded_token_values() -> None:
     """[P0] 8.2-UNIT-002c: No hardcoded token/credential patterns in deploy-site.yml.
 
@@ -166,7 +161,6 @@ def test_tc2_no_hardcoded_token_values() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc3_npm_run_build_present() -> None:
     """[P0] 8.2-UNIT-003a: deploy-site.yml must include an 'npm run build' step (AC2, AC3)."""
     text = _load_text()
@@ -176,7 +170,6 @@ def test_tc3_npm_run_build_present() -> None:
     )
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc3_npm_run_build_precedes_deploy() -> None:
     """[P0] 8.2-UNIT-003b: npm run build must appear before the deploy step (AC3, R-008).
 
@@ -209,7 +202,6 @@ def test_tc3_npm_run_build_precedes_deploy() -> None:
     )
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc3_no_continue_on_error_on_build() -> None:
     """[P0] 8.2-UNIT-003c: build step must not have continue-on-error: true (AC3, R-008).
 
@@ -240,7 +232,6 @@ def test_tc3_no_continue_on_error_on_build() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc4_workflow_dispatch_has_ref_input() -> None:
     """[P1] 8.2-UNIT-004: workflow_dispatch must declare a 'ref' input (AC1, R-003).
 
@@ -268,7 +259,6 @@ def test_tc4_workflow_dispatch_has_ref_input() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc5_checkout_uses_event_inputs_ref() -> None:
     """[P1] 8.2-UNIT-005: checkout step must use ${{ github.event.inputs.ref }} (AC2, R-003).
 
@@ -293,7 +283,6 @@ def test_tc5_checkout_uses_event_inputs_ref() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="RED PHASE — deploy-site.yml not yet implemented (Story 8.2 backlog)")
 def test_tc6_build_uses_site_working_directory() -> None:
     """[P2] 8.2-UNIT-006: npm run build must run inside the site/ directory (AC2, R-008).
 
