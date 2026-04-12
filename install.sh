@@ -11,7 +11,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 if ! declare -f _gh > /dev/null 2>&1; then
   _gh() {
-    gh "$@"
+    GH_PAGER= gh "$@"
   }
 fi
 
