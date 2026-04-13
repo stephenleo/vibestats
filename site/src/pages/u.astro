@@ -69,7 +69,7 @@ import Base from '../layouts/Base.astro';
   }
 
   // ── Render heatmap for a given year ───────────────────────────────────────
-  function renderHeatmap(selectedYear: string): void {
+  async function renderHeatmap(selectedYear: string): Promise<void> {
     if (!vibestatsData) return;
 
     // Destroy previous instance
@@ -87,7 +87,7 @@ import Base from '../layouts/Base.astro';
     const maxSessions = calData.reduce((m, d) => Math.max(m, d.value), 1);
 
     const cal = new CalHeatmap();
-    cal.paint(
+    await cal.paint(
       {
         itemSelector: '#cal-heatmap',
         data: {
@@ -150,7 +150,7 @@ import Base from '../layouts/Base.astro';
       btn.textContent = year;
       btn.className = 'year-btn' + (year === selectedYear ? ' active' : '');
       btn.setAttribute('aria-pressed', String(year === selectedYear));
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         // Update active state without re-fetching
         for (const b of yearToggleEl.querySelectorAll('.year-btn')) {
           b.classList.remove('active');
@@ -158,7 +158,11 @@ import Base from '../layouts/Base.astro';
         }
         btn.classList.add('active');
         btn.setAttribute('aria-pressed', 'true');
-        renderHeatmap(year);
+        try {
+          await renderHeatmap(year);
+        } catch {
+          showError(`Failed to render dashboard for @${username}`);
+        }
       });
       yearToggleEl.appendChild(btn);
     }
@@ -210,12 +214,16 @@ import Base from '../layouts/Base.astro';
     const currentYear = String(new Date().getFullYear());
     const defaultYear = years.includes(currentYear) ? currentYear : years[0];
 
-    // Show content section
-    loadingEl.hidden = true;
-    contentEl.hidden = false;
+    // Show content section and render
+    try {
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
 
-    renderYearToggle(years, defaultYear);
-    renderHeatmap(defaultYear);
+      renderYearToggle(years, defaultYear);
+      await renderHeatmap(defaultYear);
+    } catch {
+      showError(`Failed to render dashboard for @${username}`);
+    }
   }
 
   init();
@@ -252,6 +260,13 @@ import Base from '../layouts/Base.astro';
     color: #dc2626;
   }
 
+  #cal-heatmap {
+    overflow-x: auto;
+  }
+</style>
+
+<!-- Unscoped: year-toggle buttons are created dynamically via JS -->
+<style is:global>
   .year-toggle {
     display: flex;
     gap: 0.5rem;
@@ -279,9 +294,5 @@ import Base from '../layouts/Base.astro';
     border-color: #f97316;
     color: #fff;
     font-weight: 600;
-  }
-
-  #cal-heatmap {
-    overflow-x: auto;
   }
 </style>
