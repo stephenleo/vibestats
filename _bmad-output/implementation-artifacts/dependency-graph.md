@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-13T00:00:00Z (story 9.1 artifact hygiene — all Epics 1–8 complete)_
+_Last updated: 2026-04-13T06:00:00Z (phase0 run — epic 9 stories added; 9.1–9.6 done, 9.7–9.9 backlog)_
 
 ## Stories
 
@@ -38,6 +38,15 @@ _Last updated: 2026-04-13T00:00:00Z (story 9.1 artifact hygiene — all Epics 1�
 | 8.1 | 8 | Implement Rust binary release CI | done | #39 | #73 | merged | epics 1–7 complete | ✅ Yes (done) |
 | 8.2 | 8 | Implement Cloudflare Pages deploy workflow | done | #40 | #74 | merged | epics 1–7 complete | ✅ Yes (done) |
 | 8.3 | 8 | Configure GitHub Actions Marketplace publication | done | #41 | #75 | merged | epics 1–7 complete | ✅ Yes (done) |
+| 9.1 | 9 | Artifact hygiene — fix stale story statuses and missing records | done | #81 | #94 | merged | none (independent) | ✅ Yes (done) |
+| 9.2 | 9 | Retrospective code reviews for Stories 4.3 and 4.4 | done | #82 | #95 | merged | none (independent) | ✅ Yes (done) |
+| 9.3 | 9 | Fix test_6_2.bats pre-existing failures | done | #83 | #96 | merged | none (independent) | ✅ Yes (done) |
+| 9.4 | 9 | Bash installer — refactor EXIT trap to composable cleanup | done | #84 | #97 | merged | none (independent) | ✅ Yes (done) |
+| 9.5 | 9 | Rust — remove dead_code suppressors and verify lint clean | done | #85 | #99 | merged | none (independent) | ✅ Yes (done) |
+| 9.6 | 9 | First release — push v0.1.0 tag and create v1 floating tag | done | #86 | #98 | merged | 9.3 (recommended) | ✅ Yes (done) |
+| 9.7 | 9 | aggregate.yml — add concurrency group to prevent push conflicts | backlog | #87 | — | — | none (independent) | ✅ Yes |
+| 9.8 | 9 | Architecture documentation — capture post-sprint lessons | backlog | #88 | — | — | none (independent) | ✅ Yes |
+| 9.9 | 9 | Python script hardening — update_readme.py and aggregate.py improvements | backlog | #89 | — | — | none (independent) | ✅ Yes |
 
 ## Dependency Chains
 
@@ -81,6 +90,11 @@ _Last updated: 2026-04-13T00:00:00Z (story 9.1 artifact hygiene — all Epics 1�
 **Epic 8:**
 - All stories (8.1–8.3) depend on: epics 1–7 complete (independent of each other within the epic)
 
+**Epic 9:**
+- All stories (9.1–9.9) are independent of each other and can be worked in any order
+- Recommended order: 9.1 → 9.2 → 9.3 → 9.5 → 9.4 → 9.6 → 9.7 → 9.8 → 9.9
+- 9.6 should only follow 9.3 (broken installer tests should not be on a released version)
+
 ## Notes
 
 - **Epic 1 complete** — all four PRs merged: #43 (1.1), #44 (1.2), #46 (1.3), #45 (1.4). Worktrees and remote branches cleaned up.
@@ -117,4 +131,7 @@ _Last updated: 2026-04-13T00:00:00Z (story 9.1 artifact hygiene — all Epics 1�
 - **Epic 6 complete** — All stories (6.1–6.4) done.
 - **All Epics 1–8 complete** — The sprint is fully done. Epic 9 (Post-Sprint Quality & Technical Debt) is in progress.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
-- **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.
+- **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created. Epic 9 issues #80–#89 already created.
+- **Epic 9 stories 9.1–9.6 done** — PRs #94 (9.1), #95 (9.2), #96 (9.3), #97 (9.4), #99 (9.5), #98 (9.6) all merged 2026-04-13. Worktrees for 9.4, 9.5, 9.6 removed; remote branches deleted.
+- **Epic 9 stories 9.7–9.9** — backlog, no PRs yet. All three are independent and ready to work.
+- **No open PRs** as of 2026-04-13.
