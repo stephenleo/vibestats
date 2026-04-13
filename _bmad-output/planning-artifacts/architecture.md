@@ -700,3 +700,157 @@ patterns prevent the most likely agent conflicts, and all 3 gaps are resolved.
 5. `install.sh`
 6. `site/` Astro setup → `u/index.astro` + `public/_redirects`
 7. `.github/workflows/release.yml` + `.github/workflows/deploy-site.yml`
+
+---
+
+## Known Gotchas & Conventions
+
+This section captures non-obvious lessons and footguns discovered during implementation. Each item is cross-referenced to the source file that demonstrates the correct pattern.
+
+---
+
+### 1. Cloudflare Pages `_redirects` evaluation order
+
+Cloudflare Pages evaluates `_redirects` top-to-bottom and stops at the first match. Pass-through rules for static assets **must appear before** any catch-all rewrite rules. A catch-all like `/:username /u  200` placed first will intercept `/_astro/`, `/favicon.ico`, and every other path — nothing else will ever be served.
+
+**Additional footgun:** Rewriting to `/u.html` instead of `/u` triggers Cloudflare's clean-URL redirect (`*.html` → `*`), which sends the browser back to `/:username` — causing an infinite redirect loop. Always rewrite to `/u`, not `/u.html`.
+
+Correct ordering (canonical reference: `site/public/_redirects`):
+
+```
+# Pass-through rules: keep static assets untouched.
+# These MUST come before the /:username catch-all below.
+/favicon.ico  /favicon.ico  200
+/favicon.svg  /favicon.svg  200
+/install.sh   /install.sh   200
+/_astro/*     /_astro/:splat  200
+
+# Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
+# Target is /u (the clean URL), not /u.html.  Rewriting to /u.html would
+# trigger Cloudflare's clean-URL redirect (*.html → *), sending the browser
+# to /u, which re-matches /:username — causing an infinite redirect loop.
+/:username    /u  200
+```
+
+Source: Epic 1 retrospective, Challenge #1; `site/public/_redirects`
+
+---
+
+### 2. Rust `#[serde(default)]` vs `Default` footgun
+
+`#[serde(default = "some_fn")]` controls what serde uses during **deserialization** when a field is absent from the JSON/TOML. It does **not** affect `Default::default()`. If you `#[derive(Default)]`, the derived impl uses Rust's zero values (empty string, 0, false) — not `some_fn`.
+
+Whenever a struct uses `#[serde(default = "fn")]` **and** needs `Default`, write a manual `Default` impl that calls the same functions.
+
+Reference implementation (`src/checkpoint.rs` lines 10–33):
+
+```rust
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Checkpoint {
+    /// "active" | "retired" | "purged"; defaults to "active"
+    #[serde(default = "default_machine_status")]
+    pub machine_status: String,
+    // ...
+}
+
+fn default_machine_status() -> String {
+    "active".to_string()
+}
+
+impl Default for Checkpoint {
+    fn default() -> Self {
+        Self {
+            throttle_timestamp: None,
+            machine_status: default_machine_status(),
+            auth_error: false,
+            date_hashes: HashMap::new(),
+        }
+    }
+}
+```
+
+Source: Epic 2 retrospective, Challenge #3; `src/checkpoint.rs`
+
+---
+
+### 3. Cargo worktree `[workspace]` isolation pattern
+
+When running `cargo` commands from within a git worktree nested inside the main repo (e.g., `.worktrees/story-X-*`), Cargo walks up the directory tree and may find the parent `Cargo.toml`. To prevent this, the project's `Cargo.toml` must include `[workspace]` with no members — this declares an isolated workspace root and stops Cargo's upward search.
+
+The vibestats `Cargo.toml` line 1 is `[workspace]` with no members key — this is intentional. Do not remove it.
+
+Source: Epic 1 retrospective, Key Insight #3; `Cargo.toml`
+
+---
+
+### 4. `_gh()` define-if-not-defined pattern for testable shell helpers
+
+When writing shell scripts that call external tools (`gh`, `curl`, `brew`, etc.), wrap each external call in a helper function using the define-if-not-defined guard. Test files can then pre-define their own stub before sourcing `install.sh`, making the entire script testable without shell binary mocking.
+
+Pattern (from `install.sh` line 28):
+
+```bash
+if ! declare -f _gh > /dev/null 2>&1; then
+  _gh() {
+    GH_PAGER= gh "$@"
+  }
+fi
+```
+
+This pattern is used throughout `install.sh` and `tests/installer/` — all external tool wrappers follow this convention. Do **not** call `gh` directly in `install.sh`; always route through `_gh`.
+
+Source: Epic 6 retrospective, Key Insight #1; `install.sh` line 28
+
+---
+
+### 5. Python3 stdlib over `jq` for JSON in Bash scripts
+
+When shell scripts need JSON manipulation, use Python3 stdlib (`import json, sys, base64`) rather than `jq`. `jq` is not installed by default on macOS or many Linux distributions; Python3 is standard on both.
+
+Standard pattern (from `install.sh` lines 197–199):
+
+```bash
+USER_JSON=$(_gh api /user)
+GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+```
+
+For base64 decode (GitHub API Content responses):
+
+```bash
+python3 -c "import sys, base64; print(base64.b64decode(sys.stdin.read().replace('\n','')).decode())"
+```
+
+Pipe JSON to stdin and extract the required field. This avoids the `--jq` flag dependency on `gh` as well.
+
+Source: Epic 6 retrospective, Key Insight #2; `install.sh` lines 197–199
+
+---
+
+### 6. Security negative test pattern
+
+Security properties (e.g., "token is never written to disk") require **explicit negative test assertions** in bats. Implementation notes are not sufficient — add an assertion that actively detects leaks using a sentinel value.
+
+Pattern (from `tests/installer/test_6_2.bats` around line 243):
+
+```bash
+@test "[P0] VIBESTATS_TOKEN is never written to disk or echoed to stdout" {
+  SENTINEL_TOKEN="ghp_SENTINEL_VIBESTATS_TOKEN_DETECT_ME"
+
+  # Stub returns the sentinel so we can scan for it afterward
+  # ... (stub setup) ...
+
+  # Remove the stub before scanning to avoid false positives
+  rm -f "${HOME}/stub_env.sh"
+
+  # Assert the sentinel does NOT appear in any file under $HOME
+  found=$(grep -rl "${SENTINEL_TOKEN}" "${HOME}/" 2>/dev/null || true)
+  [ -z "$found" ]
+
+  # Also assert the sentinel does NOT appear in stdout
+  [[ "$output" != *"${SENTINEL_TOKEN}"* ]]
+}
+```
+
+Every security requirement in `install.sh` (NFR7: token never on disk) should have a corresponding negative bats test.
+
+Source: Epic 6 retrospective, Key Insight #3; `tests/installer/test_6_2.bats` line 243
