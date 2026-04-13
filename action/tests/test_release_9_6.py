@@ -39,8 +39,6 @@ Run: python3 -m pytest action/tests/test_release_9_6.py -v
 
 import pathlib
 import re
-import subprocess
-import sys
 
 import pytest
 import yaml
@@ -71,6 +69,19 @@ def _load_yaml(path: pathlib.Path) -> dict:
 
 def _load_text(path: pathlib.Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Module-level cached content — parsed once, reused across tests
+# (avoids repeated disk I/O; file content is static during a test run)
+# ---------------------------------------------------------------------------
+
+_RELEASE_YML_TEXT: str = _load_text(RELEASE_YML) if RELEASE_YML.exists() else ""
+_RELEASE_YML_DOC: dict = _load_yaml(RELEASE_YML) if RELEASE_YML.exists() else {}
+_DEPLOY_SITE_YML_DOC: dict = _load_yaml(DEPLOY_SITE_YML) if DEPLOY_SITE_YML.exists() else {}
+_ACTION_YML_DOC: dict = _load_yaml(ACTION_YML) if ACTION_YML.exists() else {}
+_CONTRIBUTING_MD_TEXT: str = _load_text(CONTRIBUTING_MD) if CONTRIBUTING_MD.exists() else ""
+_CARGO_TOML_TEXT: str = _load_text(CARGO_TOML) if CARGO_TOML.exists() else ""
 
 
 # ---------------------------------------------------------------------------
@@ -139,8 +150,7 @@ def test_tc1_action_yml_name_present_and_non_empty() -> None:
     Task 1 pre-release checklist: confirm action.yml name is set.
     Required for GitHub Actions Marketplace listing (AC #4).
     """
-    parsed = _load_yaml(ACTION_YML)
-    name = parsed.get("name")
+    name = _ACTION_YML_DOC.get("name")
     assert isinstance(name, str) and name.strip(), (
         f"action.yml 'name' must be a non-empty string, got: {name!r}. "
         "A non-empty 'name' is required for the Marketplace submission (AC #4, Task 1)."
@@ -153,8 +163,7 @@ def test_tc1_action_yml_description_present_and_non_empty() -> None:
     Task 1 pre-release checklist: confirm action.yml description is set.
     Required for GitHub Actions Marketplace listing (AC #4).
     """
-    parsed = _load_yaml(ACTION_YML)
-    description = parsed.get("description")
+    description = _ACTION_YML_DOC.get("description")
     assert isinstance(description, str) and description.strip(), (
         f"action.yml 'description' must be a non-empty string, got: {description!r}. "
         "A non-empty 'description' is required for the Marketplace submission (AC #4, Task 1)."
@@ -167,8 +176,7 @@ def test_tc1_action_yml_branding_icon_present_and_non_empty() -> None:
     Task 1 pre-release checklist: confirm action.yml branding.icon is set.
     Required for GitHub Actions Marketplace listing (AC #4).
     """
-    parsed = _load_yaml(ACTION_YML)
-    branding = parsed.get("branding", {})
+    branding = _ACTION_YML_DOC.get("branding", {})
     icon = branding.get("icon")
     assert isinstance(icon, str) and icon.strip(), (
         f"action.yml 'branding.icon' must be a non-empty string, got: {icon!r}. "
@@ -182,8 +190,7 @@ def test_tc1_action_yml_branding_color_present_and_non_empty() -> None:
     Task 1 pre-release checklist: confirm action.yml branding.color is set.
     Required for GitHub Actions Marketplace listing (AC #4).
     """
-    parsed = _load_yaml(ACTION_YML)
-    branding = parsed.get("branding", {})
+    branding = _ACTION_YML_DOC.get("branding", {})
     color = branding.get("color")
     assert isinstance(color, str) and color.strip(), (
         f"action.yml 'branding.color' must be a non-empty string, got: {color!r}. "
@@ -204,10 +211,9 @@ def test_tc2_contributing_md_has_release_versioning_section() -> None:
     Task 1 pre-release checklist: CONTRIBUTING.md Release Versioning section
     is a Marketplace prerequisite (Story 8.3 deliverable, AC #4).
     """
-    text = _load_text(CONTRIBUTING_MD)
     assert re.search(
         r"##.*(?:release\s+versioning|versioning)",
-        text,
+        _CONTRIBUTING_MD_TEXT,
         re.IGNORECASE | re.MULTILINE,
     ), (
         "CONTRIBUTING.md must contain a '## Release Versioning' (or '## Versioning') "
@@ -222,8 +228,7 @@ def test_tc2_contributing_md_references_v1_tag() -> None:
     in CONTRIBUTING.md. The documentation must reference 'v1' for the
     `uses: stephenleo/vibestats@v1` convention.
     """
-    text = _load_text(CONTRIBUTING_MD)
-    assert "v1" in text, (
+    assert "v1" in _CONTRIBUTING_MD_TEXT, (
         "CONTRIBUTING.md must reference 'v1' (the floating major tag). "
         "The v1 floating tag created in Task 4 follows this documented convention (AC #2)."
     )
@@ -236,9 +241,8 @@ def test_tc2_contributing_md_documents_floating_tag_force_push() -> None:
     AC #2: The maintenance checklist (git tag -f v1 ... && git push --force origin v1)
     must be present in CONTRIBUTING.md so future maintainers can update v1 correctly.
     """
-    text = _load_text(CONTRIBUTING_MD)
     # The documented procedure should include force-flag usage
-    assert "--force" in text or "-f" in text, (
+    assert "--force" in _CONTRIBUTING_MD_TEXT or "-f" in _CONTRIBUTING_MD_TEXT, (
         "CONTRIBUTING.md must document the 'git push --force origin v1' (or 'git tag -f v1') "
         "procedure for updating the floating major tag after each release (AC #2)."
     )
@@ -260,12 +264,11 @@ def test_tc3_release_yml_has_v1_floating_tag_step() -> None:
     The release.yml workflow must automate this by force-updating the v1 tag
     after each vX.Y.Z release (Story 8.1 architecture decision).
     """
-    text = _load_text(RELEASE_YML)
     # The step must reference the major version extraction and force-push pattern
     # release.yml extracts major version: e.g. major="${REF_NAME%%.*}"  → v1
     assert (
-        "git tag" in text and ("--force" in text or "-f" in text)
-    ) or "%%.*" in text, (
+        "git tag" in _RELEASE_YML_TEXT and ("--force" in _RELEASE_YML_TEXT or "-f" in _RELEASE_YML_TEXT)
+    ) or "%%.*" in _RELEASE_YML_TEXT, (
         "release.yml must contain a step that creates/updates the v1 floating tag "
         "(e.g., 'git tag $major $REF_NAME --force' + 'git push origin $major --force'). "
         "Without this, `uses: stephenleo/vibestats@v1` breaks after v0.1.0 (AC #2)."
@@ -280,13 +283,12 @@ def test_tc3_release_yml_floating_tag_uses_force_push() -> None:
     to the latest vX.Y.Z within the v1 major line. A plain 'git push' fails if
     v1 already exists (which it will after v0.1.0 is published).
     """
-    text = _load_text(RELEASE_YML)
     # Force push is required for updating an existing tag
     push_force_pattern = re.compile(
         r"git\s+push\s+.*--force|git\s+push\s+.*-f\b",
         re.IGNORECASE,
     )
-    assert push_force_pattern.search(text), (
+    assert push_force_pattern.search(_RELEASE_YML_TEXT), (
         "release.yml floating tag step must use 'git push ... --force' (or -f) for the v1 tag. "
         "A non-force push to an existing tag fails with 'already exists' error (AC #2)."
     )
@@ -300,13 +302,12 @@ def test_tc3_release_yml_floating_tag_derives_major_version() -> None:
     so the workflow works correctly for any future v1.x.x, v2.x.x releases.
     No hardcoded 'v1' string is acceptable — the tag must be computed.
     """
-    text = _load_text(RELEASE_YML)
     # release.yml uses parameter expansion: major="${REF_NAME%%.*}" to extract v1 from v1.2.3
     # For v0.1.0, major would be v0 (which is correct behaviour — v0 is the float for 0.x)
     # The key thing is: the computation exists (not hardcoded 'v1')
     # Check for shell parameter expansion pattern or similar dynamic extraction
-    assert "%%.*" in text or "cut" in text or re.search(
-        r"major\s*=\s*['\"]?\$", text
+    assert "%%.*" in _RELEASE_YML_TEXT or "cut" in _RELEASE_YML_TEXT or re.search(
+        r"major\s*=\s*['\"]?\$", _RELEASE_YML_TEXT
     ), (
         "release.yml must dynamically compute the major version tag from the pushed tag "
         "(e.g., major=\"${REF_NAME%%.*}\"). Hardcoding 'v1' breaks future major releases (AC #2)."
@@ -329,9 +330,8 @@ def test_tc4_release_yml_references_all_three_binary_assets() -> None:
       - vibestats-x86_64-unknown-linux-gnu.tar.gz
     The release.yml files: block must include all three.
     """
-    text = _load_text(RELEASE_YML)
     for target in EXPECTED_BINARY_TARGETS:
-        assert target in text, (
+        assert target in _RELEASE_YML_TEXT, (
             f"release.yml does not reference binary asset for target '{target}'. "
             f"AC #1 requires all three platform assets: {sorted(EXPECTED_BINARY_TARGETS)}. "
             "Check the 'files:' block in the release step."
@@ -344,8 +344,7 @@ def test_tc4_release_yml_references_tar_gz_assets() -> None:
     AC #1: All three platform binaries must be distributed as .tar.gz archives.
     install.sh (Epic 6) constructs download URLs expecting the .tar.gz suffix.
     """
-    text = _load_text(RELEASE_YML)
-    tar_gz_count = text.count(".tar.gz")
+    tar_gz_count = _RELEASE_YML_TEXT.count(".tar.gz")
     # Expect at least 3 occurrences in files: block (one per target)
     assert tar_gz_count >= 3, (
         f"release.yml contains {tar_gz_count} reference(s) to '.tar.gz' but expected at least 3. "
@@ -366,11 +365,10 @@ def test_tc5_cargo_toml_version_is_0_1_0() -> None:
     The tag pushed in Task 2 is v0.1.0. The Cargo.toml version must match
     to ensure the compiled binary reports the correct version via `vibestats --version`.
     """
-    text = _load_text(CARGO_TOML)
     # Accept both [package] version and workspace.package.version
     assert re.search(
         r'version\s*=\s*["\']0\.1\.0["\']',
-        text,
+        _CARGO_TOML_TEXT,
     ), (
         "Cargo.toml package version must be '0.1.0' to match the v0.1.0 tag being pushed. "
         "The binary version string (`vibestats --version`) is derived from this value (Task 2)."
@@ -384,8 +382,7 @@ def test_tc5_cargo_toml_has_ureq_dependency() -> None:
     the documented rustls fallback requires the ureq dependency to exist so
     that 'features = ["rustls"]' can be added to it.
     """
-    text = _load_text(CARGO_TOML)
-    assert "ureq" in text, (
+    assert "ureq" in _CARGO_TOML_TEXT, (
         "Cargo.toml must include 'ureq' as a dependency. "
         "This is required for the rustls TLS fallback documented in Dev Notes (AC #3, Task 3)."
     )
@@ -414,8 +411,7 @@ def test_tc6_deploy_site_yml_has_workflow_dispatch_trigger() -> None:
     AC #5: Task 5 requires triggering deploy-site.yml via workflow_dispatch.
     Without this trigger, the manual deployment step cannot be executed (AC #5).
     """
-    workflow = _load_yaml(DEPLOY_SITE_YML)
-    on_block = workflow.get("on", workflow.get(True, {}))
+    on_block = _DEPLOY_SITE_YML_DOC.get("on", _DEPLOY_SITE_YML_DOC.get(True, {}))
     assert isinstance(on_block, dict), (
         "deploy-site.yml 'on:' block must be a YAML mapping."
     )
@@ -441,8 +437,7 @@ def test_tc7_release_yml_trigger_is_tag_push_only() -> None:
     on every push to main, depleting GitHub Actions minutes and creating
     spurious releases (AC #1).
     """
-    doc = _load_yaml(RELEASE_YML)
-    on_block = doc.get("on", doc.get(True, {}))
+    on_block = _RELEASE_YML_DOC.get("on", _RELEASE_YML_DOC.get(True, {}))
     assert isinstance(on_block, dict), "'on:' block in release.yml must be a mapping."
 
     trigger_keys = set(on_block.keys())
