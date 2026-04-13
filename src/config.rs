@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::PathBuf;
@@ -45,6 +43,7 @@ fn write_file_mode_600(path: &std::path::Path, contents: &[u8]) -> std::io::Resu
     set_permissions_600(path)
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn fnv1a_hash(s: &str) -> u64 {
     let mut hash: u64 = 14695981039346656037;
     for byte in s.bytes() {
@@ -54,6 +53,7 @@ fn fnv1a_hash(s: &str) -> u64 {
     hash
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn generate_machine_id() -> String {
     let hostname = std::process::Command::new("hostname")
         .output()
@@ -117,12 +117,6 @@ impl Config {
         write_file_mode_600(&path, contents.as_bytes())
             .map_err(|e| format!("Failed to write config file: {e}"))?;
         Ok(())
-    }
-
-    pub fn generate_machine_id(&mut self) -> Result<(), String> {
-        let id = generate_machine_id();
-        self.machine_id = id;
-        self.save()
     }
 
     pub fn load_or_exit() -> Config {

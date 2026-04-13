@@ -10,11 +10,6 @@
 //! Claude Code hook hot-paths where any terminal output would break the hook
 //! protocol (NFR10, NFR11).
 
-// The public API is intentionally not called from main.rs yet (other modules
-// will use `use crate::logger` once implemented). Suppress dead-code lints so
-// that `cargo clippy -- -D warnings` passes during this intermediate state.
-#![allow(dead_code)]
-
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -152,6 +147,7 @@ pub fn log(level: &str, message: &str) {
 }
 
 /// Convenience wrapper: log at INFO level.
+#[allow(dead_code)] // intentionally kept: public API convenience wrapper
 pub fn info(message: &str) {
     log("INFO", message);
 }
@@ -162,6 +158,7 @@ pub fn error(message: &str) {
 }
 
 /// Convenience wrapper: log at WARN level.
+#[allow(dead_code)] // intentionally kept: public API convenience wrapper
 pub fn warn(message: &str) {
     log("WARN", message);
 }
