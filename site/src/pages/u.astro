@@ -2,13 +2,30 @@
 import Base from '../layouts/Base.astro';
 ---
 <Base title="vibestats dashboard">
+  <!-- Early fetch: start data download in <head>, before the 316KB module loads -->
+  <script is:inline slot="head">
+    (function() {
+      var RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
+      var seg = window.location.pathname.split('/').filter(Boolean)[0] || '';
+      var user = RE.test(seg) ? seg : '';
+      if (user) {
+        window.__vibestatsData = fetch(
+          'https://raw.githubusercontent.com/' + user + '/' + user + '/main/vibestats/data.json'
+        ).then(function(r) { return r.ok ? r.json() : null; })
+         .catch(function() { return null; });
+      }
+    })();
+  </script>
   <main class="dashboard">
     <header class="dash-header">
       <h1 id="dash-title">vibestats dashboard</h1>
       <p id="dash-subtitle" class="subtitle"></p>
     </header>
 
-    <div id="loading-state" class="state-msg">Loading...</div>
+    <div id="loading-state" class="state-msg">
+      <div class="spinner" aria-hidden="true"></div>
+      Loading dashboard&hellip;
+    </div>
     <div id="error-state" class="state-msg error" hidden></div>
 
     <section id="dashboard-content" hidden>
@@ -178,16 +195,28 @@ import Base from '../layouts/Base.astro';
       return;
     }
 
-    const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json`;
-
+    // Reuse the early fetch started in <head>, or fall back to a fresh fetch.
     let data: VibestatsData;
     try {
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        showError(`No vibestats data found for @${username}`);
-        return;
+      const earlyPromise = (window as Record<string, unknown>).__vibestatsData as
+        | Promise<VibestatsData | null>
+        | undefined;
+      if (earlyPromise) {
+        const result = await earlyPromise;
+        if (!result) {
+          showError(`No vibestats data found for @${username}`);
+          return;
+        }
+        data = result;
+      } else {
+        const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          showError(`No vibestats data found for @${username}`);
+          return;
+        }
+        data = (await resp.json()) as VibestatsData;
       }
-      data = (await resp.json()) as VibestatsData;
     } catch {
       showError(`No vibestats data found for @${username}`);
       return;
@@ -258,6 +287,20 @@ import Base from '../layouts/Base.astro';
 
   .state-msg.error {
     color: #dc2626;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    margin: 0 auto 0.5rem;
+    border: 3px solid #e5e7eb;
+    border-top-color: #f97316;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   #cal-heatmap {
