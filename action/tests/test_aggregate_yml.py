@@ -3,11 +3,15 @@
 Story 5.5: Implement aggregate.yml (user vibestats-data workflow template)
 GH Issue: #30
 
+Story 9.7: Add concurrency group to prevent concurrent push conflicts
+GH Issue: #87
+
 Test IDs follow the story task list:
   TC-1 (P0): Only 'schedule' and 'workflow_dispatch' triggers present — no push/PR
   TC-2 (P1): 'workflow_dispatch' trigger is present
   TC-3 (P1): Step uses 'stephenleo/vibestats@v1'
   TC-4 (P1): 'token' input references 'secrets.VIBESTATS_TOKEN'
+  TC-5 (P1): 'concurrency:' block present with correct group and cancel-in-progress=False
 """
 
 import pathlib
@@ -149,4 +153,49 @@ def test_tc4_token_input_references_vibestats_token_secret() -> None:
     assert "secrets.VIBESTATS_TOKEN" in str(token_value), (
         f"'with.token' is '{token_value}', expected it to reference "
         "'secrets.VIBESTATS_TOKEN' (AC1, FR10)."
+    )
+
+
+# ---------------------------------------------------------------------------
+# TC-5 (P1): 'concurrency:' block present with correct group and policy (Story 9.7)
+# AC1: workflow-level concurrency block serialises concurrent runs for same owner
+# AC3: test asserts presence of concurrency key, group value, and cancel-in-progress
+# ---------------------------------------------------------------------------
+
+
+def test_tc5_concurrency_block_present_with_correct_group_and_policy() -> None:
+    """[P1] Story-9.7/AC1/AC3: aggregate.yml must declare a workflow-level
+    'concurrency:' block that serialises runs for the same repository owner.
+
+    The group key must be 'vibestats-${{ github.repository_owner }}' so that
+    concurrent runs triggered by different machines for the same profile repo
+    are queued rather than raced. cancel-in-progress must be False so that
+    an in-flight push is never killed mid-run (Dev Notes: cancel-in-progress
+    rationale in story 9.7).
+
+    This test will FAIL until the concurrency block is added to aggregate.yml.
+    """
+    workflow = _load_workflow()
+
+    # The 'concurrency:' key is unambiguous YAML — no PyYAML quirk (unlike 'on:')
+    concurrency = workflow.get("concurrency")
+    assert concurrency is not None, (
+        "Missing 'concurrency:' block in aggregate.yml. "
+        "Story 9.7 requires a workflow-level concurrency group to serialise "
+        "concurrent runs and prevent push conflicts (AC1)."
+    )
+
+    group = concurrency.get("group")
+    assert group == "vibestats-${{ github.repository_owner }}", (
+        f"'concurrency.group' is '{group}', expected "
+        "'vibestats-${{ github.repository_owner }}'. "
+        "The group must be owner-scoped so that runs from different machines "
+        "sharing the same profile repo are serialised (AC2, Story 9.7)."
+    )
+
+    cancel_in_progress = concurrency.get("cancel-in-progress")
+    assert cancel_in_progress is False, (
+        f"'concurrency.cancel-in-progress' is '{cancel_in_progress}', expected False. "
+        "Setting cancel-in-progress: false queues the second run instead of killing "
+        "an in-flight push, ensuring both machines' data is captured (AC2, Dev Notes)."
     )
