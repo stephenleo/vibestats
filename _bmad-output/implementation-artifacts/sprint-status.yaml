@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-13 (stories 9-1 through 9-6 done)
+last_updated: 2026-04-13 (story 9.8 ready-for-dev)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -155,7 +155,7 @@ development_status:
   9-4-bash-installer-refactor-exit-trap-to-composable-cleanup: done
   9-5-rust-remove-dead-code-suppressors-and-verify-lint-clean: done
   9-6-first-release-push-v0-1-0-tag-and-create-v1-floating-tag: done
-  9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: backlog
-  9-8-architecture-documentation-capture-post-sprint-lessons: backlog
-  9-9-python-script-hardening-update-readme-and-aggregate-improvements: backlog
+  9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: atdd-done
+  9-8-architecture-documentation-capture-post-sprint-lessons: ready-for-dev
+  9-9-python-script-hardening-update-readme-and-aggregate-improvements: ready-for-dev
   epic-9-retrospective: optional
