@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-13 (stories 9.7-9.9 done, epic-9 done)
+last_updated: 2026-04-13 (epic-9 retrospective complete)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -158,4 +158,4 @@ development_status:
   9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: done
   9-8-architecture-documentation-capture-post-sprint-lessons: done
   9-9-python-script-hardening-update-readme-and-aggregate-improvements: done
-  epic-9-retrospective: optional
+  epic-9-retrospective: done
