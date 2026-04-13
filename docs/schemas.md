@@ -28,7 +28,18 @@ machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3
 ### File Content
 
 ```json
-{ "sessions": 4, "active_minutes": 87 }
+{
+  "sessions": 4,
+  "active_minutes": 87,
+  "input_tokens": 12500,
+  "output_tokens": 3800,
+  "cache_read_tokens": 4200,
+  "cache_creation_tokens": 800,
+  "models": { "claude-sonnet-4-5": 3800 },
+  "longest_session_minutes": 45,
+  "message_count": 32,
+  "tool_uses": 18
+}
 ```
 
 ### Fields
@@ -37,6 +48,16 @@ machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3
 |-------|------|-------------|-------------|
 | `sessions` | integer | ≥ 0 | Number of Claude Code sessions active on this machine on this day |
 | `active_minutes` | integer | ≥ 0 | Approximate active working minutes (derived from session durations) |
+| `input_tokens` | integer | ≥ 0 | Total input tokens across all assistant turns |
+| `output_tokens` | integer | ≥ 0 | Total output tokens across all assistant turns |
+| `cache_read_tokens` | integer | ≥ 0 | Total cache_read_input_tokens from the usage object |
+| `cache_creation_tokens` | integer | ≥ 0 | Total cache_creation_input_tokens from the usage object |
+| `models` | object | — | Map of model name → output_tokens for that model. Keys are alphabetically ordered. |
+| `longest_session_minutes` | integer | ≥ 0 | Duration in minutes of the longest single session on this day |
+| `message_count` | integer | ≥ 0 | Total message count (from `turn_duration.messageCount`) |
+| `tool_uses` | integer | ≥ 0 | Total count of `tool_use` content blocks across all turns |
+
+**Backward compatibility:** Old files with only `sessions` and `active_minutes` remain valid. The aggregation layer uses `.get(field, 0)` / `.get("models", {})` for all new fields, defaulting to zero.
 
 ### Design Notes
 
@@ -65,8 +86,13 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
   "generated_at": "2026-04-10T14:23:00Z",
   "username": "stephenleo",
   "days": {
-    "2026-04-01": { "sessions": 3, "active_minutes": 42 },
-    "2026-04-10": { "sessions": 4, "active_minutes": 87 }
+    "2026-04-01": {
+      "sessions": 3, "active_minutes": 42,
+      "input_tokens": 8000, "output_tokens": 2500,
+      "cache_read_tokens": 1200, "cache_creation_tokens": 300,
+      "models": { "claude-sonnet-4-5": 2500 },
+      "longest_session_minutes": 30, "message_count": 18, "tool_uses": 10
+    }
   }
 }
 ```
@@ -77,14 +103,22 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
 |-------|------|-------------|
 | `generated_at` | string (ISO 8601 UTC) | Timestamp when the GitHub Action produced this file. Format: `YYYY-MM-DDTHH:MM:SSZ`. Never a Unix timestamp. |
 | `username` | string | GitHub username of the repo owner |
-| `days` | object | Keys are `YYYY-MM-DD` date strings; values are `{ "sessions": N, "active_minutes": N }` objects |
+| `days` | object | Keys are `YYYY-MM-DD` date strings; values are day objects (see below) |
 
 ### `days` Value Object
 
-| Field | Type | Constraints | Description |
+| Field | Type | Aggregation | Description |
 |-------|------|-------------|-------------|
-| `sessions` | integer | ≥ 0 | Total sessions across all machines on this date |
-| `active_minutes` | integer | ≥ 0 | Total active minutes across all machines on this date |
+| `sessions` | integer | sum | Total sessions across all machines on this date |
+| `active_minutes` | integer | sum | Total active minutes across all machines |
+| `input_tokens` | integer | sum | Total input tokens across all machines |
+| `output_tokens` | integer | sum | Total output tokens across all machines |
+| `cache_read_tokens` | integer | sum | Total cache read tokens across all machines |
+| `cache_creation_tokens` | integer | sum | Total cache creation tokens across all machines |
+| `models` | object | merge-sum | Map of model name → output_tokens (merged across machines) |
+| `longest_session_minutes` | integer | max | Longest single session across all machines on this date |
+| `message_count` | integer | sum | Total message count across all machines |
+| `tool_uses` | integer | sum | Total tool use count across all machines |
 
 ### Design Notes
 

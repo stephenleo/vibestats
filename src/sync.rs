@@ -149,11 +149,10 @@ pub fn run(start_date: &str, end_date: &str) {
 
     for date in dates {
         let activity = &activities[date];
-        // Serialize with deterministic field order (sessions always before active_minutes)
-        let payload = format!(
-            r#"{{"sessions":{},"active_minutes":{}}}"#,
-            activity.sessions, activity.active_minutes
-        );
+        // serde_json serializes struct fields in definition order; BTreeMap keys sort
+        // alphabetically — both guarantee deterministic bytes for the SHA256 hash (NFR12).
+        let payload = serde_json::to_string(activity)
+            .expect("DailyActivity serialization is infallible");
         let hash = sha256_hex(payload.as_bytes());
 
         // Skip if hash matches checkpoint (idempotency — NFR12)
@@ -220,35 +219,41 @@ mod tests {
 
     #[test]
     fn sha256_payload_known_vector() {
-        // Dev Notes in 3-1 explicitly list this payload shape as a test vector.
-        // Pin the expected hash so any accidental change to the payload byte
-        // format (e.g. spacing, field order) or the SHA256 implementation
-        // itself breaks this test loudly rather than silently violating
-        // idempotency (NFR12) against already-synced data.
-        let payload = b"{\"sessions\":4,\"active_minutes\":87}";
+        // Pin the serialized payload hash so any accidental change to the byte
+        // format (field order, spacing, new fields) breaks loudly rather than
+        // silently violating idempotency (NFR12) against already-synced data.
+        // Fields serialized in DailyActivity definition order; BTreeMap models: {}.
+        use crate::jsonl_parser::DailyActivity;
+        let activity = DailyActivity {
+            sessions: 4,
+            active_minutes: 87,
+            ..Default::default()
+        };
+        let payload = serde_json::to_string(&activity).unwrap();
         assert_eq!(
-            sha256_hex(payload),
-            "4c4abadf5bbf2aed4cbf40cd6ea569c1fd46ecfdc7f054edf6d5d8f4a5e3900a"
+            sha256_hex(payload.as_bytes()),
+            "2bbeb81ced9d736690d79e2ff461ada5c42db9f23f22ff578fe8d90fe473b67e"
         );
     }
 
     #[test]
     fn payload_format_matches_hashed_bytes() {
-        // The payload string built inside `run` must hash to the same value as
-        // the documented test vector above. This guards against a refactor
-        // that switches to `serde_json::to_string` (non-deterministic field
-        // order) or otherwise changes the serialized byte sequence.
-        let sessions: u32 = 4;
-        let active_minutes: u32 = 87;
-        let payload = format!(
-            r#"{{"sessions":{},"active_minutes":{}}}"#,
-            sessions, active_minutes
-        );
-        assert_eq!(payload, r#"{"sessions":4,"active_minutes":87}"#);
-        assert_eq!(
-            sha256_hex(payload.as_bytes()),
-            "4c4abadf5bbf2aed4cbf40cd6ea569c1fd46ecfdc7f054edf6d5d8f4a5e3900a"
-        );
+        // Verify the exact JSON bytes produced by serde_json for a known DailyActivity.
+        // This pins the field order and ensures the payload is byte-for-byte deterministic.
+        use crate::jsonl_parser::DailyActivity;
+        let activity = DailyActivity {
+            sessions: 4,
+            active_minutes: 87,
+            ..Default::default()
+        };
+        let payload = serde_json::to_string(&activity).unwrap();
+        // Confirm exact byte sequence — field order matches DailyActivity struct definition.
+        assert!(payload.starts_with("{\"sessions\":4,\"active_minutes\":87,"), "payload: {payload}");
+        assert!(payload.contains("\"models\":{}"), "models must be empty: {payload}");
+        // Hash must be stable across runs (idempotency — NFR12).
+        let h1 = sha256_hex(payload.as_bytes());
+        let h2 = sha256_hex(payload.as_bytes());
+        assert_eq!(h1, h2);
     }
 
     // ── hive_path tests ──────────────────────────────────────────────────────

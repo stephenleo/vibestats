@@ -29,6 +29,7 @@ import Base from '../layouts/Base.astro';
     <div id="error-state" class="state-msg error" hidden></div>
 
     <section id="dashboard-content" hidden>
+      <div id="stats-summary" class="stats-summary" hidden></div>
       <div id="year-toggle" class="year-toggle" aria-label="Select year"></div>
       <div class="heatmap-wrapper">
         <div class="day-labels" aria-hidden="true">
@@ -55,6 +56,14 @@ import Base from '../layouts/Base.astro';
   interface DayEntry {
     sessions: number;
     active_minutes: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_tokens?: number;
+    cache_creation_tokens?: number;
+    models?: Record<string, number>;
+    longest_session_minutes?: number;
+    message_count?: number;
+    tool_uses?: number;
   }
 
   interface VibestatsData {
@@ -70,6 +79,7 @@ import Base from '../layouts/Base.astro';
   const titleEl = document.getElementById('dash-title') as HTMLElement;
   const subtitleEl = document.getElementById('dash-subtitle') as HTMLElement;
   const yearToggleEl = document.getElementById('year-toggle') as HTMLElement;
+  const statsSummaryEl = document.getElementById('stats-summary') as HTMLElement;
 
   // ── Username discovery ─────────────────────────────────────────────────────
   const GH_USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
@@ -91,6 +101,91 @@ import Base from '../layouts/Base.astro';
     loadingEl.hidden = true;
     errorEl.textContent = msg;
     errorEl.hidden = false;
+  }
+
+  // ── Format helpers ─────────────────────────────────────────────────────────
+  function fmtTokens(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  }
+
+  // ── Compute and render all-time stats summary ───────────────────────────────
+  function renderStatsSummary(data: VibestatsData): void {
+    const allDays = Object.values(data.days);
+    if (allDays.length === 0) { statsSummaryEl.hidden = true; return; }
+
+    // Totals
+    const totalSessions = allDays.reduce((s, d) => s + d.sessions, 0);
+    const totalMinutes = allDays.reduce((s, d) => s + d.active_minutes, 0);
+    const totalInput = allDays.reduce((s, d) => s + (d.input_tokens ?? 0), 0);
+    const totalOutput = allDays.reduce((s, d) => s + (d.output_tokens ?? 0), 0);
+    const totalTokens = totalInput + totalOutput;
+    const longestSession = allDays.reduce((m, d) => Math.max(m, d.longest_session_minutes ?? 0), 0);
+
+    // Favorite model (highest output_tokens across all days)
+    const modelTotals: Record<string, number> = {};
+    for (const d of allDays) {
+      for (const [model, count] of Object.entries(d.models ?? {})) {
+        modelTotals[model] = (modelTotals[model] ?? 0) + count;
+      }
+    }
+    const favoriteModel = Object.keys(modelTotals).sort((a, b) => modelTotals[b] - modelTotals[a])[0] ?? null;
+
+    // Streaks (consecutive active days)
+    const activeDates = new Set(Object.keys(data.days));
+    const today = new Date().toISOString().slice(0, 10);
+    let longestStreak = 0;
+    let streak = 0;
+    const sortedDates = [...activeDates].sort();
+    for (let i = 0; i < sortedDates.length; i++) {
+      if (i === 0) { streak = 1; }
+      else {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        const diff = (curr.getTime() - prev.getTime()) / 86_400_000;
+        streak = diff === 1 ? streak + 1 : 1;
+      }
+      longestStreak = Math.max(longestStreak, streak);
+    }
+    // Current streak: consecutive days ending at today or yesterday
+    let currentStreak = 0;
+    const checkDate = new Date(today);
+    while (activeDates.has(checkDate.toISOString().slice(0, 10))) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    const modelLabel = favoriteModel
+      ? favoriteModel.replace(/^claude-/, '').replace(/-(\d)/, ' $1')
+      : null;
+
+    const stats: Array<{ label: string; value: string }> = [
+      { label: 'Total tokens', value: totalTokens > 0 ? fmtTokens(totalTokens) : '—' },
+      { label: 'Sessions', value: totalSessions.toLocaleString() },
+      { label: 'Active time', value: totalMinutes >= 60 ? `${Math.round(totalMinutes / 60)}h` : `${totalMinutes}m` },
+      { label: 'Longest session', value: longestSession > 0 ? `${longestSession}m` : '—' },
+      { label: 'Current streak', value: currentStreak > 0 ? `${currentStreak}d` : '—' },
+      { label: 'Longest streak', value: longestStreak > 0 ? `${longestStreak}d` : '—' },
+      ...(modelLabel ? [{ label: 'Top model', value: modelLabel }] : []),
+    ];
+
+    // Build DOM safely — no innerHTML
+    while (statsSummaryEl.firstChild) statsSummaryEl.removeChild(statsSummaryEl.firstChild);
+    for (const s of stats) {
+      const card = document.createElement('div');
+      card.className = 'stat-card';
+      const valEl = document.createElement('span');
+      valEl.className = 'stat-value';
+      valEl.textContent = s.value;
+      const labelEl = document.createElement('span');
+      labelEl.className = 'stat-label';
+      labelEl.textContent = s.label;
+      card.appendChild(valEl);
+      card.appendChild(labelEl);
+      statsSummaryEl.appendChild(card);
+    }
+    statsSummaryEl.hidden = false;
   }
 
   // ── Render GitHub-style heatmap for a given year ────────────────────────────
@@ -159,7 +254,13 @@ import Base from '../layouts/Base.astro';
               if (!dayData || value === null || value === 0) {
                 return `No activity on ${dayjsDate.format('MMM D, YYYY')}`;
               }
-              return `${dayjsDate.format('MMM D, YYYY')}: ${dayData.sessions} session${dayData.sessions === 1 ? '' : 's'}, ~${dayData.active_minutes} min`;
+              const totalTokens = (dayData.input_tokens ?? 0) + (dayData.output_tokens ?? 0);
+              const topModel = dayData.models
+                ? Object.entries(dayData.models).sort((a, b) => b[1] - a[1])[0]?.[0]
+                : null;
+              const modelStr = topModel ? `, ${topModel.replace(/^claude-/, '')}` : '';
+              const tokStr = totalTokens > 0 ? `, ${fmtTokens(totalTokens)} tokens` : '';
+              return `${dayjsDate.format('MMM D, YYYY')}: ${dayData.sessions} session${dayData.sessions === 1 ? '' : 's'}, ~${dayData.active_minutes} min${tokStr}${modelStr}`;
             },
           },
         ],
@@ -256,6 +357,7 @@ import Base from '../layouts/Base.astro';
       loadingEl.hidden = true;
       contentEl.hidden = false;
 
+      renderStatsSummary(data);
       renderYearToggle(years, defaultYear);
       await renderHeatmap(defaultYear);
     } catch (err) {
@@ -309,6 +411,39 @@ import Base from '../layouts/Base.astro';
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .stats-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    min-width: 80px;
+  }
+
+  .stat-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.125rem;
   }
 
   .heatmap-wrapper {

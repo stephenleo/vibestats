@@ -1,1 +1,1 @@
-{"sessions": 2, "active_minutes": 30}
+{"sessions": 2, "active_minutes": 30, "input_tokens": 3000, "output_tokens": 1500, "cache_read_tokens": 500, "cache_creation_tokens": 200, "models": {"claude-sonnet-4-5": 1500}, "longest_session_minutes": 15, "message_count": 10, "tool_uses": 5}

@@ -21,15 +21,44 @@ import unittest
 FIXTURES_ROOT = pathlib.Path(__file__).parent / "fixtures" / "sample_machine_data"
 
 # Expected days values derived from fixtures (purged machine excluded):
-#   2026-04-09: machine-a/claude(3s,45m) + machine-b/claude(2s,30m) + machine-a/codex(1s,10m)
-#              → sessions=6, active_minutes=85
-#   2026-04-10: machine-a/claude(4s,60m) + machine-b/claude(1s,15m)
-#              → sessions=5, active_minutes=75
-#   2026-04-11: machine-a/claude(5s,75m) → sessions=5, active_minutes=75
+#   2026-04-09: machine-a/claude(3s,45m,5000in,2000out) + machine-b/claude(2s,30m,3000in,1500out)
+#              + machine-a/codex(1s,10m,1000in,500out); longest=max(20,15,10)=20
+#              → sessions=6, active_minutes=85, input_tokens=9000, output_tokens=4000,
+#                cache_read_tokens=1500, cache_creation_tokens=700,
+#                models={"claude-sonnet-4-5":3500,"codex-mini":500},
+#                longest_session_minutes=20, message_count=30, tool_uses=15
+#   2026-04-10: machine-a/claude(4s,60m,8000in,3000out) + machine-b/claude(1s,15m,2000in,800out)
+#              → sessions=5, active_minutes=75, input_tokens=10000, output_tokens=3800,
+#                cache_read_tokens=2300, cache_creation_tokens=900,
+#                models={"claude-opus-4":800,"claude-sonnet-4-5":3000},
+#                longest_session_minutes=30, message_count=26, tool_uses=15
+#   2026-04-11: machine-a/claude(5s,75m,6000in,2500out)
+#              → sessions=5, active_minutes=75, input_tokens=6000, output_tokens=2500,
+#                cache_read_tokens=1500, cache_creation_tokens=600,
+#                models={"claude-sonnet-4-5":2500},
+#                longest_session_minutes=25, message_count=18, tool_uses=10
 EXPECTED_DAYS = {
-    "2026-04-09": {"sessions": 6, "active_minutes": 85},
-    "2026-04-10": {"sessions": 5, "active_minutes": 75},
-    "2026-04-11": {"sessions": 5, "active_minutes": 75},
+    "2026-04-09": {
+        "sessions": 6, "active_minutes": 85,
+        "input_tokens": 9000, "output_tokens": 4000,
+        "cache_read_tokens": 1500, "cache_creation_tokens": 700,
+        "models": {"claude-sonnet-4-5": 3500, "codex-mini": 500},
+        "longest_session_minutes": 20, "message_count": 30, "tool_uses": 15,
+    },
+    "2026-04-10": {
+        "sessions": 5, "active_minutes": 75,
+        "input_tokens": 10000, "output_tokens": 3800,
+        "cache_read_tokens": 2300, "cache_creation_tokens": 900,
+        "models": {"claude-sonnet-4-5": 3000, "claude-opus-4": 800},
+        "longest_session_minutes": 30, "message_count": 26, "tool_uses": 15,
+    },
+    "2026-04-11": {
+        "sessions": 5, "active_minutes": 75,
+        "input_tokens": 6000, "output_tokens": 2500,
+        "cache_read_tokens": 1500, "cache_creation_tokens": 600,
+        "models": {"claude-sonnet-4-5": 2500},
+        "longest_session_minutes": 25, "message_count": 18, "tool_uses": 10,
+    },
 }
 
 
@@ -109,33 +138,55 @@ class TestAggregateOutputSchema(unittest.TestCase):
 
         self.assertEqual(set(result.keys()), {"generated_at", "username", "days"})
 
-    def test_days_values_have_only_numeric_fields(self):
-        """Each days entry must have only sessions (int) and active_minutes (int).
-        No machine IDs, Hive paths, hostnames, or raw file content."""
+    def test_days_values_have_only_expected_fields(self):
+        """Each days entry must have exactly the expected fields.
+        Numeric fields must be int; models must be a dict of str→int."""
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
+
+        expected_keys = {
+            "sessions", "active_minutes", "input_tokens", "output_tokens",
+            "cache_read_tokens", "cache_creation_tokens", "models",
+            "longest_session_minutes", "message_count", "tool_uses",
+        }
+        numeric_fields = expected_keys - {"models"}
 
         for date_key, day_data in result["days"].items():
             self.assertEqual(
                 set(day_data.keys()),
-                {"sessions", "active_minutes"},
+                expected_keys,
                 msg=f"Day {date_key} has unexpected keys: {set(day_data.keys())}",
             )
-            self.assertIsInstance(day_data["sessions"], int, msg=f"sessions must be int on {date_key}")
-            self.assertIsInstance(day_data["active_minutes"], int, msg=f"active_minutes must be int on {date_key}")
+            for field in numeric_fields:
+                self.assertIsInstance(day_data[field], int, msg=f"{field} must be int on {date_key}")
+            # models must be a dict mapping str → int
+            self.assertIsInstance(day_data["models"], dict, msg=f"models must be dict on {date_key}")
+            for model_name, token_count in day_data["models"].items():
+                self.assertIsInstance(model_name, str, msg=f"model key must be str on {date_key}")
+                self.assertIsInstance(token_count, int, msg=f"model value must be int on {date_key}")
 
     def test_days_values_contain_no_string_leakage(self):
-        """No string values in days entries — no machine IDs, paths, or hostnames."""
+        """No string values at the top level of days entries — no machine IDs, paths, or hostnames.
+        models dict is allowed (its keys are model names, values are int token counts)."""
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
         for date_key, day_data in result["days"].items():
             for field, value in day_data.items():
-                self.assertNotIsInstance(
-                    value,
-                    str,
-                    msg=f"String value found in days[{date_key}][{field}] = {value!r} — data boundary violated (NFR8/NFR9)",
-                )
+                if field == "models":
+                    # models is a dict — check its values are ints, not strings
+                    self.assertIsInstance(value, dict, msg=f"models must be dict on {date_key}")
+                    for model_key, model_val in value.items():
+                        self.assertNotIsInstance(
+                            model_val, str,
+                            msg=f"Token count for model {model_key!r} on {date_key} must not be a string",
+                        )
+                else:
+                    self.assertNotIsInstance(
+                        value,
+                        str,
+                        msg=f"String value found in days[{date_key}][{field}] = {value!r} — data boundary violated (NFR8/NFR9)",
+                    )
 
     def test_username_set_correctly(self):
         """username field must equal the value passed to aggregate()."""
@@ -229,7 +280,8 @@ class TestAggregateSingleMachineBaseline(unittest.TestCase):
     """5.1-UNIT-005: Single machine baseline happy path (P1)."""
 
     def test_single_machine_single_date_correct_values(self):
-        """Given a single active machine with one date, output matches exact values."""
+        """Given a single active machine with one date, output matches exact values.
+        Old-format data.json (missing new fields) defaults all new fields to 0/{}."""
         agg = _import_aggregate()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -242,7 +294,12 @@ class TestAggregateSingleMachineBaseline(unittest.TestCase):
 
             result = agg.aggregate(tmproot, "testuser")
 
-        self.assertEqual(result["days"], {"2026-04-09": {"sessions": 7, "active_minutes": 120}})
+        day = result["days"]["2026-04-09"]
+        self.assertEqual(day["sessions"], 7)
+        self.assertEqual(day["active_minutes"], 120)
+        self.assertEqual(day["input_tokens"], 0)
+        self.assertEqual(day["output_tokens"], 0)
+        self.assertEqual(day["models"], {})
 
 
 class TestAggregateMultipleDates(unittest.TestCase):

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::{BufRead, BufReader};
 
 /// Per-day aggregated session activity.
@@ -7,6 +7,47 @@ use std::io::{BufRead, BufReader};
 pub struct DailyActivity {
     pub sessions: u32,
     pub active_minutes: u32,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cache_read_tokens: u64,
+    pub cache_creation_tokens: u64,
+    /// Maps model name → total output tokens attributed to that model on this day.
+    /// BTreeMap ensures deterministic serialization order (alphabetical keys).
+    pub models: BTreeMap<String, u64>,
+    pub longest_session_minutes: u32,
+    pub message_count: u32,
+    pub tool_uses: u32,
+}
+
+/// Token usage from an assistant message's `usage` object.
+#[derive(Debug, Default, Deserialize)]
+struct MessageUsage {
+    #[serde(default)]
+    input_tokens: Option<u64>,
+    #[serde(default)]
+    output_tokens: Option<u64>,
+    #[serde(rename = "cache_read_input_tokens", default)]
+    cache_read_tokens: Option<u64>,
+    #[serde(rename = "cache_creation_input_tokens", default)]
+    cache_creation_tokens: Option<u64>,
+}
+
+/// A single content block inside an assistant message.
+#[derive(Debug, Default, Deserialize)]
+struct ContentBlock {
+    #[serde(rename = "type", default)]
+    block_type: Option<String>,
+}
+
+/// The `message` field on an assistant JSONL entry.
+#[derive(Debug, Default, Deserialize)]
+struct AssistantMessage {
+    #[serde(default)]
+    model: Option<String>,
+    #[serde(default)]
+    usage: Option<MessageUsage>,
+    #[serde(default)]
+    content: Option<Vec<ContentBlock>>,
 }
 
 /// Internal struct for deserializing individual JSONL lines.
@@ -30,6 +71,15 @@ struct ClaudeEntry {
     /// JSON field name is "durationMs" (camelCase).
     #[serde(rename = "durationMs", default)]
     duration_ms: Option<u64>,
+
+    /// Assistant message object — only present on type=assistant entries.
+    #[serde(default)]
+    message: Option<AssistantMessage>,
+
+    /// Total message count for the session — present on type=system, subtype=turn_duration.
+    /// JSON field name is "messageCount" (camelCase).
+    #[serde(rename = "messageCount", default)]
+    message_count: Option<u32>,
 }
 
 /// Return the path to `~/.claude/projects` using `HOME` env var.
@@ -76,6 +126,13 @@ fn parse_file(
 
     let mut session_date: Option<String> = None;
     let mut duration_ms: u64 = 0;
+    let mut input_tokens: u64 = 0;
+    let mut output_tokens: u64 = 0;
+    let mut cache_read_tokens: u64 = 0;
+    let mut cache_creation_tokens: u64 = 0;
+    let mut session_models: BTreeMap<String, u64> = BTreeMap::new();
+    let mut message_count: u32 = 0;
+    let mut tool_uses: u32 = 0;
 
     for line in BufReader::new(file).lines().map_while(Result::ok) {
         let entry: ClaudeEntry = match serde_json::from_str(&line) {
@@ -92,12 +149,42 @@ fn parse_file(
             }
         }
 
-        // Capture duration from the turn_duration system entry.
+        // Accumulate token usage and model stats from assistant entries.
+        if entry.entry_type.as_deref() == Some("assistant") {
+            if let Some(msg) = &entry.message {
+                if let Some(usage) = &msg.usage {
+                    input_tokens += usage.input_tokens.unwrap_or(0);
+                    let out = usage.output_tokens.unwrap_or(0);
+                    output_tokens += out;
+                    cache_read_tokens += usage.cache_read_tokens.unwrap_or(0);
+                    cache_creation_tokens += usage.cache_creation_tokens.unwrap_or(0);
+
+                    // Tally output tokens per model.
+                    if let Some(model) = &msg.model {
+                        *session_models.entry(model.clone()).or_insert(0) += out;
+                    }
+                }
+
+                // Count tool_use content blocks.
+                if let Some(blocks) = &msg.content {
+                    for block in blocks {
+                        if block.block_type.as_deref() == Some("tool_use") {
+                            tool_uses += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Capture duration and message count from the turn_duration system entry.
         if entry.entry_type.as_deref() == Some("system")
             && entry.subtype.as_deref() == Some("turn_duration")
         {
             if let Some(ms) = entry.duration_ms {
                 duration_ms = ms;
+            }
+            if let Some(mc) = entry.message_count {
+                message_count = mc;
             }
         }
     }
@@ -107,7 +194,21 @@ fn parse_file(
         if date.as_str() >= start && date.as_str() <= end {
             let activity = result.entry(date).or_default();
             activity.sessions += 1;
-            activity.active_minutes += (duration_ms / 60_000) as u32;
+            let session_minutes = (duration_ms / 60_000) as u32;
+            activity.active_minutes += session_minutes;
+            activity.input_tokens += input_tokens;
+            activity.output_tokens += output_tokens;
+            activity.cache_read_tokens += cache_read_tokens;
+            activity.cache_creation_tokens += cache_creation_tokens;
+            activity.message_count += message_count;
+            activity.tool_uses += tool_uses;
+            for (model, count) in session_models {
+                *activity.models.entry(model).or_insert(0) += count;
+            }
+            // Track longest single session on this day.
+            if session_minutes > activity.longest_session_minutes {
+                activity.longest_session_minutes = session_minutes;
+            }
         }
     }
 }
@@ -257,5 +358,89 @@ mod tests {
         let day = result.get("2026-04-10").expect("date present");
         assert_eq!(day.sessions, 1);
         assert_eq!(day.active_minutes, 0);
+    }
+
+    #[test]
+    fn assistant_entry_with_usage_accumulates_tokens() {
+        let lines = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","uuid":"a","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":50,"cache_read_input_tokens":20,"cache_creation_input_tokens":10},"content":[{"type":"text"},{"type":"tool_use"}]}}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":120000,"messageCount":4,"timestamp":"2026-04-10T14:02:00.000Z","uuid":"b"}"#,
+        ];
+        let path = write_temp_jsonl(lines);
+        let mut result = HashMap::new();
+        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        let _ = std::fs::remove_file(&path);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.sessions, 1);
+        assert_eq!(day.active_minutes, 2); // 120_000 ms / 60_000 = 2
+        assert_eq!(day.input_tokens, 100);
+        assert_eq!(day.output_tokens, 50);
+        assert_eq!(day.cache_read_tokens, 20);
+        assert_eq!(day.cache_creation_tokens, 10);
+        assert_eq!(day.message_count, 4);
+        assert_eq!(day.tool_uses, 1);
+        assert_eq!(day.models.get("claude-sonnet-4-5").copied().unwrap_or(0), 50);
+    }
+
+    #[test]
+    fn old_format_entry_no_message_field_still_counted() {
+        // Old JSONL entries without a `message` field must still count sessions/minutes.
+        let lines = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","uuid":"x","sessionId":"s1"}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"timestamp":"2026-04-10T14:01:00.000Z","uuid":"y"}"#,
+        ];
+        let path = write_temp_jsonl(lines);
+        let mut result = HashMap::new();
+        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        let _ = std::fs::remove_file(&path);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.sessions, 1);
+        assert_eq!(day.active_minutes, 1);
+        assert_eq!(day.input_tokens, 0);
+        assert_eq!(day.output_tokens, 0);
+        assert!(day.models.is_empty());
+        assert_eq!(day.tool_uses, 0);
+    }
+
+    #[test]
+    fn longest_session_minutes_tracks_max_across_sessions() {
+        // Two files on the same day: 60 min and 120 min. longest_session_minutes = 120.
+        let long_session = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T10:00:00.000Z","uuid":"a"}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":7200000,"timestamp":"2026-04-10T12:00:00.000Z","uuid":"b"}"#,
+        ];
+        let short_session = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T13:00:00.000Z","uuid":"c"}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":3600000,"timestamp":"2026-04-10T14:00:00.000Z","uuid":"d"}"#,
+        ];
+        let p1 = write_temp_jsonl(long_session);
+        let p2 = write_temp_jsonl(short_session);
+        let mut result = HashMap::new();
+        parse_file(&p1, "2026-04-10", "2026-04-10", &mut result);
+        parse_file(&p2, "2026-04-10", "2026-04-10", &mut result);
+        let _ = std::fs::remove_file(&p1);
+        let _ = std::fs::remove_file(&p2);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.sessions, 2);
+        assert_eq!(day.active_minutes, 180); // 120 + 60
+        assert_eq!(day.longest_session_minutes, 120); // max, not sum
+    }
+
+    #[test]
+    fn models_accumulated_across_multiple_assistant_entries() {
+        // Two assistant entries with different models in one session.
+        let lines = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","uuid":"a","message":{"model":"claude-sonnet-4-5","usage":{"output_tokens":30},"content":[]}}"#,
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:01:00.000Z","uuid":"b","message":{"model":"claude-opus-4","usage":{"output_tokens":70},"content":[]}}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"uuid":"c","timestamp":"2026-04-10T14:02:00.000Z"}"#,
+        ];
+        let path = write_temp_jsonl(lines);
+        let mut result = HashMap::new();
+        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        let _ = std::fs::remove_file(&path);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.models.get("claude-sonnet-4-5").copied().unwrap_or(0), 30);
+        assert_eq!(day.models.get("claude-opus-4").copied().unwrap_or(0), 70);
+        assert_eq!(day.output_tokens, 100);
     }
 }

@@ -1,1 +1,1 @@
-{"sessions": 1, "active_minutes": 10}
+{"sessions": 1, "active_minutes": 10, "input_tokens": 1000, "output_tokens": 500, "cache_read_tokens": 0, "cache_creation_tokens": 0, "models": {"codex-mini": 500}, "longest_session_minutes": 10, "message_count": 5, "tool_uses": 2}
