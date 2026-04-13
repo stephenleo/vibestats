@@ -120,6 +120,33 @@ that raised them. Revisit when the blocking rationale no longer applies.
   in that case, install.sh (Epic 6) should create a stub README before the
   first action run.
 
+## Deferred from: retrospective code review of story 4-3-implement-vibestats-auth-command (2026-04-13)
+
+- **Non-atomic `Config::save()` write** [src/config.rs:107-119] — `Config::save()` uses
+  `OpenOptions::truncate(true)` which is an in-place overwrite, not a temp-file+rename.
+  A process crash during write could leave a partially written `config.toml`. In practice
+  the file is tiny (<200 bytes) and any partial write is detected at next `Config::load()`
+  via TOML parse error with an actionable "Run 'vibestats auth'" message. Risk is low.
+  Revisit if atomic config writes become a requirement (e.g., multi-machine shared config).
+- **OAuth token retained in heap after use** [src/commands/auth.rs:55,90] — `config.oauth_token`
+  holds the raw token string for the lifetime of the `auth::run()` stack frame. Rust does not
+  zero memory on drop. This is standard Rust behavior and not exploitable in the single-process
+  CLI context, but noted for completeness. Revisit only if the binary ever handles tokens from
+  higher-sensitivity contexts.
+- **No message when checkpoint skip occurs due to unset HOME** [src/commands/auth.rs:124] —
+  When `checkpoint_path()` returns `None`, the auth_error clear is silently skipped with no
+  stdout message. The auth token refresh succeeded, so this is not a correctness issue, but
+  a user running without HOME set would see "vibestats: auth complete" without knowing checkpoint
+  was not updated. Revisit if user-visible diagnostic completeness becomes a priority.
+
+## Deferred from: retrospective code review of story 4-4-implement-vibestats-uninstall-command (2026-04-13)
+
+- **`remove_file` on a symlink removes the symlink, not the target** [src/commands/uninstall.rs:198] —
+  If `~/.local/bin/vibestats` is a symlink (non-standard install), `std::fs::remove_file` removes
+  the symlink only, leaving the binary at the symlink target in place. The installer (Story 6.x)
+  copies the binary rather than symlinking, so this is not reachable in practice. Revisit if a
+  future install strategy uses symlinks (e.g., `~/.local/bin/vibestats -> /usr/local/bin/vibestats`).
+
 ## Deferred from: code review of story 6-1-implement-dependency-detection-and-gh-authentication (2026-04-12)
 
 - **EXIT trap override in `download_and_install_binary`** [install.sh:129] —

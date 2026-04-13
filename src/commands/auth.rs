@@ -79,11 +79,14 @@ pub fn run() {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()?;
-        // Unwrap is safe because we configured stdin as piped above.
+        // stdin is piped — convert None to io::Error so the closure can use ?
+        // without resorting to expect() or unwrap() in non-test code.
         child
             .stdin
             .as_mut()
-            .expect("stdin is piped")
+            .ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stdin not piped")
+            })?
             .write_all(config.oauth_token.as_bytes())?;
         // Drop stdin to close the pipe and signal EOF to the child process.
         // Without this, `gh secret set --body-file -` would block waiting for
