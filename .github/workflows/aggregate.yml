@@ -3,6 +3,10 @@
 # and update your GitHub profile heatmap automatically.
 name: Aggregate vibestats data
 
+concurrency:
+  group: vibestats-${{ github.repository_owner }}
+  cancel-in-progress: false
+
 on:
   schedule:
     - cron: '0 2 * * *'   # Daily at 02:00 UTC
