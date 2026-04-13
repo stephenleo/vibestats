@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Story 9.8: Architecture documentation — Capture post-sprint lessons
-# ATDD Red Phase — tests assert expected content; will fail until architecture.md is updated.
+# ATDD Green Phase — all 18 tests passing after architecture.md was updated.
 #
 # Run: bats tests/docs/test_9_8.bats
 #
@@ -28,10 +28,9 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P0 — Story 9.8, AC #1, 9.8-DOC-001
 # ---------------------------------------------------------------------------
 @test "[P0][9.8-DOC-001] architecture.md contains a 'Known Gotchas & Conventions' section heading" {
-  # RED: architecture.md currently has no 'Known Gotchas' section.
-  run grep -c "Known Gotchas" "$ARCH_MD"
+  run grep -E "Known Gotchas" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -39,21 +38,18 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P0 — Story 9.8, AC #1, 9.8-DOC-002
 # ---------------------------------------------------------------------------
 @test "[P0][9.8-DOC-002] architecture.md documents the _redirects evaluation-order rule (top-to-bottom first match)" {
-  # RED: the evaluation-order rule (pass-through before catch-all) is not yet in architecture.md.
-  # The doc must explain that Cloudflare evaluates rules top-to-bottom and stops at first match.
-  # Existing content only references '_redirects' for the URL rewrite solution (Gap 1).
-  # The new gotcha entry must explain the order dependency explicitly.
+  # Cloudflare evaluates rules top-to-bottom, stopping at first match; pass-through rules must
+  # appear before catch-all rules or they are never reached.
   run grep -E "top.to.bottom|first.match|pass.through.*before|before.*catch.all|evaluation.order" "$ARCH_MD"
   [ "$status" -eq 0 ]
   [[ -n "$output" ]]
 }
 
 @test "[P1][9.8-DOC-003] architecture.md documents the /u.html infinite-redirect trap" {
-  # RED: the /u.html → infinite redirect trap is not yet documented.
   # The doc must warn against rewriting to '/u.html'.
-  run grep -c "u\.html\|infinite.redirect\|clean.URL" "$ARCH_MD"
+  run grep -E "u\.html|infinite.redirect|clean.URL" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -61,19 +57,15 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P0 — Story 9.8, AC #1+2, 9.8-DOC-004
 # ---------------------------------------------------------------------------
 @test "[P0][9.8-DOC-004] architecture.md documents the serde(default = 'fn') vs Default::default() footgun" {
-  # RED: no gotcha documentation for the serde(default = "fn") / Default divergence exists yet.
-  # The existing architecture.md mentions serde(default) in the context of schema tolerance (line 88),
-  # but does NOT document the footgun (serde(default="fn") != Default::default()).
-  # The new section must include the specific 'default = "fn"' annotation syntax.
+  # The section must include the specific 'default = "fn"' annotation syntax and a concrete example.
   run grep -E 'serde\(default = |default_machine_status|footgun' "$ARCH_MD"
   [ "$status" -eq 0 ]
   [[ -n "$output" ]]
 }
 
 @test "[P0][9.8-DOC-005] architecture.md explains that serde(default) does NOT affect Default::default()" {
-  # AC #2: the documentation must give enough context to avoid the footgun without reading Story 2.3.
-  # The key clarification is that #[serde(default = "fn")] only affects deserialization,
-  # NOT the derived Default impl. The doc must reference 'Default' alongside 'serde'.
+  # AC #2: the doc must clarify that #[serde(default = "fn")] only affects deserialization,
+  # NOT the derived Default impl, so readers don't need to read Story 2.3 to avoid the footgun.
   run grep -E "Default|default_machine_status|manual.*impl|impl Default" "$ARCH_MD"
   [ "$status" -eq 0 ]
   [[ -n "$output" ]]
@@ -84,10 +76,9 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P1 — Story 9.8, AC #1, 9.8-DOC-006
 # ---------------------------------------------------------------------------
 @test "[P1][9.8-DOC-006] architecture.md documents the Cargo [workspace] worktree isolation pattern" {
-  # RED: no Cargo worktree isolation pattern is documented in architecture.md yet.
-  run grep -c "\[workspace\]\|worktree.*cargo\|cargo.*worktree" "$ARCH_MD"
+  run grep -E "\[workspace\]|worktree.*cargo|cargo.*worktree" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -95,10 +86,9 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P1 — Story 9.8, AC #1, 9.8-DOC-007
 # ---------------------------------------------------------------------------
 @test "[P1][9.8-DOC-007] architecture.md documents the _gh() define-if-not-defined testable shell helper pattern" {
-  # RED: the _gh() pattern is not yet documented in architecture.md.
-  run grep -c "declare -f\|define-if-not-defined\|_gh()" "$ARCH_MD"
+  run grep -E "declare -f|define-if-not-defined|_gh\(\)" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -106,10 +96,9 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P1 — Story 9.8, AC #1, 9.8-DOC-008
 # ---------------------------------------------------------------------------
 @test "[P1][9.8-DOC-008] architecture.md documents the Python3 stdlib over jq convention for JSON in Bash scripts" {
-  # RED: the Python3 over jq convention is not yet documented in architecture.md.
-  run grep -c "python3.*json\|jq.*python\|Python3 stdlib\|python3 -c" "$ARCH_MD"
+  run grep -E "python3.*json|jq.*python|Python3 stdlib|python3 -c" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -117,10 +106,8 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # P1 — Story 9.8, AC #1, 9.8-DOC-009
 # ---------------------------------------------------------------------------
 @test "[P1][9.8-DOC-009] architecture.md documents the security negative test pattern (sentinel token + grep assertion)" {
-  # RED: the security negative test pattern is not yet documented in architecture.md.
-  # The existing architecture.md mentions NFR7 in a different context (token not written to disk
-  # as an implementation note), but does NOT document the bats negative test pattern for it.
-  # The new entry must describe the sentinel + grep test approach.
+  # The new entry must describe the sentinel-inject + grep-absent assertion approach for bats
+  # security tests, distinct from the existing NFR7 implementation note.
   run grep -E "SENTINEL|sentinel.*token|negative.*test.*security|security.*negative|! grep.*sentinel|inject.*sentinel" "$ARCH_MD"
   [ "$status" -eq 0 ]
   [[ -n "$output" ]]
@@ -181,16 +168,16 @@ ARCH_MD="${REPO_ROOT}/_bmad-output/planning-artifacts/architecture.md"
 # ---------------------------------------------------------------------------
 @test "[P1][9.8-INT-001] architecture.md still contains 'Architecture Readiness Assessment' section (existing content preserved)" {
   # The story requires purely additive changes — existing sections must not be removed.
-  run grep -c "Architecture Readiness Assessment" "$ARCH_MD"
+  run grep -E "Architecture Readiness Assessment" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 @test "[P1][9.8-INT-002] architecture.md still contains 'Implementation Patterns' section (existing content preserved)" {
   # Another key existing section that must not be removed or modified.
-  run grep -c "Implementation Patterns" "$ARCH_MD"
+  run grep -E "Implementation Patterns" "$ARCH_MD"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [[ -n "$output" ]]
 }
 
 @test "[P2][9.8-INT-003] architecture.md Known Gotchas section appears AFTER Architecture Validation Results" {
