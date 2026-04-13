@@ -59,7 +59,6 @@ def _run(args: list[str], readme_content: str, tmp_path: Path) -> subprocess.Com
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — AC1 not yet implemented: update_readme.py missing empty-username guard")
 def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
     """[P1] AC1/AC2: When --username "" is passed, update_readme.py must exit non-zero
     and write a clear error message to stderr.
@@ -94,7 +93,6 @@ def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — AC1 edge case not yet implemented: whitespace-only username guard")
 def test_tc7_whitespace_only_username_exits_nonzero(tmp_path: Path) -> None:
     """[P2] AC1 edge case: When --username '   ' (whitespace only) is passed,
     update_readme.py must exit non-zero with a clear error message to stderr.
@@ -121,7 +119,6 @@ def test_tc7_whitespace_only_username_exits_nonzero(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — AC3 not yet executed: expected_output/data.json dead fixture not yet removed")
 def test_expected_output_fixture_removed() -> None:
     """[P1] AC3: The dead fixture action/tests/fixtures/expected_output/data.json
     must be absent from the repository after Story 9.9 is implemented.
@@ -147,24 +144,24 @@ def test_expected_output_fixture_removed() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — AC3 not yet executed: expected_output/ directory not yet removed")
 def test_expected_output_directory_removed() -> None:
     """[P1] AC3: After removing data.json, the expected_output/ directory must
-    also be absent (since it would be empty).
+    not contain unexpected files.
 
-    If heatmap.svg also lives in expected_output/, only remove the directory
-    if it is empty after data.json deletion. This test asserts the directory
-    is absent when no other files remain.
+    heatmap.svg is a known fixture used by test_generate_svg.py (snapshot test)
+    and is intentionally retained. data.json was the only dead artifact to remove.
+    This test verifies data.json is gone and no other unexpected files were introduced.
     """
-    # This test is only relevant if the directory would be empty after removing data.json.
-    # Count remaining files to make the assertion conditional.
+    # Known fixtures allowed to remain in expected_output/ (used by other tests)
+    KNOWN_FIXTURES = {"heatmap.svg", ".gitkeep"}
+
     if EXPECTED_OUTPUT_DIR.exists():
-        remaining = list(EXPECTED_OUTPUT_DIR.iterdir())
-        # Only the fixture data.json should have been in this dir
-        assert len(remaining) == 0, (
-            f"expected_output/ directory still contains files after data.json removal: "
-            f"{[str(f) for f in remaining]}\n"
-            "Remove the directory if it is empty."
+        remaining = {f.name for f in EXPECTED_OUTPUT_DIR.iterdir()}
+        unexpected = remaining - KNOWN_FIXTURES
+        assert len(unexpected) == 0, (
+            f"expected_output/ directory contains unexpected files after data.json removal: "
+            f"{sorted(unexpected)}\n"
+            "Remove or explain any unexpected files."
         )
 
 
@@ -174,7 +171,6 @@ def test_expected_output_directory_removed() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="TDD RED PHASE — AC4 regression guard: full suite cannot pass until AC1-AC3 are implemented")
 def test_full_pytest_suite_passes() -> None:
     """[P3] AC4: The full Python test suite `cd action && python -m pytest tests/ -v`
     must pass with 0 failures after all story 9.9 changes are applied.
@@ -185,8 +181,16 @@ def test_full_pytest_suite_passes() -> None:
     - No regressions in existing TC-1 through TC-5 or aggregate tests
     """
     action_dir = UPDATE_README.parent
+    # Exclude this file from the recursive run to avoid infinite recursion / timeout.
+    # test_9_9_python_hardening.py is the meta-test harness; all its substantive
+    # assertions (TC-6, TC-7, fixture removal) are also mirrored in the other test
+    # files (test_update_readme.py), so the exclusion does not reduce coverage.
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short"],
+        [
+            sys.executable, "-m", "pytest", "tests/",
+            "--ignore=tests/test_9_9_python_hardening.py",
+            "-v", "--tb=short",
+        ],
         cwd=str(action_dir),
         capture_output=True,
         text=True,

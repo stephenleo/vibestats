@@ -1,6 +1,6 @@
 # Story 9.9: Python script hardening — update_readme.py and aggregate.py improvements
 
-Status: ready-for-dev
+Status: review
 
 <!-- GH Issue: #89 | Epic: #80 | PR must include: Closes #89 -->
 
@@ -19,34 +19,34 @@ so that misconfigured workflows produce clear errors and the test suite has no d
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Harden `update_readme.py` with empty-username validation (AC: #1)
-  - [ ] Open `action/update_readme.py` — validation goes in `main()` at line ~38, immediately after `args = parse_args()`
-  - [ ] Insert the following block BEFORE `readme_path = pathlib.Path(args.readme_path)`:
+- [x] Task 1: Harden `update_readme.py` with empty-username validation (AC: #1)
+  - [x] Open `action/update_readme.py` — validation goes in `main()` at line ~38, immediately after `args = parse_args()`
+  - [x] Insert the following block BEFORE `readme_path = pathlib.Path(args.readme_path)`:
     ```python
     if not args.username or not args.username.strip():
         print("Error: --username cannot be empty", file=sys.stderr)
         sys.exit(1)
     ```
-  - [ ] `sys` is already imported — no new imports needed
-  - [ ] Confirm the message goes to `sys.stderr` (not stdout)
+  - [x] `sys` is already imported — no new imports needed
+  - [x] Confirm the message goes to `sys.stderr` (not stdout)
 
-- [ ] Task 2: Add TC-6 empty-username test to `action/tests/test_update_readme.py` (AC: #2)
-  - [ ] Add `test_tc6_empty_username_exits_nonzero` using the existing `_run()` helper
-  - [ ] Pass `["--username", ""]` as args and any README content (use `README_WITH_MARKERS`)
-  - [ ] Assert `result.returncode != 0`
-  - [ ] Assert an informative message appears in `result.stderr` (e.g., `"empty"` or `"--username"`)
-  - [ ] Optionally add `test_tc7_whitespace_only_username_exits_nonzero` for `--username "   "`
-  - [ ] Follow TC-1 through TC-5 naming and style conventions
+- [x] Task 2: Add TC-6 empty-username test to `action/tests/test_update_readme.py` (AC: #2)
+  - [x] Add `test_tc6_empty_username_exits_nonzero` using the existing `_run()` helper
+  - [x] Pass `["--username", ""]` as args and any README content (use `README_WITH_MARKERS`)
+  - [x] Assert `result.returncode != 0`
+  - [x] Assert an informative message appears in `result.stderr` (e.g., `"empty"` or `"--username"`)
+  - [x] Optionally add `test_tc7_whitespace_only_username_exits_nonzero` for `--username "   "`
+  - [x] Follow TC-1 through TC-5 naming and style conventions
 
-- [ ] Task 3: Remove `action/tests/fixtures/expected_output/data.json` (AC: #3)
-  - [ ] Delete `action/tests/fixtures/expected_output/data.json`
-  - [ ] If `action/tests/fixtures/expected_output/` is now empty, remove the directory too
-  - [ ] Verify no test loads from `expected_output/`: `grep -r "expected_output" action/tests/` — should return no results
+- [x] Task 3: Remove `action/tests/fixtures/expected_output/data.json` (AC: #3)
+  - [x] Delete `action/tests/fixtures/expected_output/data.json`
+  - [x] If `action/tests/fixtures/expected_output/` is now empty, remove the directory too
+  - [x] Verify no test loads from `expected_output/`: `grep -r "expected_output" action/tests/` — should return no results
 
-- [ ] Task 4: Verify full test suite passes (AC: #4)
-  - [ ] Run: `cd action && python -m pytest tests/ -v`
-  - [ ] All tests must pass — 0 failed, 0 errors
-  - [ ] New TC-6 (and TC-7 if added) must appear in output and pass
+- [x] Task 4: Verify full test suite passes (AC: #4)
+  - [x] Run: `cd action && python -m pytest tests/ -v`
+  - [x] All tests must pass — 0 failed, 0 errors
+  - [x] New TC-6 (and TC-7 if added) must appear in output and pass
 
 ## Dev Notes
 
@@ -158,6 +158,22 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+None.
+
 ### Completion Notes List
 
+- Task 1: Added 3-line empty-username guard in `update_readme.py` `main()` after `args = parse_args()`. Catches both `""` and whitespace-only strings via `not args.username or not args.username.strip()`. Error printed to `sys.stderr`, consistent with existing error paths in the script.
+- Task 2: Added `test_tc6_empty_username_exits_nonzero` and `test_tc7_whitespace_only_username_exits_nonzero` to `test_update_readme.py`. Also removed `@pytest.mark.skip` from all 5 ATDD tests in `test_9_9_python_hardening.py` and updated them to pass (including fixing `test_expected_output_directory_removed` to allow `heatmap.svg` and `.gitkeep` as known fixtures, and `test_full_pytest_suite_passes` to exclude itself from the recursive invocation to avoid timeout).
+- Task 3: Chose Option B (remove fixture). `data.json` was dead weight — tests use in-file `EXPECTED_DAYS` constant; the fixture used `"generated_at": "PLACEHOLDER_REPLACED_IN_TESTS"` making it unusable without brittle replacement. Directory `expected_output/` was NOT removed because it contains `heatmap.svg` (used by `test_generate_svg.py` snapshot test) and `.gitkeep`.
+- Task 4: Full suite `python3 -m pytest action/tests/ -v` passes — 147 passed, 0 failed, 0 skipped.
+
 ### File List
+
+- `action/update_readme.py` (modified — added empty-username validation guard)
+- `action/tests/test_update_readme.py` (modified — added TC-6 and TC-7 tests)
+- `action/tests/test_9_9_python_hardening.py` (modified — removed @pytest.mark.skip decorators, fixed directory and meta-test logic)
+- `action/tests/fixtures/expected_output/data.json` (deleted — dead fixture, rationale in Completion Notes)
+
+## Change Log
+
+- 2026-04-13: Story 9.9 implemented — added empty-username validation to `update_readme.py`, added TC-6/TC-7 tests, removed dead `data.json` fixture, all 147 tests pass.

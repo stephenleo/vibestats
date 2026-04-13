@@ -36,6 +36,9 @@ def build_block(username: str) -> str:
 
 def main() -> None:
     args = parse_args()
+    if not args.username or not args.username.strip():
+        print("Error: --username cannot be empty", file=sys.stderr)
+        sys.exit(1)
     readme_path = pathlib.Path(args.readme_path)
 
     # Read the README file

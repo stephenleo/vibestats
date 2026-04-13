@@ -198,3 +198,45 @@ def test_tc5_content_changed_file_is_written(tmp_path: Path) -> None:
         "Expected 'updated' in output after writing file.\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+# ---------------------------------------------------------------------------
+# TC-6 (P1): empty --username exits non-zero with clear stderr message (AC1, Story 9.9)
+# ---------------------------------------------------------------------------
+
+
+def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
+    """[P1] AC1: When --username "" is passed, update_readme.py must exit non-zero
+    and write a clear error message to stderr."""
+    result = _run(["--username", ""], README_WITH_MARKERS, tmp_path)
+
+    assert result.returncode != 0, (
+        f"Expected non-zero exit when --username is empty, got {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+    assert "empty" in result.stderr or "--username" in result.stderr, (
+        f"Expected error message about empty username in stderr.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# TC-7 (P2): whitespace-only --username exits non-zero (AC1 edge case, Story 9.9)
+# ---------------------------------------------------------------------------
+
+
+def test_tc7_whitespace_only_username_exits_nonzero(tmp_path: Path) -> None:
+    """[P2] AC1 edge case: When --username '   ' (whitespace only) is passed,
+    update_readme.py must exit non-zero with a clear error message to stderr."""
+    result = _run(["--username", "   "], README_WITH_MARKERS, tmp_path)
+
+    assert result.returncode != 0, (
+        f"Expected non-zero exit when --username is whitespace-only, got {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+    assert "empty" in result.stderr or "--username" in result.stderr, (
+        f"Expected error message about empty username in stderr.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
