@@ -15,6 +15,7 @@ Test IDs follow the story task list:
 """
 
 import pathlib
+from typing import Optional
 
 import yaml
 
@@ -31,6 +32,20 @@ def _load_workflow() -> dict:
     """Parse aggregate.yml and return the top-level dict."""
     with AGGREGATE_YML.open("r", encoding="utf-8") as fh:
         return yaml.safe_load(fh)
+
+
+def _find_uses_step(workflow: dict) -> Optional[dict]:
+    """Return the first step that has a 'uses:' key, searching all jobs.
+
+    TC-3 and TC-4 both need to locate the composite-action step. Centralising
+    the search here keeps the test bodies focused on their own assertions and
+    makes the traversal pattern easy to update if the YAML structure changes.
+    """
+    for _job_name, job_def in workflow.get("jobs", {}).items():
+        for step in job_def.get("steps", []):
+            if "uses" in step:
+                return step
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -98,26 +113,13 @@ def test_tc3_step_uses_vibestats_v1_action() -> None:
     to action.yml in the same repo via the Marketplace tag 'v1' (Story 8.3)."""
     workflow = _load_workflow()
 
-    jobs = workflow.get("jobs", {})
-    assert jobs, "No 'jobs:' defined in aggregate.yml"
-
-    # Find the 'uses:' field in any step across all jobs
-    found_uses = None
-    for _job_name, job_def in jobs.items():
-        steps = job_def.get("steps", [])
-        for step in steps:
-            if "uses" in step:
-                found_uses = step["uses"]
-                break
-        if found_uses:
-            break
-
-    assert found_uses is not None, (
+    step = _find_uses_step(workflow)
+    assert step is not None, (
         "No 'uses:' step found in any job in aggregate.yml. "
         "Expected a step that calls 'stephenleo/vibestats@v1'."
     )
-    assert found_uses == "stephenleo/vibestats@v1", (
-        f"Step 'uses:' is '{found_uses}', expected 'stephenleo/vibestats@v1' (AC1)."
+    assert step["uses"] == "stephenleo/vibestats@v1", (
+        f"Step 'uses:' is '{step['uses']}', expected 'stephenleo/vibestats@v1' (AC1)."
     )
 
 
@@ -132,19 +134,13 @@ def test_tc4_token_input_references_vibestats_token_secret() -> None:
     would cause silent authentication failures for every user."""
     workflow = _load_workflow()
 
-    jobs = workflow.get("jobs", {})
-    assert jobs, "No 'jobs:' defined in aggregate.yml"
+    step = _find_uses_step(workflow)
+    assert step is not None, (
+        "No 'uses:' step found in any job in aggregate.yml. "
+        "The step using 'stephenleo/vibestats@v1' must be present to have a 'token' input (AC1)."
+    )
 
-    token_value = None
-    for _job_name, job_def in jobs.items():
-        steps = job_def.get("steps", [])
-        for step in steps:
-            if "uses" in step and "with" in step:
-                token_value = step["with"].get("token")
-                break
-        if token_value is not None:
-            break
-
+    token_value = step.get("with", {}).get("token")
     assert token_value is not None, (
         "No 'with.token' input found in any step in aggregate.yml. "
         "The step using 'stephenleo/vibestats@v1' must pass 'token' (AC1)."
@@ -173,7 +169,6 @@ def test_tc5_concurrency_block_present_with_correct_group_and_policy() -> None:
     an in-flight push is never killed mid-run (Dev Notes: cancel-in-progress
     rationale in story 9.7).
 
-    This test will FAIL until the concurrency block is added to aggregate.yml.
     """
     workflow = _load_workflow()
 
