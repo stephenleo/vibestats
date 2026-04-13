@@ -178,12 +178,14 @@ WRAPPER_SCRIPT
   # After refactor: all trap registrations use 'trap cleanup EXIT' at the top level only.
   # RED: install.sh currently has an inline trap inside download_and_install_binary() at line 137.
   #
-  # Count occurrences of 'trap ... EXIT' that are NOT 'trap cleanup EXIT'.
-  # After refactor this count must be 0.
-  INLINE_TRAP_COUNT=$(grep -c "trap '.*' EXIT\|trap \".*\" EXIT" "${INSTALL_SH}" || true)
+  # Invariant: every 'trap ... EXIT' in the file must be 'trap cleanup EXIT'.
+  # Count all trap...EXIT lines and all 'trap cleanup EXIT' lines — they must be equal.
+  # This catches any form of inline trap (quoted, variable-based, etc.), not just quoted forms.
+  ALL_TRAP_EXIT_COUNT=$(grep -c 'trap.*EXIT' "${INSTALL_SH}" || true)
+  CLEANUP_TRAP_COUNT=$(grep -c 'trap cleanup EXIT' "${INSTALL_SH}" || true)
 
-  # RED phase: count is 1 (the inline trap at line 137); after refactor it must be 0
-  [ "$INLINE_TRAP_COUNT" -eq 0 ]
+  # After refactor: all trap...EXIT registrations must be the single 'trap cleanup EXIT'
+  [ "$ALL_TRAP_EXIT_COUNT" -eq "$CLEANUP_TRAP_COUNT" ]
 }
 
 # ---------------------------------------------------------------------------
@@ -232,14 +234,13 @@ WRAPPER_SCRIPT
 # AC #3 — [P1] Regression guard: test_6_1.bats still passes after refactor
 # (integration-level; runs full existing suite as a black-box regression check)
 # 9.4-INT-003
-# NOTE: This test is skipped in pure red phase; it is a GREEN phase verification gate.
-# It is included here as a documented requirement so the DEV agent knows to run it.
+# GREEN phase: implementation complete — regression guard is now active.
 # ---------------------------------------------------------------------------
-# @test "[P1][9.4-INT-003] REGRESSION: bats test_6_1.bats still passes after refactor" {
-#   run bats "${BATS_TEST_DIRNAME}/test_6_1.bats" 2>&1
-#   [ "$status" -eq 0 ]
-# }
-#
-# Uncomment and run manually to verify GREEN phase after implementation:
-#   bats tests/installer/test_6_1.bats tests/installer/test_6_2.bats \
-#        tests/installer/test_6_3.bats tests/installer/test_6_4.bats
+@test "[P1][9.4-INT-003] REGRESSION: existing test_6_1.bats suite still passes after refactor" {
+  # Run the Epic 6 first-install test suite as a black-box regression check.
+  # This verifies AC #3: zero regressions in existing tests after the EXIT trap refactor.
+  # Note: nested bats invocation is intentional here — we want the full bats runner
+  # output and exit code rather than sourcing individual test files.
+  run bats "${BATS_TEST_DIRNAME}/test_6_1.bats" 2>&1
+  [ "$status" -eq 0 ]
+}
