@@ -3,39 +3,30 @@ import Base from '../layouts/Base.astro';
 import 'cal-heatmap/cal-heatmap.css';
 ---
 <Base title="vibestats">
-  <main class="max-w-4xl mx-auto px-4 py-20">
+  <main class="landing">
 
     <!-- Hero -->
-    <section class="text-center mb-24">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 text-xs font-medium mb-6">
-        <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+    <section class="hero">
+      <div class="badge">
+        <span class="badge-dot"></span>
         Now tracking Claude Code sessions
       </div>
-      <h1 class="text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
-        Track your Claude Code sessions
-      </h1>
-      <p class="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-        Automatically capture every session and render a GitHub-style heatmap
-        on your profile — zero manual commands.
+      <h1>Show the world how you code with AI</h1>
+      <p class="hero-sub">
+        Every session. Every token. Every machine — tracked automatically.<br/>
+        One install gets you a GitHub-style heatmap and a full analytics dashboard.
       </p>
     </section>
 
     <!-- Install -->
-    <section class="mb-24">
-      <h2 class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Install</h2>
-      <div class="flex items-center gap-3 flex-wrap">
-        <div class="flex-1 min-w-0 flex items-center gap-3 bg-slate-950 dark:bg-slate-900 border border-slate-800 rounded-lg px-4 py-3">
-          <span class="text-slate-500 select-none">$</span>
-          <code id="install-cmd" class="text-sm text-slate-100 font-mono truncate">curl -sSf https://vibestats.dev/install.sh | bash</code>
+    <section class="section">
+      <h2 class="section-label">Install on every machine you use Claude Code</h2>
+      <div class="install-row">
+        <div class="install-box">
+          <span class="install-dollar">$</span>
+          <code id="install-cmd">curl -sSf https://vibestats.dev/install.sh | bash</code>
         </div>
-        <button
-          id="copy-btn"
-          type="button"
-          aria-live="polite"
-          class="shrink-0 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        >
-          Copy
-        </button>
+        <button id="copy-btn" type="button" aria-live="polite" class="copy-btn">Copy</button>
       </div>
       <script>
         const btn = document.getElementById('copy-btn');
@@ -57,10 +48,10 @@ import 'cal-heatmap/cal-heatmap.css';
       </script>
     </section>
 
-    <!-- Heatmap -->
-    <section class="mb-24">
-      <h2 class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">See it in action</h2>
-      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-6 overflow-x-auto">
+    <!-- Demo Heatmap -->
+    <section class="section">
+      <h2 class="section-label">See it in action <span class="info-icon" role="img" aria-label="Interactive demo with randomized data. Your real dashboard uses live data from your Claude Code sessions.">i<span class="info-tooltip">Interactive demo with randomized data. Your real dashboard uses live data from your Claude Code sessions.</span></span></h2>
+      <div class="demo-card">
         <div id="demo-heatmap"></div>
       </div>
     </section>
@@ -69,7 +60,6 @@ import 'cal-heatmap/cal-heatmap.css';
       import CalHeatmap from 'cal-heatmap';
       import Tooltip from 'cal-heatmap/plugins/Tooltip';
 
-      // Generate realistic demo data for the past 12 months
       const data: { date: string; value: number }[] = [];
       const now = new Date();
       for (let d = 364; d >= 0; d--) {
@@ -86,7 +76,6 @@ import 'cal-heatmap/cal-heatmap.css';
         }
       }
 
-      // Start from 12 months ago, aligned to the first of that month
       const start = new Date(now);
       start.setMonth(start.getMonth() - 11);
       start.setDate(1);
@@ -101,17 +90,22 @@ import 'cal-heatmap/cal-heatmap.css';
           domain: {
             type: 'month',
             label: { text: 'MMM', textAlign: 'start', position: 'top' },
+            gutter: 4,
           },
           subDomain: {
             type: 'ghDay',
-            width: 11,
-            height: 11,
+            width: 13,
+            height: 13,
             radius: 2,
+            gutter: 3,
           },
           scale: {
             color: {
               type: 'threshold',
-              range: ['#1e293b', '#fed7aa', '#fb923c', '#f97316', '#c2410c'],
+              range: [
+                document.documentElement.classList.contains('dark') ? '#2a3346' : '#ebedf0',
+                '#fed7aa', '#fb923c', '#f97316', '#c2410c',
+              ],
               domain: [1, 3, 7, 12],
             },
           },
@@ -130,33 +124,589 @@ import 'cal-heatmap/cal-heatmap.css';
       );
     </script>
 
-    <!-- Why -->
-    <section class="mb-24">
-      <h2 class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-6">Why vibestats?</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-5">
-          <div class="text-orange-500 mb-3">
+    <!-- Dashboard Preview -->
+    <section class="section">
+      <h2 class="section-label">Your analytics dashboard</h2>
+      <p class="section-desc">Every vibestats user gets a full analytics dashboard at <strong>vibestats.dev/username</strong>. Here's what you'll see:</p>
+
+      <!-- Mock KPI row with info tooltips -->
+
+      <!-- Mock KPI row -->
+      <div class="preview-kpis">
+        <div class="preview-kpi">
+          <div class="preview-kpi-header"><span class="preview-kpi-label">Total Tokens</span><span class="info-icon" role="img" aria-label="Input + output tokens across all sessions and machines, all time.">i<span class="info-tooltip">Input + output tokens across all sessions and machines, all time.</span></span></div>
+          <span class="preview-kpi-value">24.8M</span>
+          <span class="preview-kpi-sub up">+12% vs last 30d</span>
+        </div>
+        <div class="preview-kpi">
+          <div class="preview-kpi-header"><span class="preview-kpi-label">Sessions</span><span class="info-icon" role="img" aria-label="Total Claude Code sessions across all machines, all time.">i<span class="info-tooltip">Total Claude Code sessions across all machines, all time.</span></span></div>
+          <span class="preview-kpi-value">1,247</span>
+          <span class="preview-kpi-sub up">+8%</span>
+        </div>
+        <div class="preview-kpi">
+          <div class="preview-kpi-header"><span class="preview-kpi-label">Active Time</span><span class="info-icon" role="img" aria-label="Sum of all session durations across all machines, all time.">i<span class="info-tooltip">Sum of all session durations across all machines, all time.</span></span></div>
+          <span class="preview-kpi-value">312h</span>
+        </div>
+        <div class="preview-kpi">
+          <div class="preview-kpi-header"><span class="preview-kpi-label">Current Streak</span><span class="info-icon" role="img" aria-label="Consecutive days with at least one session, ending today.">i<span class="info-tooltip">Consecutive days with at least one session, ending today.</span></span></div>
+          <span class="preview-kpi-value">14d</span>
+        </div>
+      </div>
+
+      <!-- Mock charts grid -->
+      <div class="preview-grid">
+        <!-- Token chart -->
+        <div class="preview-card">
+          <h3 class="preview-card-title">Daily Token Consumption <span class="info-icon" role="img" aria-label="Daily input + output tokens over the last 30 days, all machines.">i<span class="info-tooltip">Daily input + output tokens over the last 30 days, all machines.</span></span></h3>
+          <div class="preview-bars" id="preview-token-bars"></div>
+        </div>
+        <!-- Model donut -->
+        <div class="preview-card">
+          <h3 class="preview-card-title">Model Usage <span class="info-icon" role="img" aria-label="Share of output tokens by Claude model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by Claude model, all time across all machines.</span></span></h3>
+          <div class="preview-donut-row">
+            <div class="preview-donut"></div>
+            <div class="preview-legend">
+              <div class="preview-legend-item"><span class="preview-dot" style="background:#f97316"></span>Sonnet 4.5 — 45%</div>
+              <div class="preview-legend-item"><span class="preview-dot" style="background:#3b82f6"></span>Opus 4 — 27%</div>
+              <div class="preview-legend-item"><span class="preview-dot" style="background:#a855f7"></span>Sonnet 4 — 16%</div>
+              <div class="preview-legend-item"><span class="preview-dot" style="background:#06b6d4"></span>Haiku 4.5 — 7%</div>
+            </div>
+          </div>
+        </div>
+        <!-- Sparklines -->
+        <div class="preview-card">
+          <h3 class="preview-card-title">Weekly Trends <span class="info-icon" role="img" aria-label="Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.">i<span class="info-tooltip">Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.</span></span></h3>
+          <div class="preview-spark-rows" id="preview-sparklines"></div>
+        </div>
+        <!-- Efficiency -->
+        <div class="preview-card">
+          <h3 class="preview-card-title">Efficiency Metrics <span class="info-icon" role="img" aria-label="Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse.">i<span class="info-tooltip">Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse.</span></span></h3>
+          <div class="preview-spark-rows" id="preview-efficiency"></div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // ── Mock token bars ───────────────────────────────────────────
+      const tokenBars = document.getElementById('preview-token-bars')!;
+      for (let i = 0; i < 30; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'pbar';
+        const isWeekend = i % 7 === 5 || i % 7 === 6;
+        const h = isWeekend ? 10 + Math.random() * 25 : 30 + Math.random() * 70;
+        bar.style.height = `${h}%`;
+        bar.style.background = isWeekend
+          ? 'var(--color-text-muted, #9ca3af)'
+          : 'linear-gradient(to top, #f97316, #fb923c)';
+        tokenBars.appendChild(bar);
+      }
+
+      // ── Mock sparklines ───────────────────────────────────────────
+      function makePreviewSpark(containerId: string, rows: Array<{label: string; value: string; color: string}>) {
+        const container = document.getElementById(containerId)!;
+        for (const row of rows) {
+          const rowEl = document.createElement('div');
+          rowEl.className = 'pspark-row';
+          const label = document.createElement('span');
+          label.className = 'pspark-label';
+          label.textContent = row.label;
+          const sparkline = document.createElement('div');
+          sparkline.className = 'pspark-line';
+          for (let i = 0; i < 12; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'pspark-bar';
+            bar.style.height = `${8 + Math.random() * 92}%`;
+            bar.style.background = row.color;
+            bar.style.opacity = String(0.3 + (i / 12) * 0.7);
+            sparkline.appendChild(bar);
+          }
+          const val = document.createElement('span');
+          val.className = 'pspark-value';
+          val.textContent = row.value;
+          rowEl.appendChild(label);
+          rowEl.appendChild(sparkline);
+          rowEl.appendChild(val);
+          container.appendChild(rowEl);
+        }
+      }
+
+      makePreviewSpark('preview-sparklines', [
+        { label: 'Sessions', value: '42', color: '#f97316' },
+        { label: 'Tokens', value: '1.2M', color: '#3b82f6' },
+        { label: 'Active min', value: '487m', color: '#22c55e' },
+        { label: 'Messages', value: '1,842', color: '#a855f7' },
+      ]);
+
+      makePreviewSpark('preview-efficiency', [
+        { label: 'Tokens/min', value: '1.3K', color: '#06b6d4' },
+        { label: 'Msgs/session', value: '44', color: '#f97316' },
+        { label: 'Cache hit %', value: '72%', color: '#22c55e' },
+        { label: 'Tools/session', value: '6.7', color: '#eab308' },
+      ]);
+    </script>
+
+    <!-- Features -->
+    <section class="section">
+      <h2 class="section-label">Why vibestats?</h2>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           </div>
-          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Zero effort</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400">Hooks fire silently on every session. No manual commands needed.</p>
+          <h3>Zero effort</h3>
+          <p>Hooks fire silently on every session. No manual commands needed.</p>
         </div>
-        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-5">
-          <div class="text-orange-500 mb-3">
+        <div class="feature">
+          <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="2" y="3" rx="2"/><path d="M10 17v4M7 21h10M22 7v4"/></svg>
           </div>
-          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Cross-machine</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400">All your machines, one repository. Data is always in sync.</p>
+          <h3>Cross-machine</h3>
+          <p>All your machines, one repository. Data is always in sync.</p>
         </div>
-        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-5">
-          <div class="text-orange-500 mb-3">
+        <div class="feature">
+          <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
           </div>
-          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">GitHub profile</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400">Heatmap embeds in your README and links to your dashboard.</p>
+          <h3>GitHub profile</h3>
+          <p>Heatmap embeds in your README and links to your dashboard.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          </div>
+          <h3>Rich analytics</h3>
+          <p>Token trends, model breakdown, efficiency metrics, streaks, and more.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>Streak tracking</h3>
+          <p>Current and longest streaks. See your consistency at a glance.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          </div>
+          <h3>Dark mode</h3>
+          <p>Full dark mode support on the dashboard and GitHub profile SVGs.</p>
         </div>
       </div>
     </section>
 
   </main>
 </Base>
+
+<style>
+  .landing {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1rem 6rem;
+  }
+
+  /* ── Hero ──────────────────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding-top: 3rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #ea580c;
+  }
+  :global(.dark) .badge {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.3);
+    color: #fb923c;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #f97316;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: #64748b;
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  :global(.dark) .hero-sub { color: #94a3b8; }
+
+  /* ── Sections ──────────────────────────────────────────────────── */
+  .section {
+    margin-bottom: 4rem;
+  }
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+  }
+  :global(.dark) .section-label { color: #64748b; }
+  .section-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  :global(.dark) .section-desc { color: #94a3b8; }
+  .section-desc strong { color: #f97316; font-weight: 600; }
+
+  /* ── Install ───────────────────────────────────────────────────── */
+  .install-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .install-box {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+  }
+  :global(.dark) .install-box {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .install-dollar {
+    color: #475569;
+    user-select: none;
+  }
+  .install-box code {
+    font-size: 0.875rem;
+    color: #e2e8f0;
+    font-family: ui-monospace, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .copy-btn {
+    flex-shrink: 0;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  :global(.dark) .copy-btn {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+  .copy-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+  :global(.dark) .copy-btn:hover {
+    background: #334155;
+  }
+
+  /* ── Demo card ─────────────────────────────────────────────────── */
+  .demo-card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+  :global(.dark) .demo-card {
+    border-color: #1e293b;
+    background: #1e293b;
+  }
+
+  /* ── Info tooltips ───────────────────────────────────────────────── */
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid #9ca3af;
+    font-size: 0.55rem;
+    font-weight: 700;
+    font-style: italic;
+    color: #9ca3af;
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+  :global(.dark) .info-icon { border-color: #64748b; color: #64748b; }
+  .info-icon:hover { border-color: #f97316; color: #f97316; }
+  .info-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    width: max-content;
+    max-width: 240px;
+    z-index: 100;
+    pointer-events: none;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  :global(.dark) .info-tooltip { background: #e2e8f0; color: #0f172a; }
+  .info-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #111827;
+  }
+  :global(.dark) .info-tooltip::after { border-top-color: #e2e8f0; }
+  .info-icon:hover .info-tooltip { display: block; }
+
+  /* ── Dashboard preview ─────────────────────────────────────────── */
+  .preview-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .preview-kpi {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  :global(.dark) .preview-kpi {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .preview-kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .preview-kpi-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+  }
+  :global(.dark) .preview-kpi-label { color: #64748b; }
+  .preview-kpi-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .preview-kpi-sub {
+    font-size: 0.72rem;
+    color: #9ca3af;
+  }
+  .preview-kpi-sub.up { color: #22c55e; }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .preview-grid { grid-template-columns: 1fr; }
+  }
+  .preview-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  :global(.dark) .preview-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .preview-card-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  :global(.dark) .preview-card-title { color: #64748b; }
+
+  /* Mock bars */
+  .preview-bars {
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  /* Mock donut */
+  .preview-donut-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .preview-donut {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: conic-gradient(
+      #f97316 0% 45%,
+      #3b82f6 45% 72%,
+      #a855f7 72% 88%,
+      #06b6d4 88% 95%,
+      #64748b 95% 100%
+    );
+    position: relative;
+  }
+  .preview-donut::after {
+    content: '';
+    position: absolute;
+    inset: 28%;
+    border-radius: 50%;
+    background: #f9fafb;
+  }
+  :global(.dark) .preview-donut::after { background: #1e293b; }
+  .preview-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .preview-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: #64748b;
+  }
+  :global(.dark) .preview-legend-item { color: #94a3b8; }
+  .preview-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Features ──────────────────────────────────────────────────── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  .feature {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 1.25rem;
+  }
+  :global(.dark) .feature {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .feature-icon {
+    color: #f97316;
+    margin-bottom: 0.75rem;
+  }
+  .feature h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+  }
+  .feature p {
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  :global(.dark) .feature p { color: #94a3b8; }
+</style>
+
+<!-- Global: dynamically generated chart elements -->
+<style is:global>
+  .pbar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    min-width: 3px;
+  }
+  .pspark-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .dark .pspark-row { border-bottom-color: #334155; }
+  .pspark-row:last-child { border-bottom: none; }
+  .pspark-label {
+    width: 80px;
+    font-size: 0.72rem;
+    color: #64748b;
+  }
+  .dark .pspark-label { color: #94a3b8; }
+  .pspark-line {
+    flex: 1;
+    height: 22px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .pspark-bar {
+    flex: 1;
+    border-radius: 1px;
+    min-height: 2px;
+  }
+  .pspark-value {
+    width: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: right;
+    color: #111827;
+  }
+  .dark .pspark-value { color: #e2e8f0; }
+</style>
