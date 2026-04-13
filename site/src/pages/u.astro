@@ -211,7 +211,7 @@ import Base from '../layouts/Base.astro';
 
   function colorScale(metric: string): { range: string[]; domain: number[] } {
     const isDark = document.documentElement.classList.contains('dark');
-    const empty = isDark ? '#1e293b' : '#ebedf0';
+    const empty = isDark ? '#2a3346' : '#ebedf0';
     switch (metric) {
       case 'sessions':
         return { range: [empty, '#fef3e8', '#fed7aa', '#fb923c', '#f97316'], domain: [1, 10, 50, 100] };
@@ -380,6 +380,15 @@ import Base from '../layouts/Base.astro';
       t.classList.toggle('active', t === btn);
     }
     renderHeatmap(currentYear, metric);
+  });
+
+  // ── Re-render heatmap on theme change ───────────────────────────────
+  const themeBtn = document.getElementById('theme-toggle');
+  themeBtn?.addEventListener('click', () => {
+    // Small delay to let the .dark class toggle first
+    requestAnimationFrame(() => {
+      if (vibestatsData) renderHeatmap(currentYear, currentMetric);
+    });
   });
 
   // ── Token trend chart ──────────────────────────────────────────────
