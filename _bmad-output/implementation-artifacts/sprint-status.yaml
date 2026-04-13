@@ -152,7 +152,7 @@ development_status:
   9-1-artifact-hygiene-fix-stale-story-statuses-and-missing-records: ready-for-dev
   9-2-retrospective-code-reviews-for-stories-4-3-and-4-4: ready-for-dev
   9-3-fix-test-6-2-bats-pre-existing-failures: ready-for-dev
-  9-4-bash-installer-refactor-exit-trap-to-composable-cleanup: backlog
+  9-4-bash-installer-refactor-exit-trap-to-composable-cleanup: review
   9-5-rust-remove-dead-code-suppressors-and-verify-lint-clean: backlog
   9-6-first-release-push-v0-1-0-tag-and-create-v1-floating-tag: backlog
   9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: backlog
