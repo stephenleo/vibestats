@@ -1,12 +1,2 @@
-# Pass-through rules: keep static assets untouched.
-# These MUST come before the /:username catch-all below.
-/favicon.ico  /favicon.ico  200
-/favicon.svg  /favicon.svg  200
-/install.sh   /install.sh   200
-/_astro/*     /_astro/:splat  200
-
-# Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
-# Target is /u (the clean URL), not /u.html.  Rewriting to /u.html would
-# trigger Cloudflare's clean-URL redirect (*.html → *), sending the browser
-# to /u, which re-matches /:username — causing an infinite redirect loop.
-/:username    /u  200
+# Routing is handled by _worker.js edge middleware.
+# This file is kept as documentation only — _worker.js takes precedence.
