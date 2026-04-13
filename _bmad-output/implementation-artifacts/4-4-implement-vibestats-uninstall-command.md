@@ -322,6 +322,57 @@ None.
 - `src/main.rs` (modified — replaced `println!("not yet implemented")` in `Commands::Uninstall` arm)
 - `src/commands/machines.rs` (modified — fixed pre-existing clippy warning: `.last()` → `.next_back()`)
 
+## Review Findings
+
+**Reviewer:** Claude Sonnet 4.6 | **Date:** 2026-04-13 | **Story:** 4.4
+
+### Blind Hunter Pass
+
+**Focus:** Security vulnerabilities, token leakage, permission issues, injection risks
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| BH-1 | S1 — `is_vibestats_hook` uses `starts_with("vibestats ")` (space, not tab). A command `"vibestats\tsync"` (tab-separated) would NOT match — correct behavior: the installer always writes space-separated commands and no tab-variant should be matched | P0 | Clean |
+| BH-2 | S2 — Hook type scope: `remove_vibestats_hooks` iterates only `["Stop", "SessionStart"]` in the first pass. `PreToolUse` and other hook types are never touched. Verified by test `hook_filtering_preserves_unknown_hook_types` and `hook_filtering_does_not_touch_non_stop_sessionstart_types_even_if_vibestats_command` | P0 | Clean |
+| BH-3 | S3 — `std::fs::write` atomicity: the implementation uses write-to-tmp + rename pattern (`settings.json.tmp` → `settings.json`). This is atomic on POSIX. A process crash mid-write leaves the `.tmp` file (cleaned up on failure branch) but `settings.json` intact. **This resolves the concern raised in the story spec** — the implementation went beyond the spec | P0 | Clean |
+| BH-4 | S4 — `std::fs::remove_file` on a symlink at `~/.local/bin/vibestats`: removes the symlink, not the target. This is the correct behavior for user-installed binaries (the installer copies the binary, not symlinking). If the binary is a symlink, the symlink is removed and the original is preserved — acceptable and documented as intended design | P2 | Deferred |
+
+### Edge Case Hunter Pass
+
+**Focus:** Boundary conditions, missing file states, race conditions, malformed inputs
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| EH-1 | E1 — Malformed `settings.json`: `serde_json::from_str` returns `Err` → "could not parse ~/.claude/settings.json: ..." + "Hook removal skipped." Actionable and non-fatal | P0 | Clean |
+| EH-2 | E2 — `settings.json` exists but no `"hooks"` key: `remove_vibestats_hooks` returns `false` (no change), `run()` prints "no vibestats hooks found in settings.json (already clean)" | P0 | Clean |
+| EH-3 | E3 — Group with no inner `"hooks"` key: `group.get_mut("hooks").and_then(|h| h.as_array_mut())` returns `None` via `let Some(...) else { continue }`, group is preserved via `unwrap_or(true)` in `groups_arr.retain`. Unknown-format groups untouched | P0 | Clean |
+| EH-4 | E4 — Binary not found at `~/.local/bin/vibestats`: `Err(e) if e.kind() == ErrorKind::NotFound` arm prints "binary not found at ... (already removed?)". Non-fatal | P0 | Clean |
+| EH-5 | E5 — HOME not set: both `settings_path()` and `binary_path()` return `None` — hook removal prints "HOME not set — skipping hook removal", binary deletion prints "HOME not set — skipping binary deletion". Both steps continue to post-uninstall message | P0 | Clean |
+| EH-6 | Deviation from story spec: story spec (Task 2 Step 2) says to use `std::env::current_exe()` for binary path, but the actual implementation uses a `binary_path()` helper targeting `~/.local/bin/vibestats`. This is a documented security/correctness improvement (prevents dev-build self-deletion). The story Dev Notes explicitly document this divergence | P0 | Clean |
+| EH-7 | Test isolation: `settings_path_reflects_home_state` and `binary_path_builds_local_bin_path` both mutate `HOME` using non-`unsafe` `set_var`/`remove_var`. On Rust 2021 edition (project uses 2021), these are safe — `unsafe` requirement only applies in 2024 edition. No issue | P0 | Clean |
+
+### Acceptance Auditor Pass
+
+**Focus:** All ACs verified against actual implementation
+
+| AC | Verified | Notes |
+|----|----------|-------|
+| AC #1 | Yes | `remove_vibestats_hooks` removes Stop and SessionStart hooks from `~/.claude/settings.json`. Binary deletion via `binary_path()` → `remove_file`. Both steps always attempted regardless of each other's outcome. FR37 satisfied |
+| AC #2 | Yes | Post-uninstall instructions always printed: vibestats-data repo deletion, README marker removal, config directory cleanup. Printed unconditionally after binary step |
+| AC #3 | Yes | `is_vibestats_hook` uses precise matching (`cmd == "vibestats"` OR `cmd.starts_with("vibestats ")`), not substring `.contains()`. Non-vibestats hooks preserved. Verified by 9 unit tests |
+| NFR10 | Yes | No `std::process::exit` call anywhere in `src/commands/uninstall.rs` (confirmed by grep) |
+
+### Fixes Applied
+
+No P0 or P1 findings. No source code changes required. The implementation exceeds the story spec in two ways:
+1. Atomic write-via-rename for `settings.json` (spec said non-atomic write was P2 concern; implementation resolved it proactively)
+2. Precise hook matching (`starts_with("vibestats ")`) instead of `.contains("vibestats")` from spec (prevents false positives on `"my-tool --vibestats-arg"`)
+
+### Summary
+
+`src/commands/uninstall.rs` is a high-quality implementation that exceeds the original story spec in correctness and safety. The JSON surgery (atomic write, precise hook matching, scope limited to Stop/SessionStart only) is robust and thoroughly tested with 9 focused unit tests. Binary deletion correctly targets the installed path rather than `current_exe()`, preventing developer footgun. All ACs and NFR10 verified. One P2 observation about symlink behavior deferred (acceptable, matches common installer convention). **Recommendation: APPROVE.**
+
 ## Change Log
 
 - 2026-04-11: Implemented `vibestats uninstall` command (Story 4.4) — hook removal from `~/.claude/settings.json`, binary self-deletion, manual cleanup instructions. All ACs satisfied. 135 tests pass.
+- 2026-04-13: Retrospective code review completed (Story 9.2). Three-pass review: Blind Hunter, Edge Case Hunter, Acceptance Auditor. All P0/P1 checks pass. One P2 observation deferred. Status updated to done.

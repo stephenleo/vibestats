@@ -370,6 +370,56 @@ None.
 - `src/commands/mod.rs` (modified — added `pub mod auth;`)
 - `src/main.rs` (modified — replaced `println!("not yet implemented")` in `Commands::Auth` arm)
 
+## Review Findings
+
+**Reviewer:** Claude Sonnet 4.6 | **Date:** 2026-04-13 | **Story:** 4.3
+
+### Blind Hunter Pass
+
+**Focus:** Security vulnerabilities, token leakage, permission issues, injection risks
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| BH-1 | S1 — Token is never passed as `--body` argument; implementation correctly uses `--body-file -` with stdin pipe | P0 | Clean |
+| BH-2 | S2 — No `println!` or error path prints the raw token value; error messages contain only `{e}` or `{stderr}` (not `config.oauth_token`) | P0 | Clean |
+| BH-3 | S3 — `Config::save()` calls `write_file_mode_600` (sets `mode(0o600)` at creation) then `set_permissions_600` (re-asserts on existing files) — both at-creation and pre-existing file permissions are enforced | P0 | Clean |
+| BH-4 | S4 — `Config::save()` is in-place truncate (`OpenOptions::write(true).truncate(true)`), not atomic temp-file+rename. A process crash during write could leave a partially written `config.toml`. Accepted as P2 since: (a) the file is small, (b) any partial write is detected at next `Config::load()` via TOML parse error, and (c) adding atomic-write to config.rs is out of scope for this story | P2 | Deferred |
+| BH-5 | S5 — `drop(child.stdin.take())` is present before `wait_with_output()` — no deadlock risk | P0 | Clean |
+| BH-6 | S6 — `config.oauth_token` holds raw token in heap memory after write; Rust does not zero-on-drop. Accepted as P2 — token lifetime is process-scoped and this is standard Rust behavior | P2 | Deferred |
+
+### Edge Case Hunter Pass
+
+**Focus:** Boundary conditions, missing file states, race conditions, malformed inputs
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| EH-1 | E1 — `gh auth token` whitespace-only: `String::from_utf8_lossy(&out.stdout).trim().to_string()` trims first, then `is_empty()` checks. Correct ordering — whitespace-only outputs are caught as empty | P0 | Clean |
+| EH-2 | E2 — `Config::load()` when `config.toml` does not exist: returns `Err` with message "Config file not found at ...". `auth.rs` maps this to `println!("vibestats: auth failed — could not load config: {e}")` with actionable message | P1 | Clean |
+| EH-3 | E3 — `checkpoint_path()` returns `None` when HOME unset: the `if let Some(cp_path) = checkpoint_path()` branch skips checkpoint clear silently (no message printed). This is safe — auth token refresh succeeded. Minor UX gap: no message tells the user checkpoint was skipped | P2 | Deferred |
+| EH-4 | E4 — `Checkpoint::load()` on missing file returns `Default`: `clear_auth_error()` on a default checkpoint sets `auth_error = false` (already false). Idempotent and safe | P0 | Clean |
+| EH-5 | E5 — `gh` binary not in PATH: error path prints "could not run 'gh': {e}" + "Ensure 'gh' CLI is installed and accessible in PATH." Actionable remediation provided | P0 | Clean |
+| EH-6 | `stdin` piping: `ok_or_else` converts `stdin.as_mut()` returning `None` into a proper `io::Error` instead of using `expect()`. No non-test `expect()`/`unwrap()` present in `auth.rs` | P0 | Clean |
+
+### Acceptance Auditor Pass
+
+**Focus:** All ACs verified against actual implementation
+
+| AC | Verified | Notes |
+|----|----------|-------|
+| AC #1 | Yes | `gh auth token` → `Config::load()` → set `config.oauth_token = new_token` → `config.save()`. `Config::save()` calls `write_file_mode_600` which opens with `mode(0o600)` and re-asserts 600 on existing files. FR36, NFR6 satisfied |
+| AC #2 | Yes | `gh secret set VIBESTATS_TOKEN --repo <vibestats_data_repo> --body-file -` with token fed via stdin pipe. FR36 satisfied. Failure is non-fatal (local token still refreshed) with manual-runbook hint printed |
+| AC #3 | Yes | `Checkpoint::clear_auth_error()` called and `cp.save()` called on success. Non-fatal if checkpoint save fails. `vibestats: auth complete` printed on success path |
+| NFR10 | Yes | No `std::process::exit` call anywhere in `src/commands/auth.rs` (confirmed by grep) |
+
+### Fixes Applied
+
+No P0 or P1 findings. No source code changes required.
+
+### Summary
+
+`src/commands/auth.rs` is a clean, security-conscious implementation. The two key security properties — stdin-pipe token delivery and 600-perm config file — are correctly implemented and verified. Error handling follows the story's fatal/non-fatal contract precisely. No `unwrap()`/`expect()` in non-test code. Three P2 observations are deferred: (1) non-atomic config.toml write (acceptable given small file size and error detection on load), (2) no in-memory zeroing of the token (standard Rust behavior), (3) no message when checkpoint skip occurs due to unset HOME (minor UX gap). All ACs and NFR10 verified. **Recommendation: APPROVE.**
+
 ## Change Log
 
 - 2026-04-11: Implemented `vibestats auth` command (Story 4.3) — `gh auth token` → config.toml update → `gh secret set` → checkpoint auth_error clear. All ACs satisfied. 104 tests pass.
+- 2026-04-13: Retrospective code review completed (Story 9.2). Three-pass review: Blind Hunter, Edge Case Hunter, Acceptance Auditor. All P0/P1 checks pass. Three P2 observations deferred. Status updated to done.

@@ -1,6 +1,6 @@
 # Story 9.2: Retrospective code reviews for Stories 4.3 and 4.4
 
-Status: ready-for-dev
+Status: done
 
 <!-- GH Issue: #82 | Epic: #80 | PR must include: Closes #82 -->
 
@@ -34,40 +34,40 @@ Source: Epic 4 retrospective, Challenge #1 and Action Item #2.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Read context files before starting review
-  - [ ] Read `_bmad-output/implementation-artifacts/4-3-implement-vibestats-auth-command.md` (full story + dev notes)
-  - [ ] Read `_bmad-output/implementation-artifacts/4-4-implement-vibestats-uninstall-command.md` (full story + dev notes)
-  - [ ] Read current source: `src/commands/auth.rs`
-  - [ ] Read current source: `src/commands/uninstall.rs`
-  - [ ] Read supporting modules: `src/config.rs`, `src/checkpoint.rs`
+- [x] Task 1: Read context files before starting review
+  - [x] Read `_bmad-output/implementation-artifacts/4-3-implement-vibestats-auth-command.md` (full story + dev notes)
+  - [x] Read `_bmad-output/implementation-artifacts/4-4-implement-vibestats-uninstall-command.md` (full story + dev notes)
+  - [x] Read current source: `src/commands/auth.rs`
+  - [x] Read current source: `src/commands/uninstall.rs`
+  - [x] Read supporting modules: `src/config.rs`, `src/checkpoint.rs`
 
-- [ ] Task 2: Invoke `bmad-code-review` on Story 4.3 (`vibestats auth`)
-  - [ ] Use the `bmad-code-review` skill (`/bmad-code-review`) in a fresh context
-  - [ ] Primary target file: `src/commands/auth.rs`
-  - [ ] Context files to provide: `4-3-implement-vibestats-auth-command.md` + `src/config.rs` + `src/checkpoint.rs`
-  - [ ] Three review layers: Blind Hunter (security-first), Edge Case Hunter, Acceptance Auditor
-  - [ ] Record ALL findings with priority ratings (P0–P2) in a new `## Review Findings` section appended to `4-3-implement-vibestats-auth-command.md`
+- [x] Task 2: Invoke `bmad-code-review` on Story 4.3 (`vibestats auth`)
+  - [x] Use the `bmad-code-review` skill (`/bmad-code-review`) in a fresh context
+  - [x] Primary target file: `src/commands/auth.rs`
+  - [x] Context files to provide: `4-3-implement-vibestats-auth-command.md` + `src/config.rs` + `src/checkpoint.rs`
+  - [x] Three review layers: Blind Hunter (security-first), Edge Case Hunter, Acceptance Auditor
+  - [x] Record ALL findings with priority ratings (P0–P2) in a new `## Review Findings` section appended to `4-3-implement-vibestats-auth-command.md`
 
-- [ ] Task 3: Invoke `bmad-code-review` on Story 4.4 (`vibestats uninstall`)
-  - [ ] Use the `bmad-code-review` skill in a fresh context
-  - [ ] Primary target file: `src/commands/uninstall.rs`
-  - [ ] Context files to provide: `4-4-implement-vibestats-uninstall-command.md` + `src/config.rs`
-  - [ ] Special attention: `remove_vibestats_hooks` JSON surgery — verify it cannot corrupt the file on partial write or OS crash mid-write
-  - [ ] Record ALL findings in a new `## Review Findings` section appended to `4-4-implement-vibestats-uninstall-command.md`
+- [x] Task 3: Invoke `bmad-code-review` on Story 4.4 (`vibestats uninstall`)
+  - [x] Use the `bmad-code-review` skill in a fresh context
+  - [x] Primary target file: `src/commands/uninstall.rs`
+  - [x] Context files to provide: `4-4-implement-vibestats-uninstall-command.md` + `src/config.rs`
+  - [x] Special attention: `remove_vibestats_hooks` JSON surgery — verify it cannot corrupt the file on partial write or OS crash mid-write
+  - [x] Record ALL findings in a new `## Review Findings` section appended to `4-4-implement-vibestats-uninstall-command.md`
 
-- [ ] Task 4: Apply any P0/P1 fixes
-  - [ ] For each P0/P1 finding in either review, apply the fix to the source file
-  - [ ] Run `cargo test` from repo root after ALL fixes — must pass with 0 failures
-  - [ ] Run `cargo clippy --all-targets -- -D warnings` from repo root — must produce 0 warnings
-  - [ ] Document each fix applied in the corresponding Review Findings section
+- [x] Task 4: Apply any P0/P1 fixes
+  - [x] For each P0/P1 finding in either review, apply the fix to the source file
+  - [x] Run `cargo test` from repo root after ALL fixes — must pass with 0 failures
+  - [x] Run `cargo clippy --all-targets -- -D warnings` from repo root — must produce 0 warnings
+  - [x] Document each fix applied in the corresponding Review Findings section
 
-- [ ] Task 5: Handle P2 findings
-  - [ ] Apply P2 fixes at reviewer's discretion
-  - [ ] For any unaddressed P2 findings, add entries to `_bmad-output/implementation-artifacts/deferred-work.md` (create if not present)
+- [x] Task 5: Handle P2 findings
+  - [x] Apply P2 fixes at reviewer's discretion
+  - [x] For any unaddressed P2 findings, add entries to `_bmad-output/implementation-artifacts/deferred-work.md` (create if not present)
 
-- [ ] Task 6: Update story file status headers (AC #6)
-  - [ ] Change `Status: review` to `Status: done` in `4-3-implement-vibestats-auth-command.md`
-  - [ ] Change `Status: review` to `Status: done` in `4-4-implement-vibestats-uninstall-command.md`
+- [x] Task 6: Update story file status headers (AC #6)
+  - [x] Change `Status: review` to `Status: done` in `4-3-implement-vibestats-auth-command.md`
+  - [x] Change `Status: review` to `Status: done` in `4-4-implement-vibestats-uninstall-command.md`
 
 ## Dev Notes
 
@@ -259,7 +259,7 @@ cargo clippy --all-targets -- -D warnings        # Must produce: 0 warnings
 
 ### Agent Model Used
 
-<!-- To be filled in by dev agent -->
+claude-sonnet-4-6 (Step 4 test reviewer)
 
 ### Debug Log References
 
@@ -267,12 +267,22 @@ None.
 
 ### Completion Notes List
 
-<!-- To be filled in by dev agent -->
+- Read all context files: `4-3-implement-vibestats-auth-command.md`, `4-4-implement-vibestats-uninstall-command.md`, `src/commands/auth.rs`, `src/commands/uninstall.rs`, `src/config.rs`, `src/checkpoint.rs`
+- Performed three-pass code review (Blind Hunter, Edge Case Hunter, Acceptance Auditor) on both `auth.rs` and `uninstall.rs`
+- Story 4.3 (`auth.rs`): All P0/P1 security and correctness checks passed clean. Three P2 items deferred (non-atomic config write, in-memory token retention, silent checkpoint skip). No source code changes needed.
+- Story 4.4 (`uninstall.rs`): All P0/P1 checks passed clean. Implementation exceeds spec in two areas: atomic settings.json write (spec listed this as P2 concern — already resolved) and precise hook matching using `starts_with` instead of `.contains`. One P2 item deferred (symlink removal behavior).
+- Verified: `cargo test` — 138 passed, 0 failed. `cargo clippy --all-targets -- -D warnings` — 0 warnings.
+- Updated `deferred-work.md` with 4 P2 deferred items (3 from 4.3, 1 from 4.4)
+- Updated both story files to `Status: done`
 
 ### File List
 
-<!-- To be filled in by dev agent -->
+- `_bmad-output/implementation-artifacts/4-3-implement-vibestats-auth-command.md` (modified — Status: done, added Review Findings section)
+- `_bmad-output/implementation-artifacts/4-4-implement-vibestats-uninstall-command.md` (modified — Status: done, added Review Findings section)
+- `_bmad-output/implementation-artifacts/deferred-work.md` (modified — added 4 P2 deferred items)
+- `_bmad-output/implementation-artifacts/9-2-retrospective-code-reviews-for-stories-4-3-and-4-4.md` (modified — all tasks checked, Status: done, agent record filled)
 
 ## Change Log
 
 - 2026-04-12: Story created — retrospective code reviews for Stories 4.3 and 4.4
+- 2026-04-13: Story completed — three-pass reviews performed on auth.rs and uninstall.rs; all ACs satisfied; 4 P2 items deferred; both target stories updated to done
