@@ -25,10 +25,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_block(username: str) -> str:
+    base = f"https://raw.githubusercontent.com/{username}/{username}/main/vibestats"
     return (
         f"<!-- vibestats-start -->\n"
-        f'<img src="https://raw.githubusercontent.com/{username}/{username}/main/vibestats/heatmap.svg"'
-        f' alt="vibestats heatmap" />\n\n'
+        f"<picture>\n"
+        f'  <source media="(prefers-color-scheme: dark)" srcset="{base}/heatmap-dark.svg" />\n'
+        f'  <source media="(prefers-color-scheme: light)" srcset="{base}/heatmap.svg" />\n'
+        f'  <img src="{base}/heatmap.svg" alt="vibestats heatmap" />\n'
+        f"</picture>\n\n"
         f"[View interactive dashboard →](https://vibestats.dev/{username})\n"
         f"<!-- vibestats-end -->"
     )

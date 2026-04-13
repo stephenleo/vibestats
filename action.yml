@@ -38,12 +38,17 @@ runs:
         python ${{ github.action_path }}/action/aggregate.py
         mv data.json _profile_repo/vibestats/data.json
 
-    - name: Run generate_svg.py
+    - name: Run generate_svg.py (light + dark)
       shell: bash
       run: |
         python ${{ github.action_path }}/action/generate_svg.py \
           --input _profile_repo/vibestats/data.json \
-          --output _profile_repo/vibestats/heatmap.svg
+          --output _profile_repo/vibestats/heatmap.svg \
+          --theme light
+        python ${{ github.action_path }}/action/generate_svg.py \
+          --input _profile_repo/vibestats/data.json \
+          --output _profile_repo/vibestats/heatmap-dark.svg \
+          --theme dark
 
     - name: Run update_readme.py
       shell: bash
@@ -61,7 +66,7 @@ runs:
         cd _profile_repo
         git config user.name "vibestats[bot]"
         git config user.email "vibestats[bot]@users.noreply.github.com"
-        git add vibestats/data.json vibestats/heatmap.svg README.md
+        git add vibestats/data.json vibestats/heatmap.svg vibestats/heatmap-dark.svg README.md
         git diff --cached --quiet && echo "vibestats: no changes to commit" && exit 0
         git commit -m "chore(vibestats): update heatmap [skip ci]"
 

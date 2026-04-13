@@ -35,14 +35,29 @@ from datetime import date, timedelta
 # Constants
 # ---------------------------------------------------------------------------
 
-# Claude orange colour palette — intensities 0–4
+# Claude orange colour palettes — intensities 0–4
 # Intensity 0 and 4 are fixed by AC2; 1–3 are implementation-defined orange family.
-COLOUR_PALETTE = {
-    0: "#ebedf0",  # neutral/zero — required by AC2
-    1: "#fef3e8",  # low — required by AC2
-    2: "#fed7aa",  # orange-200
-    3: "#fb923c",  # orange-400
-    4: "#f97316",  # high — required by AC2
+COLOUR_PALETTES = {
+    "light": {
+        0: "#ebedf0",  # neutral/zero
+        1: "#fef3e8",  # low
+        2: "#fed7aa",  # orange-200
+        3: "#fb923c",  # orange-400
+        4: "#f97316",  # high
+    },
+    "dark": {
+        0: "#2a3346",  # neutral/zero — visible against dark bg
+        1: "#fef3e8",  # low
+        2: "#fed7aa",  # orange-200
+        3: "#fb923c",  # orange-400
+        4: "#f97316",  # high
+    },
+}
+
+# Theme-aware text/label colours
+TEXT_COLOURS = {
+    "light": "#586069",
+    "dark": "#8b949e",
 }
 
 # SVG layout constants
@@ -125,11 +140,12 @@ def _compute_intensity(sessions: int, max_sessions: int) -> int:
 # SVG rendering
 # ---------------------------------------------------------------------------
 
-def _build_svg(grid: list[list[date]], days: dict[str, dict]) -> ET.Element:
+def _build_svg(grid: list[list[date]], days: dict[str, dict], theme: str = "light") -> ET.Element:
     """Build and return the SVG ElementTree root element.
 
     grid: list of 52 columns, each a list of 7 dates.
     days: mapping from "YYYY-MM-DD" → {"sessions": int, "active_minutes": int}
+    theme: "light" or "dark" — controls palette and label colours.
     """
     # Compute max_sessions across all activity days (validated to be ints
     # upstream in generate(), so .get() default of 0 is purely defensive).
@@ -160,7 +176,7 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict]) -> ET.Element:
         text.set("y", str(y))
         text.set("font-size", "9")
         text.set("text-anchor", "end")
-        text.set("fill", "#586069")
+        text.set("fill", TEXT_COLOURS[theme])
         text.set("font-family", "sans-serif")
         text.text = label
 
@@ -178,7 +194,7 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict]) -> ET.Element:
             text.set("x", str(x))
             text.set("y", str(TOP_MARGIN - 6))
             text.set("font-size", "9")
-            text.set("fill", "#586069")
+            text.set("fill", TEXT_COLOURS[theme])
             text.set("font-family", "sans-serif")
             text.text = MONTH_ABBREVS[month - 1]
             prev_month = month
@@ -193,7 +209,7 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict]) -> ET.Element:
             day_data = days.get(date_str, {})
             sessions = day_data.get("sessions", 0)
             intensity = _compute_intensity(sessions, max_sessions)
-            fill = COLOUR_PALETTE[intensity]
+            fill = COLOUR_PALETTES[theme][intensity]
 
             rect = ET.SubElement(svg, "rect")
             rect.set("x", str(x))
@@ -218,9 +234,10 @@ def _svg_to_string(svg_root: ET.Element) -> str:
 # Main public API
 # ---------------------------------------------------------------------------
 
-def generate(input_path: str, output_path: str) -> None:
+def generate(input_path: str, output_path: str, theme: str = "light") -> None:
     """Read data.json at input_path, write heatmap.svg to output_path.
 
+    theme: "light" or "dark" — controls palette and label colours.
     Raises SystemExit with non-zero code on any error.
     """
     # Load and parse input
@@ -303,7 +320,7 @@ def generate(input_path: str, output_path: str) -> None:
 
     # Build grid and SVG
     grid = _compute_grid_dates(last_date)
-    svg_root = _build_svg(grid, days)
+    svg_root = _build_svg(grid, days, theme=theme)
     svg_content = _svg_to_string(svg_root)
 
     # Write output
@@ -334,9 +351,15 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="vibestats/heatmap.svg",
         help="Path to write heatmap.svg (default: vibestats/heatmap.svg)",
     )
+    parser.add_argument(
+        "--theme",
+        choices=["light", "dark"],
+        default="light",
+        help="Colour theme: 'light' or 'dark' (default: light)",
+    )
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    generate(args.input, args.output)
+    generate(args.input, args.output, theme=args.theme)

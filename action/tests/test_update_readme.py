@@ -132,11 +132,15 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
     """[P0] AC3/R-004: When the README already has the correct content between
     the markers, update_readme.py exits 0 without writing the file (idempotent run)."""
     # Build the README that already contains the expected injected block
+    base = f"https://raw.githubusercontent.com/{USERNAME}/{USERNAME}/main/vibestats"
     already_injected = (
         "# My Profile\n\n"
         "<!-- vibestats-start -->\n"
-        f"<img src=\"https://raw.githubusercontent.com/{USERNAME}/{USERNAME}"
-        "/main/vibestats/heatmap.svg\" alt=\"vibestats heatmap\" />\n\n"
+        "<picture>\n"
+        f'  <source media="(prefers-color-scheme: dark)" srcset="{base}/heatmap-dark.svg" />\n'
+        f'  <source media="(prefers-color-scheme: light)" srcset="{base}/heatmap.svg" />\n'
+        f'  <img src="{base}/heatmap.svg" alt="vibestats heatmap" />\n'
+        "</picture>\n\n"
         f"[View interactive dashboard →](https://vibestats.dev/{USERNAME})\n"
         "<!-- vibestats-end -->\n\n"
         "Some other content.\n"
