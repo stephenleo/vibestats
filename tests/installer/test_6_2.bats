@@ -119,6 +119,51 @@ ${extra_cases}
 STUB
 }
 
+# Write a _gh() stub tailored for tests that exercise register_machine.
+# Compared to make_gh_stub, this stub omits repo-create/secret-set cases and
+# adds the PUT vs GET dispatch for "api repos*" that register_machine expects.
+# $1 (optional): path to write stub (default: ${HOME}/stub_env.sh)
+# $2 (optional): auth_token return value (default: "ghp_FAKE_MACHINE_TOKEN_12345")
+# $3 (optional): auth_token exit code — pass "1" to simulate auth failure (default: 0)
+make_register_machine_stub() {
+  local stub_file="${1:-${HOME}/stub_env.sh}"
+  local auth_token="${2:-ghp_FAKE_MACHINE_TOKEN_12345}"
+  local auth_exit="${3:-0}"
+
+  cat > "$stub_file" <<STUB
+_gh() {
+  case "\$1 \$2" in
+    "auth token")
+      if [ "${auth_exit}" -ne 0 ]; then
+        echo "Error: not authenticated" >&2
+        return 1
+      fi
+      echo "${auth_token}"
+      ;;
+    "api /user")
+      echo '{"login":"testuser"}'
+      ;;
+    "api repos"*)
+      echo "gh api repos: \$*" >> "\${HOME}/gh_calls.log"
+      # PUT calls succeed; GET calls return 1 so install.sh treats registry as empty
+      case "\$*" in
+        *"--method PUT"*)
+          return 0
+          ;;
+        *)
+          return 1
+          ;;
+      esac
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+export -f _gh
+STUB
+}
+
 # ---------------------------------------------------------------------------
 # AC #1 — vibestats-data does not exist → gh repo create --private called
 # P1 — Story 6.2, FR4
@@ -276,37 +321,7 @@ STUB
 # P1 — Story 6.2, R-002, NFR6, FR39
 # ---------------------------------------------------------------------------
 @test "[P1] gh auth token result stored in ~/.config/vibestats/config.toml" {
-  # Override auth token to return a recognisable value
-  make_gh_stub "${HOME}/stub_env.sh" 'AUTH_TOKEN_OVERRIDE="ghp_FAKE_MACHINE_TOKEN_12345"'
-  # Patch the stub to return our specific token value
-  cat > "${HOME}/stub_env.sh" <<'STUB'
-_gh() {
-  case "$1 $2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN_12345"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos"*)
-      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
-      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
-      case "$*" in
-        *"--method PUT"*)
-          return 0
-          ;;
-        *)
-          return 1
-          ;;
-      esac
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_register_machine_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -324,34 +339,7 @@ STUB
 # P0 — Story 6.2, R-002, NFR6
 # ---------------------------------------------------------------------------
 @test "[P0] ~/.config/vibestats/config.toml created with permissions 600" {
-  cat > "${HOME}/stub_env.sh" <<'STUB'
-_gh() {
-  case "$1 $2" in
-    "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN_12345"
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos"*)
-      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
-      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
-      case "$*" in
-        *"--method PUT"*)
-          return 0
-          ;;
-        *)
-          return 1
-          ;;
-      esac
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  make_register_machine_stub
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
@@ -380,35 +368,8 @@ STUB
 # P0 — Story 6.2, R-003, OPS
 # ---------------------------------------------------------------------------
 @test "[P0] installer exits non-zero and prints error when gh auth token fails" {
-  cat > "${HOME}/stub_env.sh" <<'STUB'
-_gh() {
-  case "$1 $2" in
-    "auth token")
-      echo "Error: not authenticated" >&2
-      return 1
-      ;;
-    "api /user")
-      echo '{"login":"testuser"}'
-      ;;
-    "api repos"*)
-      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
-      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
-      case "$*" in
-        *"--method PUT"*)
-          return 0
-          ;;
-        *)
-          return 1
-          ;;
-      esac
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-export -f _gh
-STUB
+  # auth_exit=1 simulates "gh auth token" returning a non-zero exit code
+  make_register_machine_stub "${HOME}/stub_env.sh" "" "1"
 
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
