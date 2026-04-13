@@ -24,7 +24,7 @@ def _run(args: list[str], readme_content: str, tmp_path: Path) -> subprocess.Com
     readme = tmp_path / "README.md"
     readme.write_text(readme_content, encoding="utf-8")
     cmd = [sys.executable, str(UPDATE_README)] + args + ["--readme-path", str(readme)]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
 
 README_WITH_MARKERS = """\
@@ -147,7 +147,7 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
     mtime_before = readme.stat().st_mtime
 
     cmd = [sys.executable, str(UPDATE_README), "--username", USERNAME, "--readme-path", str(readme)]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
     assert result.returncode == 0, (
         f"Expected exit 0 on no-op run, got {result.returncode}.\n"
@@ -196,5 +196,47 @@ def test_tc5_content_changed_file_is_written(tmp_path: Path) -> None:
     combined_output = result.stdout + result.stderr
     assert "updated" in combined_output.lower(), (
         "Expected 'updated' in output after writing file.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# TC-6 (P1): empty --username exits non-zero with clear stderr message (AC1, Story 9.9)
+# ---------------------------------------------------------------------------
+
+
+def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
+    """[P1] AC1: When --username "" is passed, update_readme.py must exit non-zero
+    and write a clear error message to stderr."""
+    result = _run(["--username", ""], README_WITH_MARKERS, tmp_path)
+
+    assert result.returncode != 0, (
+        f"Expected non-zero exit when --username is empty, got {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+    assert "empty" in result.stderr or "--username" in result.stderr, (
+        f"Expected error message about empty username in stderr.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# TC-7 (P2): whitespace-only --username exits non-zero (AC1 edge case, Story 9.9)
+# ---------------------------------------------------------------------------
+
+
+def test_tc7_whitespace_only_username_exits_nonzero(tmp_path: Path) -> None:
+    """[P2] AC1 edge case: When --username '   ' (whitespace only) is passed,
+    update_readme.py must exit non-zero with a clear error message to stderr."""
+    result = _run(["--username", "   "], README_WITH_MARKERS, tmp_path)
+
+    assert result.returncode != 0, (
+        f"Expected non-zero exit when --username is whitespace-only, got {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+    assert "empty" in result.stderr or "--username" in result.stderr, (
+        f"Expected error message about empty username in stderr.\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
