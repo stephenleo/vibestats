@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -37,6 +35,7 @@ impl Default for Checkpoint {
 /// Parses "YYYY-MM-DDTHH:MM:SSZ" → SystemTime (UNIX_EPOCH offset).
 /// Returns None on any parse error (fail-open: caller treats as no timestamp).
 /// Strictly requires a trailing 'Z' and rejects out-of-range fields and pre-1970 dates.
+#[cfg_attr(not(test), allow(dead_code))]
 fn parse_iso8601_utc(s: &str) -> Option<std::time::SystemTime> {
     // Require explicit trailing Z — we never want to misinterpret a naive local
     // timestamp as UTC. The schema in docs/schemas.md requires the Z suffix.
@@ -82,6 +81,7 @@ fn parse_iso8601_utc(s: &str) -> Option<std::time::SystemTime> {
 }
 
 /// Formats a SystemTime as "YYYY-MM-DDTHH:MM:SSZ".
+#[cfg_attr(not(test), allow(dead_code))]
 fn format_iso8601_utc(t: std::time::SystemTime) -> String {
     let secs = t
         .duration_since(std::time::UNIX_EPOCH)
@@ -145,6 +145,7 @@ impl Checkpoint {
 
     /// Returns true if throttle_timestamp is within 5 minutes of now.
     /// Returns false if throttle_timestamp is absent or unparseable (fail-safe: allow sync).
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn should_throttle(&self) -> bool {
         let ts_str = match &self.throttle_timestamp {
             Some(ts) => ts,
@@ -162,6 +163,7 @@ impl Checkpoint {
     }
 
     /// Sets throttle_timestamp to current UTC time as ISO 8601 string.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn update_throttle_timestamp(&mut self) {
         self.throttle_timestamp = Some(format_iso8601_utc(std::time::SystemTime::now()));
     }

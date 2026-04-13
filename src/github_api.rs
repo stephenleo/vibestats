@@ -17,9 +17,6 @@
 //! - Reading config — caller passes token + repo as constructor args
 //! - Checkpoint state — caller (`sync.rs`) manages checkpoint
 
-// The public API is not yet called by other modules (callers land in Story 3.1).
-// Suppress dead-code lints so `cargo clippy --all-targets -- -D warnings` passes.
-#![allow(dead_code)]
 // `ureq::Error` is a third-party type sized at ~272 bytes. We cannot reduce its
 // size, so suppress result_large_err for this module. The retry wrapper boxes
 // errors after inspecting retriability, so callers never hold large errors.
@@ -172,6 +169,7 @@ impl GithubApi {
     /// - `Ok(Some(sha))` — file exists, `sha` is the current blob SHA
     /// - `Ok(None)`      — file does not exist (404)
     /// - `Err(_)`        — network error or unexpected HTTP status
+    #[allow(dead_code)] // intentionally kept: public API; used internally by put_file and delete_file via get_file_sha_inner
     pub fn get_file_sha(&self, path: &str) -> Result<Option<String>, GithubApiError> {
         with_retry(|| get_file_sha_inner(&self.token, &self.repo, path))
     }
@@ -213,19 +211,6 @@ impl GithubApi {
                 Err(e)
             }
         }
-    }
-
-    /// List the file paths in a directory in the repository.
-    ///
-    /// Uses the GitHub Contents API GET on a directory path.
-    /// Returns only `"file"` type entries' `"path"` values; skips `"dir"` entries.
-    ///
-    /// Returns:
-    /// - `Ok(Vec<String>)` — list of file paths (may be empty)
-    /// - `Ok(Vec::new())`  — directory does not exist (404)
-    /// - `Err(_)`          — network error, unexpected HTTP status, or 401
-    pub fn list_directory(&self, path: &str) -> Result<Vec<String>, GithubApiError> {
-        with_retry(|| list_directory_inner(&self.token, &self.repo, path))
     }
 
     /// List all entries (both files and subdirectories) in a directory.
@@ -436,58 +421,6 @@ fn delete_file_inner(
     match response {
         Ok(_) => Ok(()),
         Err(ureq::Error::Status(404, _)) => Ok(()), // already deleted — idempotent
-        Err(e) => Err(e),
-    }
-}
-
-/// Inner GET helper for directory listing — returns file paths, empty vec for 404, or `Err`.
-///
-/// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
-/// the error for retriability before boxing.
-#[allow(clippy::result_large_err)]
-fn list_directory_inner(
-    token: &str,
-    repo: &str,
-    path: &str,
-) -> Result<Vec<String>, ureq::Error> {
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
-
-    let response = ureq::get(&url)
-        .set("Authorization", &format!("Bearer {}", token))
-        .set("User-Agent", "vibestats")
-        .set("Accept", "application/vnd.github+json")
-        .set("X-GitHub-Api-Version", "2022-11-28")
-        .call();
-
-    match response {
-        Ok(r) => {
-            let body = r.into_string().map_err(ureq::Error::from)?;
-            let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
-                ureq::Error::from(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("github_api: malformed JSON from Contents API directory: {}", e),
-                ))
-            })?;
-            let entries = match json.as_array() {
-                Some(arr) => arr,
-                None => {
-                    return Err(ureq::Error::from(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "github_api: directory listing response is not a JSON array",
-                    )));
-                }
-            };
-            let paths: Vec<String> = entries
-                .iter()
-                .filter(|e| e["type"].as_str() == Some("file"))
-                .filter_map(|e| e["path"].as_str().map(|s| s.to_string()))
-                .collect();
-            Ok(paths)
-        }
-        Err(ureq::Error::Status(404, _)) => {
-            // Directory does not exist — return empty list
-            Ok(vec![])
-        }
         Err(e) => Err(e),
     }
 }
