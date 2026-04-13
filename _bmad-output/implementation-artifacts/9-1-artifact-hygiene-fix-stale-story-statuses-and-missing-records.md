@@ -1,6 +1,6 @@
 # Story 9.1: Artifact Hygiene — Fix stale story statuses and missing records
 
-Status: review
+Status: done
 
 <!-- GH Issue: #81 | Epic: #80 | PR must include: Closes #81 -->
 
