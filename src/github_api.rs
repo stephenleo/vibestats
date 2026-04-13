@@ -169,7 +169,7 @@ impl GithubApi {
     /// - `Ok(Some(sha))` — file exists, `sha` is the current blob SHA
     /// - `Ok(None)`      — file does not exist (404)
     /// - `Err(_)`        — network error or unexpected HTTP status
-    #[allow(dead_code)] // intentionally kept: public API; used internally by put_file and delete_file via get_file_sha_inner
+    #[allow(dead_code)] // intentionally kept: public API surface for external callers
     pub fn get_file_sha(&self, path: &str) -> Result<Option<String>, GithubApiError> {
         with_retry(|| get_file_sha_inner(&self.token, &self.repo, path))
     }
