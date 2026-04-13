@@ -16,33 +16,85 @@ import Base from '../layouts/Base.astro';
       }
     })();
   </script>
-  <main class="dashboard">
-    <header class="dash-header">
-      <h1 id="dash-title">vibestats dashboard</h1>
-      <p id="dash-subtitle" class="subtitle"></p>
-    </header>
 
+  <main class="dashboard">
+    <!-- Header -->
+    <div class="dash-header">
+      <div>
+        <h1 id="dash-title">vibestats dashboard</h1>
+        <p id="dash-subtitle" class="dash-meta"></p>
+      </div>
+      <div id="year-toggle" class="year-pills" aria-label="Select year"></div>
+    </div>
+
+    <!-- Loading / Error -->
     <div id="loading-state" class="state-msg">
       <div class="spinner" aria-hidden="true"></div>
       Loading dashboard&hellip;
     </div>
     <div id="error-state" class="state-msg error" hidden></div>
 
+    <!-- Dashboard content (hidden until data loads) -->
     <section id="dashboard-content" hidden>
-      <div id="stats-summary" class="stats-summary" hidden></div>
-      <div id="year-toggle" class="year-toggle" aria-label="Select year"></div>
-      <div class="heatmap-wrapper">
-        <div class="day-labels" aria-hidden="true">
-          <span></span>
-          <span>Mon</span>
-          <span></span>
-          <span>Wed</span>
-          <span></span>
-          <span>Fri</span>
-          <span></span>
+
+      <!-- KPI Row -->
+      <div id="kpi-row" class="kpi-row"></div>
+
+      <!-- Activity Heatmap (full width) -->
+      <div class="card full-width">
+        <h3 class="card-title">Activity Heatmap</h3>
+        <div id="heatmap-tabs" class="tabs">
+          <button class="tab active" data-metric="sessions">Sessions</button>
+          <button class="tab" data-metric="tokens">Tokens</button>
+          <button class="tab" data-metric="active_minutes">Active Time</button>
+          <button class="tab" data-metric="tool_uses">Tool Uses</button>
         </div>
-        <div id="cal-heatmap"></div>
+        <div class="heatmap-wrapper">
+          <div class="day-labels" aria-hidden="true">
+            <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+          </div>
+          <div id="cal-heatmap"></div>
+        </div>
       </div>
+
+      <!-- Token Trend + Model Mix -->
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span></h3>
+          <div id="token-chart" class="chart-area"></div>
+          <div id="token-chart-labels" class="chart-labels"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Model Usage Breakdown</h3>
+          <div id="model-chart" class="donut-wrapper"></div>
+        </div>
+      </div>
+
+      <!-- Sparkline Trends + Streak -->
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">Weekly Trends</h3>
+          <div id="sparklines"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title" id="streak-title">Current Streak</h3>
+          <p id="streak-subtitle" class="streak-sub"></p>
+          <div id="streak-grid" class="streak-visual"></div>
+        </div>
+      </div>
+
+      <!-- Recent Activity + Efficiency -->
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">Recent Active Days</h3>
+          <div id="recent-days" class="timeline"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Efficiency Metrics</h3>
+          <div id="efficiency"></div>
+        </div>
+      </div>
+
     </section>
   </main>
 </Base>
@@ -52,7 +104,7 @@ import Base from '../layouts/Base.astro';
   import Tooltip from 'cal-heatmap/plugins/Tooltip';
   import 'cal-heatmap/cal-heatmap.css';
 
-  // ── Types ──────────────────────────────────────────────────────────────────
+  // ── Types ──────────────────────────────────────────────────────────
   interface DayEntry {
     sessions: number;
     active_minutes: number;
@@ -72,145 +124,200 @@ import Base from '../layouts/Base.astro';
     days: Record<string, DayEntry>;
   }
 
-  // ── DOM refs ───────────────────────────────────────────────────────────────
-  const loadingEl = document.getElementById('loading-state') as HTMLElement;
-  const errorEl = document.getElementById('error-state') as HTMLElement;
-  const contentEl = document.getElementById('dashboard-content') as HTMLElement;
-  const titleEl = document.getElementById('dash-title') as HTMLElement;
-  const subtitleEl = document.getElementById('dash-subtitle') as HTMLElement;
-  const yearToggleEl = document.getElementById('year-toggle') as HTMLElement;
-  const statsSummaryEl = document.getElementById('stats-summary') as HTMLElement;
+  // ── DOM refs ───────────────────────────────────────────────────────
+  const loadingEl = document.getElementById('loading-state')!;
+  const errorEl = document.getElementById('error-state')!;
+  const contentEl = document.getElementById('dashboard-content')!;
+  const titleEl = document.getElementById('dash-title')!;
+  const subtitleEl = document.getElementById('dash-subtitle')!;
+  const yearToggleEl = document.getElementById('year-toggle')!;
+  const kpiRowEl = document.getElementById('kpi-row')!;
+  const tokenChartEl = document.getElementById('token-chart')!;
+  const tokenChartLabelsEl = document.getElementById('token-chart-labels')!;
+  const tokenChartRangeEl = document.getElementById('token-chart-range')!;
+  const modelChartEl = document.getElementById('model-chart')!;
+  const sparklinesEl = document.getElementById('sparklines')!;
+  const streakTitleEl = document.getElementById('streak-title')!;
+  const streakSubEl = document.getElementById('streak-subtitle')!;
+  const streakGridEl = document.getElementById('streak-grid')!;
+  const recentDaysEl = document.getElementById('recent-days')!;
+  const efficiencyEl = document.getElementById('efficiency')!;
+  const heatmapTabsEl = document.getElementById('heatmap-tabs')!;
 
-  // ── Username discovery ─────────────────────────────────────────────────────
-  const GH_USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
+  // ── Username discovery ─────────────────────────────────────────────
+  const GH_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
   const rawSegment = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
-  const username = GH_USERNAME_RE.test(rawSegment) ? rawSegment : '';
+  const username = GH_RE.test(rawSegment) ? rawSegment : '';
 
   if (username) {
-    document.title = `vibestats — @${username} dashboard`;
+    document.title = `vibestats — @${username}`;
     titleEl.textContent = `@${username}`;
-    subtitleEl.textContent = 'Claude Code activity heatmap';
+    subtitleEl.textContent = 'Claude Code Analytics';
   }
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────
   let calInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
+  let currentYear = '';
+  let currentMetric = 'sessions';
 
-  // ── Error helper ───────────────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────
   function showError(msg: string): void {
     loadingEl.hidden = true;
     errorEl.textContent = msg;
     errorEl.hidden = false;
   }
 
-  // ── Format helpers ─────────────────────────────────────────────────────────
+  function clearEl(el: HTMLElement): void {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
   function fmtTokens(n: number): string {
+    if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
     return String(n);
   }
 
-  // ── Compute and render all-time stats summary ───────────────────────────────
-  function renderStatsSummary(data: VibestatsData): void {
-    const allDays = Object.values(data.days);
-    if (allDays.length === 0) { statsSummaryEl.hidden = true; return; }
-
-    // Totals
-    const totalSessions = allDays.reduce((s, d) => s + d.sessions, 0);
-    const totalMinutes = allDays.reduce((s, d) => s + d.active_minutes, 0);
-    const totalInput = allDays.reduce((s, d) => s + (d.input_tokens ?? 0), 0);
-    const totalOutput = allDays.reduce((s, d) => s + (d.output_tokens ?? 0), 0);
-    const totalTokens = totalInput + totalOutput;
-    const longestSession = allDays.reduce((m, d) => Math.max(m, d.longest_session_minutes ?? 0), 0);
-
-    // Favorite model (highest output_tokens across all days)
-    const modelTotals: Record<string, number> = {};
-    for (const d of allDays) {
-      for (const [model, count] of Object.entries(d.models ?? {})) {
-        modelTotals[model] = (modelTotals[model] ?? 0) + count;
-      }
-    }
-    const favoriteModel = Object.keys(modelTotals).sort((a, b) => modelTotals[b] - modelTotals[a])[0] ?? null;
-
-    // Streaks (consecutive active days)
-    const activeDates = new Set(Object.keys(data.days));
-    const today = new Date().toISOString().slice(0, 10);
-    let longestStreak = 0;
-    let streak = 0;
-    const sortedDates = [...activeDates].sort();
-    for (let i = 0; i < sortedDates.length; i++) {
-      if (i === 0) { streak = 1; }
-      else {
-        const prev = new Date(sortedDates[i - 1]);
-        const curr = new Date(sortedDates[i]);
-        const diff = (curr.getTime() - prev.getTime()) / 86_400_000;
-        streak = diff === 1 ? streak + 1 : 1;
-      }
-      longestStreak = Math.max(longestStreak, streak);
-    }
-    // Current streak: consecutive days ending at today or yesterday
-    let currentStreak = 0;
-    const checkDate = new Date(today);
-    while (activeDates.has(checkDate.toISOString().slice(0, 10))) {
-      currentStreak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    }
-
-    const modelLabel = favoriteModel
-      ? favoriteModel.replace(/^claude-/, '').replace(/-(\d)/, ' $1')
-      : null;
-
-    const stats: Array<{ label: string; value: string }> = [
-      { label: 'Total tokens', value: totalTokens > 0 ? fmtTokens(totalTokens) : '—' },
-      { label: 'Sessions', value: totalSessions.toLocaleString() },
-      { label: 'Active time', value: totalMinutes >= 60 ? `${Math.round(totalMinutes / 60)}h` : `${totalMinutes}m` },
-      { label: 'Longest session', value: longestSession > 0 ? `${longestSession}m` : '—' },
-      { label: 'Current streak', value: currentStreak > 0 ? `${currentStreak}d` : '—' },
-      { label: 'Longest streak', value: longestStreak > 0 ? `${longestStreak}d` : '—' },
-      ...(modelLabel ? [{ label: 'Top model', value: modelLabel }] : []),
-    ];
-
-    // Build DOM safely — no innerHTML
-    while (statsSummaryEl.firstChild) statsSummaryEl.removeChild(statsSummaryEl.firstChild);
-    for (const s of stats) {
-      const card = document.createElement('div');
-      card.className = 'stat-card';
-      const valEl = document.createElement('span');
-      valEl.className = 'stat-value';
-      valEl.textContent = s.value;
-      const labelEl = document.createElement('span');
-      labelEl.className = 'stat-label';
-      labelEl.textContent = s.label;
-      card.appendChild(valEl);
-      card.appendChild(labelEl);
-      statsSummaryEl.appendChild(card);
-    }
-    statsSummaryEl.hidden = false;
+  function fmtMinutes(m: number): string {
+    if (m >= 60) return `${Math.round(m / 60)}h`;
+    return `${m}m`;
   }
 
-  // ── Render GitHub-style heatmap for a given year ────────────────────────────
-  async function renderHeatmap(selectedYear: string): Promise<void> {
+  function fmtDelta(current: number, previous: number): { text: string; up: boolean } {
+    if (previous === 0) return { text: current > 0 ? 'new' : '—', up: true };
+    const pct = Math.round(((current - previous) / previous) * 100);
+    const arrow = pct >= 0 ? '\u25B2' : '\u25BC';
+    return { text: `${arrow} ${Math.abs(pct)}%`, up: pct >= 0 };
+  }
+
+  function dateStr(d: Date): string { return d.toISOString().slice(0, 10); }
+
+  function daysAgo(n: number): Date {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d;
+  }
+
+  function metricValue(entry: DayEntry, metric: string): number {
+    switch (metric) {
+      case 'sessions': return entry.sessions;
+      case 'tokens': return (entry.input_tokens ?? 0) + (entry.output_tokens ?? 0);
+      case 'active_minutes': return entry.active_minutes;
+      case 'tool_uses': return entry.tool_uses ?? 0;
+      default: return entry.sessions;
+    }
+  }
+
+  function colorScale(metric: string): { range: string[]; domain: number[] } {
+    const isDark = document.documentElement.classList.contains('dark');
+    const empty = isDark ? '#1e293b' : '#ebedf0';
+    switch (metric) {
+      case 'sessions':
+        return { range: [empty, '#fef3e8', '#fed7aa', '#fb923c', '#f97316'], domain: [1, 10, 50, 100] };
+      case 'tokens':
+        return { range: [empty, '#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'], domain: [1, 50000, 200000, 500000] };
+      case 'active_minutes':
+        return { range: [empty, '#d1fae5', '#6ee7b7', '#10b981', '#047857'], domain: [1, 30, 120, 300] };
+      case 'tool_uses':
+        return { range: [empty, '#ede9fe', '#c4b5fd', '#8b5cf6', '#6d28d9'], domain: [1, 20, 100, 300] };
+      default:
+        return { range: [empty, '#fef3e8', '#fed7aa', '#fb923c', '#f97316'], domain: [1, 10, 50, 100] };
+    }
+  }
+
+  // ── Data aggregation helpers ───────────────────────────────────────
+  function daysInRange(data: VibestatsData, from: Date, to: Date): DayEntry[] {
+    const entries: DayEntry[] = [];
+    const d = new Date(from);
+    while (d <= to) {
+      const key = dateStr(d);
+      if (data.days[key]) entries.push(data.days[key]);
+      d.setDate(d.getDate() + 1);
+    }
+    return entries;
+  }
+
+  function sumField(entries: DayEntry[], fn: (e: DayEntry) => number): number {
+    return entries.reduce((s, e) => s + fn(e), 0);
+  }
+
+  // ── KPI rendering ─────────────────────────────────────────────────
+  function renderKPIs(data: VibestatsData): void {
+    const now = new Date();
+    const cur30 = daysInRange(data, daysAgo(29), now);
+    const prev30 = daysInRange(data, daysAgo(59), daysAgo(30));
+    const allDays = Object.values(data.days);
+
+    const totalTokens = sumField(allDays, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+    const totalSessions = sumField(allDays, e => e.sessions);
+    const totalMinutes = sumField(allDays, e => e.active_minutes);
+    const totalToolUses = sumField(allDays, e => e.tool_uses ?? 0);
+
+    const dSessions = fmtDelta(sumField(cur30, e => e.sessions), sumField(prev30, e => e.sessions));
+    const dTokens = fmtDelta(
+      sumField(cur30, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0)),
+      sumField(prev30, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0))
+    );
+    const dMinutes = fmtDelta(sumField(cur30, e => e.active_minutes), sumField(prev30, e => e.active_minutes));
+
+    // Streaks
+    const activeDates = new Set(Object.keys(data.days));
+    let currentStreak = 0;
+    const check = new Date(dateStr(now));
+    while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
+
+    const avgMin = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+
+    const kpis: Array<{ label: string; value: string; delta?: string; up?: boolean }> = [
+      { label: 'Total Tokens', value: fmtTokens(totalTokens), delta: dTokens.text, up: dTokens.up },
+      { label: 'Sessions', value: totalSessions.toLocaleString(), delta: dSessions.text, up: dSessions.up },
+      { label: 'Active Time', value: fmtMinutes(totalMinutes), delta: dMinutes.text, up: dMinutes.up },
+      { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—' },
+      { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—' },
+      { label: 'Tool Uses', value: fmtTokens(totalToolUses) },
+    ];
+
+    clearEl(kpiRowEl);
+    for (const k of kpis) {
+      const card = document.createElement('div');
+      card.className = 'kpi';
+      const label = document.createElement('span');
+      label.className = 'kpi-label';
+      label.textContent = k.label;
+      const value = document.createElement('span');
+      value.className = 'kpi-value';
+      value.textContent = k.value;
+      card.appendChild(label);
+      card.appendChild(value);
+      if (k.delta && k.delta !== '—') {
+        const delta = document.createElement('span');
+        delta.className = 'kpi-delta' + (k.up ? '' : ' down');
+        delta.textContent = k.delta + ' vs last 30d';
+        card.appendChild(delta);
+      }
+      kpiRowEl.appendChild(card);
+    }
+  }
+
+  // ── Heatmap ────────────────────────────────────────────────────────
+  async function renderHeatmap(selectedYear: string, metric: string): Promise<void> {
     if (!vibestatsData) return;
 
-    if (calInstance) {
-      calInstance.destroy();
-      calInstance = null;
-    }
+    if (calInstance) { calInstance.destroy(); calInstance = null; }
 
     const calData = Object.entries(vibestatsData.days)
       .filter(([date]) => date.startsWith(selectedYear))
-      .map(([date, v]) => ({ date, value: v.sessions }));
-
+      .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
 
     const now = new Date();
     const yearNum = parseInt(selectedYear, 10);
     const isCurrentYear = yearNum === now.getFullYear();
-
-    // Current year: rolling view from ~1 year ago. Past years: Jan 1 – Dec 31.
     const startDate = isCurrentYear
       ? new Date(yearNum - 1, now.getMonth(), now.getDate())
       : new Date(`${selectedYear}-01-01`);
     const range = isCurrentYear ? 13 : 12;
+    const scale = colorScale(metric);
 
     const cal = new CalHeatmap();
     await cal.paint(
@@ -236,102 +343,394 @@ import Base from '../layouts/Base.astro';
           height: 11,
           gutter: 2,
         },
-        scale: {
-          color: {
-            type: 'threshold',
-            range: ['#ebedf0', '#fef3e8', '#fed7aa', '#fb923c', '#f97316'],
-            domain: [1, 10, 50, 100],
-          },
-        },
+        scale: { color: { type: 'threshold', range: scale.range, domain: scale.domain } },
       },
       [
         [
           Tooltip,
           {
-            text: (_timestamp: number, value: number | null, dayjsDate: { format: (fmt: string) => string }) => {
-              const dateKey = dayjsDate.format('YYYY-MM-DD');
-              const dayData = vibestatsData?.days[dateKey];
-              if (!dayData || value === null || value === 0) {
-                return `No activity on ${dayjsDate.format('MMM D, YYYY')}`;
-              }
-              const totalTokens = (dayData.input_tokens ?? 0) + (dayData.output_tokens ?? 0);
-              const topModel = dayData.models
-                ? Object.entries(dayData.models).sort((a, b) => b[1] - a[1])[0]?.[0]
+            text: (_ts: number, value: number | null, djs: { format: (f: string) => string }) => {
+              const dateKey = djs.format('YYYY-MM-DD');
+              const day = vibestatsData?.days[dateKey];
+              if (!day || value === null || value === 0)
+                return `No activity on ${djs.format('MMM D, YYYY')}`;
+              const totalTok = (day.input_tokens ?? 0) + (day.output_tokens ?? 0);
+              const topModel = day.models
+                ? Object.entries(day.models).sort((a, b) => b[1] - a[1])[0]?.[0]
                 : null;
-              const modelStr = topModel ? `, ${topModel.replace(/^claude-/, '')}` : '';
-              const tokStr = totalTokens > 0 ? `, ${fmtTokens(totalTokens)} tokens` : '';
-              return `${dayjsDate.format('MMM D, YYYY')}: ${dayData.sessions} session${dayData.sessions === 1 ? '' : 's'}, ~${dayData.active_minutes} min${tokStr}${modelStr}`;
+              const mStr = topModel ? `, ${topModel.replace(/^claude-/, '')}` : '';
+              const tStr = totalTok > 0 ? `, ${fmtTokens(totalTok)} tokens` : '';
+              return `${djs.format('MMM D, YYYY')}: ${day.sessions} session${day.sessions === 1 ? '' : 's'}, ~${day.active_minutes} min${tStr}${mStr}`;
             },
           },
         ],
       ]
     );
-
     calInstance = cal;
   }
 
-  // ── Year toggle ────────────────────────────────────────────────────────────
-  function renderYearToggle(years: string[], selectedYear: string): void {
-    while (yearToggleEl.firstChild) {
-      yearToggleEl.removeChild(yearToggleEl.firstChild);
+  // ── Heatmap tabs ───────────────────────────────────────────────────
+  heatmapTabsEl.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.tab') as HTMLButtonElement | null;
+    if (!btn || !vibestatsData) return;
+    const metric = btn.dataset.metric!;
+    if (metric === currentMetric) return;
+    currentMetric = metric;
+    for (const t of heatmapTabsEl.querySelectorAll('.tab')) {
+      t.classList.toggle('active', t === btn);
+    }
+    renderHeatmap(currentYear, metric);
+  });
+
+  // ── Token trend chart ──────────────────────────────────────────────
+  function renderTokenChart(data: VibestatsData): void {
+    const days: Array<{ date: string; input: number; output: number }> = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = dateStr(daysAgo(i));
+      const entry = data.days[d];
+      days.push({
+        date: d,
+        input: entry?.input_tokens ?? 0,
+        output: entry?.output_tokens ?? 0,
+      });
     }
 
+    const maxVal = Math.max(1, ...days.map(d => d.input + d.output));
+    clearEl(tokenChartEl);
+    clearEl(tokenChartLabelsEl);
+    tokenChartRangeEl.textContent = '(last 30 days)';
+
+    for (const day of days) {
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar';
+      const total = day.input + day.output;
+      const hPct = (total / maxVal) * 100;
+      bar.style.height = `${Math.max(hPct, 2)}%`;
+      const outputPct = total > 0 ? Math.round((day.output / total) * 100) : 50;
+      if (total === 0) {
+        bar.style.background = 'var(--color-border)';
+        bar.style.height = '3%';
+      } else {
+        bar.style.background = `linear-gradient(to top, var(--color-brand) ${outputPct}%, var(--color-brand-light) ${outputPct}%)`;
+      }
+      bar.title = `${day.date}: ${fmtTokens(day.output)} output, ${fmtTokens(day.input)} input`;
+      tokenChartEl.appendChild(bar);
+    }
+
+    for (let i = 0; i < 30; i += 7) {
+      const lbl = document.createElement('span');
+      const d = new Date(days[i].date + 'T00:00:00');
+      lbl.textContent = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      tokenChartLabelsEl.appendChild(lbl);
+    }
+  }
+
+  // ── Model donut chart ──────────────────────────────────────────────
+  function renderModelChart(data: VibestatsData): void {
+    const modelTotals: Record<string, number> = {};
+    for (const d of Object.values(data.days)) {
+      for (const [model, count] of Object.entries(d.models ?? {})) {
+        modelTotals[model] = (modelTotals[model] ?? 0) + count;
+      }
+    }
+
+    const sorted = Object.entries(modelTotals).sort((a, b) => b[1] - a[1]);
+    const total = sorted.reduce((s, [, v]) => s + v, 0);
+    clearEl(modelChartEl);
+    if (total === 0) {
+      const msg = document.createElement('p');
+      msg.style.cssText = 'color:var(--color-text-muted);font-size:0.85rem';
+      msg.textContent = 'No model data available';
+      modelChartEl.appendChild(msg);
+      return;
+    }
+
+    const colors = ['var(--color-brand)', 'var(--c-blue)', 'var(--c-purple)', 'var(--c-cyan)', 'var(--color-text-muted)'];
+    const top: Array<[string, number]> = sorted.slice(0, 4);
+    const otherTotal = sorted.slice(4).reduce((s, [, v]) => s + v, 0);
+    if (otherTotal > 0) top.push(['Other', otherTotal]);
+
+    const gradientParts: string[] = [];
+    const slices: Array<{ name: string; pct: number; color: string }> = [];
+    let cumPct = 0;
+    for (let i = 0; i < top.length; i++) {
+      const pct = (top[i][1] / total) * 100;
+      const color = colors[i] ?? colors[colors.length - 1];
+      gradientParts.push(`${color} ${cumPct}% ${cumPct + pct}%`);
+      slices.push({ name: top[i][0], pct: Math.round(pct), color });
+      cumPct += pct;
+    }
+
+    const donut = document.createElement('div');
+    donut.className = 'donut';
+    donut.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+    const legend = document.createElement('div');
+    legend.className = 'donut-legend';
+    for (const s of slices) {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = s.color;
+      const label = document.createElement('span');
+      label.textContent = `${s.name.replace(/^claude-/, '').replace(/-(\d)/, ' $1')} — ${s.pct}%`;
+      item.appendChild(dot);
+      item.appendChild(label);
+      legend.appendChild(item);
+    }
+    modelChartEl.appendChild(donut);
+    modelChartEl.appendChild(legend);
+  }
+
+  // ── Sparklines ─────────────────────────────────────────────────────
+  function renderSparklines(data: VibestatsData): void {
+    const now = new Date();
+    const weeks: Array<{ sessions: number; tokens: number; minutes: number; messages: number }> = [];
+    for (let w = 11; w >= 0; w--) {
+      const weekEnd = new Date(now);
+      weekEnd.setDate(weekEnd.getDate() - w * 7);
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      const entries = daysInRange(data, weekStart, weekEnd);
+      weeks.push({
+        sessions: sumField(entries, e => e.sessions),
+        tokens: sumField(entries, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0)),
+        minutes: sumField(entries, e => e.active_minutes),
+        messages: sumField(entries, e => e.message_count ?? 0),
+      });
+    }
+
+    const latestWeek = weeks[weeks.length - 1];
+    const metrics = [
+      { label: 'Sessions', key: 'sessions' as const, value: String(latestWeek.sessions), color: 'var(--color-brand)' },
+      { label: 'Tokens', key: 'tokens' as const, value: fmtTokens(latestWeek.tokens), color: 'var(--c-blue)' },
+      { label: 'Active min', key: 'minutes' as const, value: `${latestWeek.minutes}m`, color: 'var(--c-green)' },
+      { label: 'Messages', key: 'messages' as const, value: latestWeek.messages.toLocaleString(), color: 'var(--c-purple)' },
+    ];
+
+    clearEl(sparklinesEl);
+    for (const m of metrics) {
+      const row = document.createElement('div');
+      row.className = 'spark-row';
+      const label = document.createElement('span');
+      label.className = 'spark-label';
+      label.textContent = m.label;
+      const sparkline = document.createElement('div');
+      sparkline.className = 'sparkline';
+      const vals = weeks.map(w => w[m.key]);
+      const max = Math.max(1, ...vals);
+      for (let i = 0; i < vals.length; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'spark-bar';
+        bar.style.height = `${Math.max((vals[i] / max) * 100, 3)}%`;
+        bar.style.background = m.color;
+        bar.style.opacity = String(0.3 + (i / vals.length) * 0.7);
+        sparkline.appendChild(bar);
+      }
+      const value = document.createElement('span');
+      value.className = 'spark-value';
+      value.textContent = m.value;
+      row.appendChild(label);
+      row.appendChild(sparkline);
+      row.appendChild(value);
+      sparklinesEl.appendChild(row);
+    }
+  }
+
+  // ── Streak calendar ────────────────────────────────────────────────
+  function renderStreak(data: VibestatsData): void {
+    const activeDates = new Set(Object.keys(data.days));
+    const today = dateStr(new Date());
+
+    let currentStreak = 0;
+    const check = new Date(today);
+    while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
+
+    let longestStreak = 0, streak = 0;
+    const sorted = [...activeDates].sort();
+    for (let i = 0; i < sorted.length; i++) {
+      if (i === 0) { streak = 1; }
+      else {
+        const prev = new Date(sorted[i - 1]);
+        const curr = new Date(sorted[i]);
+        streak = (curr.getTime() - prev.getTime()) / 86_400_000 === 1 ? streak + 1 : 1;
+      }
+      longestStreak = Math.max(longestStreak, streak);
+    }
+
+    streakTitleEl.textContent = `Current Streak — ${currentStreak > 0 ? `${currentStreak} days` : 'none'}`;
+    if (longestStreak > 0) {
+      streakSubEl.textContent = `Your longest streak was ${longestStreak} days.`;
+    }
+
+    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    clearEl(streakGridEl);
+    for (let i = 27; i >= 0; i--) {
+      const d = daysAgo(i);
+      const key = dateStr(d);
+      const isActive = activeDates.has(key);
+      const isToday = key === today;
+      const el = document.createElement('div');
+      el.className = `streak-day ${isActive ? 'active' : 'inactive'}${isToday ? ' today' : ''}`;
+      el.textContent = dayNames[d.getDay()];
+      el.title = `${key}: ${isActive ? 'active' : 'no activity'}`;
+      streakGridEl.appendChild(el);
+    }
+  }
+
+  // ── Recent active days ─────────────────────────────────────────────
+  function renderRecentDays(data: VibestatsData): void {
+    const sorted = Object.entries(data.days)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 5);
+
+    clearEl(recentDaysEl);
+    for (const [date, entry] of sorted) {
+      const item = document.createElement('div');
+      item.className = 'timeline-item';
+      const dot = document.createElement('span');
+      dot.className = 'timeline-dot';
+      const dateEl = document.createElement('span');
+      dateEl.className = 'timeline-time';
+      const d = new Date(date + 'T00:00:00');
+      dateEl.textContent = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      const detail = document.createElement('span');
+      detail.className = 'timeline-detail';
+      detail.textContent = `${entry.sessions} session${entry.sessions === 1 ? '' : 's'}, ~${entry.active_minutes} min`;
+      const tokens = document.createElement('span');
+      tokens.className = 'timeline-tokens';
+      const totalTok = (entry.input_tokens ?? 0) + (entry.output_tokens ?? 0);
+      tokens.textContent = totalTok > 0 ? `${fmtTokens(totalTok)} tokens` : '';
+      item.appendChild(dot);
+      item.appendChild(dateEl);
+      item.appendChild(detail);
+      item.appendChild(tokens);
+      recentDaysEl.appendChild(item);
+    }
+  }
+
+  // ── Efficiency metrics ─────────────────────────────────────────────
+  function renderEfficiency(data: VibestatsData): void {
+    const allDays = Object.values(data.days);
+    const totalTokens = sumField(allDays, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+    const totalMinutes = sumField(allDays, e => e.active_minutes);
+    const totalSessions = sumField(allDays, e => e.sessions);
+    const totalMessages = sumField(allDays, e => e.message_count ?? 0);
+    const totalToolUses = sumField(allDays, e => e.tool_uses ?? 0);
+    const totalCacheRead = sumField(allDays, e => e.cache_read_tokens ?? 0);
+    const totalCacheCreation = sumField(allDays, e => e.cache_creation_tokens ?? 0);
+    const totalInput = sumField(allDays, e => e.input_tokens ?? 0);
+
+    const tokPerMin = totalMinutes > 0 ? Math.round(totalTokens / totalMinutes) : 0;
+    const msgsPerSession = totalSessions > 0 ? Math.round(totalMessages / totalSessions) : 0;
+    const cacheDenom = totalInput + totalCacheCreation;
+    const cacheHitPct = cacheDenom > 0 ? Math.round((totalCacheRead / cacheDenom) * 100) : 0;
+    const toolsPerSession = totalSessions > 0 ? (totalToolUses / totalSessions).toFixed(1) : '0';
+
+    const now = new Date();
+    const weeklyTokPerMin: number[] = [];
+    const weeklyMsgsPerSession: number[] = [];
+    const weeklyCacheHit: number[] = [];
+    const weeklyToolsPerSession: number[] = [];
+    for (let w = 11; w >= 0; w--) {
+      const weekEnd = new Date(now);
+      weekEnd.setDate(weekEnd.getDate() - w * 7);
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      const entries = daysInRange(data, weekStart, weekEnd);
+      const wTok = sumField(entries, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+      const wMin = sumField(entries, e => e.active_minutes);
+      const wSes = sumField(entries, e => e.sessions);
+      const wMsg = sumField(entries, e => e.message_count ?? 0);
+      const wTool = sumField(entries, e => e.tool_uses ?? 0);
+      const wCacheRead = sumField(entries, e => e.cache_read_tokens ?? 0);
+      const wInput = sumField(entries, e => e.input_tokens ?? 0);
+      const wCacheCreate = sumField(entries, e => e.cache_creation_tokens ?? 0);
+      weeklyTokPerMin.push(wMin > 0 ? wTok / wMin : 0);
+      weeklyMsgsPerSession.push(wSes > 0 ? wMsg / wSes : 0);
+      const wd = wInput + wCacheCreate;
+      weeklyCacheHit.push(wd > 0 ? (wCacheRead / wd) * 100 : 0);
+      weeklyToolsPerSession.push(wSes > 0 ? wTool / wSes : 0);
+    }
+
+    const effMetrics = [
+      { label: 'Tokens/min', value: fmtTokens(tokPerMin), data: weeklyTokPerMin, color: 'var(--c-cyan)' },
+      { label: 'Msgs/session', value: String(msgsPerSession), data: weeklyMsgsPerSession, color: 'var(--color-brand)' },
+      { label: 'Cache hit %', value: `${cacheHitPct}%`, data: weeklyCacheHit, color: 'var(--c-green)', highlight: true },
+      { label: 'Tools/session', value: String(toolsPerSession), data: weeklyToolsPerSession, color: 'var(--c-yellow)' },
+    ];
+
+    clearEl(efficiencyEl);
+    for (const m of effMetrics) {
+      const row = document.createElement('div');
+      row.className = 'spark-row';
+      const label = document.createElement('span');
+      label.className = 'spark-label';
+      label.textContent = m.label;
+      const sparkline = document.createElement('div');
+      sparkline.className = 'sparkline';
+      const max = Math.max(1, ...m.data);
+      for (let i = 0; i < m.data.length; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'spark-bar';
+        bar.style.height = `${Math.max((m.data[i] / max) * 100, 3)}%`;
+        bar.style.background = m.color;
+        bar.style.opacity = String(0.3 + (i / m.data.length) * 0.7);
+        sparkline.appendChild(bar);
+      }
+      const value = document.createElement('span');
+      value.className = 'spark-value';
+      value.textContent = m.value;
+      if (m.highlight) value.style.color = 'var(--c-green)';
+      row.appendChild(label);
+      row.appendChild(sparkline);
+      row.appendChild(value);
+      efficiencyEl.appendChild(row);
+    }
+  }
+
+  // ── Year toggle ────────────────────────────────────────────────────
+  function renderYearToggle(years: string[], selectedYear: string): void {
+    clearEl(yearToggleEl);
     for (const year of years) {
       const btn = document.createElement('button');
       btn.textContent = year;
-      btn.className = 'year-btn' + (year === selectedYear ? ' active' : '');
+      btn.className = 'year-pill' + (year === selectedYear ? ' active' : '');
       btn.setAttribute('aria-pressed', String(year === selectedYear));
       btn.addEventListener('click', async () => {
-        for (const b of yearToggleEl.querySelectorAll('.year-btn')) {
-          b.classList.remove('active');
-          b.setAttribute('aria-pressed', 'false');
+        currentYear = year;
+        for (const b of yearToggleEl.querySelectorAll('.year-pill')) {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', String(b === btn));
         }
-        btn.classList.add('active');
-        btn.setAttribute('aria-pressed', 'true');
-        try {
-          await renderHeatmap(year);
-        } catch (err) {
-          showError(`Failed to render dashboard for @${username}: ${err instanceof Error ? err.message : String(err)}`);
-        }
+        await renderHeatmap(year, currentMetric);
       });
       yearToggleEl.appendChild(btn);
     }
   }
 
-  // ── Main: fetch data.json and boot dashboard ───────────────────────────────
+  // ── Main init ──────────────────────────────────────────────────────
   async function init(): Promise<void> {
     if (!username) {
-      const display = rawSegment || 'unknown';
-      showError(`No vibestats data found for @${display}`);
+      showError(`No vibestats data found for @${rawSegment || 'unknown'}`);
       return;
     }
 
-    // Reuse the early fetch started in <head>, or fall back to a fresh fetch.
     let data: VibestatsData;
     try {
       const earlyPromise = (window as Record<string, unknown>).__vibestatsData as
-        | Promise<VibestatsData | null>
-        | undefined;
+        | Promise<VibestatsData | null> | undefined;
       if (earlyPromise) {
         const result = await earlyPromise;
-        if (!result) {
-          showError(`No vibestats data found for @${username}`);
-          return;
-        }
+        if (!result) { showError(`No vibestats data found for @${username}`); return; }
         data = result;
       } else {
         const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json`;
         const resp = await fetch(url);
-        if (!resp.ok) {
-          showError(`No vibestats data found for @${username}`);
-          return;
-        }
+        if (!resp.ok) { showError(`No vibestats data found for @${username}`); return; }
         data = (await resp.json()) as VibestatsData;
       }
-    } catch {
-      showError(`No vibestats data found for @${username}`);
-      return;
-    }
+    } catch { showError(`No vibestats data found for @${username}`); return; }
 
     if (!data || typeof data.days !== 'object' || data.days === null) {
       showError(`No vibestats data found for @${username}`);
@@ -340,118 +739,128 @@ import Base from '../layouts/Base.astro';
 
     vibestatsData = data;
 
-    const years = [
-      ...new Set(Object.keys(data.days).map(d => d.slice(0, 4))),
-    ].sort((a, b) => b.localeCompare(a));
+    const years = [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
+    if (years.length === 0) { showError(`No vibestats data found for @${username}`); return; }
 
-    if (years.length === 0) {
-      showError(`No vibestats data found for @${username}`);
-      return;
-    }
+    const nowYear = String(new Date().getFullYear());
+    currentYear = years.includes(nowYear) ? nowYear : years[0];
 
-    const currentYear = String(new Date().getFullYear());
-    const defaultYear = years.includes(currentYear) ? currentYear : years[0];
+    const dayCount = Object.keys(data.days).length;
+    const generated = new Date(data.generated_at);
+    const ago = Math.round((Date.now() - generated.getTime()) / 3_600_000);
+    subtitleEl.textContent = `Claude Code Analytics \u00B7 ${dayCount} active days \u00B7 updated ${ago < 1 ? 'just now' : `${ago}h ago`}`;
 
-    // Show content section and render
-    try {
-      loadingEl.hidden = true;
-      contentEl.hidden = false;
+    loadingEl.hidden = true;
+    contentEl.hidden = false;
 
-      renderStatsSummary(data);
-      renderYearToggle(years, defaultYear);
-      await renderHeatmap(defaultYear);
-    } catch (err) {
-      showError(`Failed to render dashboard for @${username}: ${err instanceof Error ? err.message : String(err)}`);
-    }
+    renderKPIs(data);
+    renderYearToggle(years, currentYear);
+    await renderHeatmap(currentYear, currentMetric);
+    renderTokenChart(data);
+    renderModelChart(data);
+    renderSparklines(data);
+    renderStreak(data);
+    renderRecentDays(data);
+    renderEfficiency(data);
   }
 
   init();
 </script>
 
+<!-- Scoped: only for elements in the Astro template -->
 <style>
   .dashboard {
-    max-width: 960px;
+    max-width: 1120px;
     margin: 2rem auto;
-    padding: 0 1rem;
+    padding: 0 1.5rem;
   }
-
   .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
     margin-bottom: 1.5rem;
   }
-
   .dash-header h1 {
-    font-size: 1.75rem;
-    margin: 0 0 0.25rem;
-  }
-
-  .subtitle {
-    color: #6b7280;
+    font-size: 1.5rem;
+    font-weight: 700;
     margin: 0;
+    color: var(--color-brand);
   }
-
+  .dash-meta {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0.25rem 0 0;
+  }
+  :global(.dark) .dash-meta { color: #94a3b8; }
   .state-msg {
     text-align: center;
     padding: 2rem;
     color: #6b7280;
   }
-
-  .state-msg.error {
-    color: #dc2626;
-  }
-
+  .state-msg.error { color: #dc2626; }
   .spinner {
-    width: 24px;
-    height: 24px;
+    width: 24px; height: 24px;
     margin: 0 auto 0.5rem;
     border: 3px solid #e5e7eb;
     border-top-color: #f97316;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .card {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: 12px;
+    padding: 1.25rem;
   }
-
-  .stats-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .stat-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 0.5rem 0.875rem;
-    min-width: 80px;
-  }
-
-  .stat-value {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1.3;
-  }
-
-  .stat-label {
+  .card-title {
     font-size: 0.7rem;
-    color: #6b7280;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-top: 0.125rem;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+    font-weight: 600;
   }
-
+  .card-range { font-weight: 400; opacity: 0.7; }
+  .full-width { margin-bottom: 1rem; }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--color-card-border);
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--color-text); }
+  .tab.active {
+    color: var(--color-brand);
+    border-bottom-color: var(--color-brand);
+  }
   .heatmap-wrapper {
     display: flex;
     align-items: flex-start;
     overflow-x: auto;
   }
-
   .day-labels {
     display: flex;
     flex-direction: column;
@@ -459,48 +868,268 @@ import Base from '../layouts/Base.astro';
     margin-right: 4px;
     flex-shrink: 0;
   }
-
   .day-labels span {
     height: 11px;
     margin-bottom: 2px;
     font-size: 9px;
     line-height: 11px;
-    color: #9ca3af;
+    color: var(--color-text-muted);
   }
-
-  #cal-heatmap {
-    overflow-x: auto;
+  .streak-sub {
+    font-size: 0.8rem;
+    color: var(--color-text-dim);
+    margin-bottom: 1rem;
   }
 </style>
 
-<!-- Unscoped: year-toggle buttons are created dynamically via JS -->
+<!-- Global: CSS variables + all dynamically created element styles -->
 <style is:global>
-  .year-toggle {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
+  /* ── CSS Variables ─────────────────────────────────────────────── */
+  :root {
+    --color-brand: #f97316;
+    --color-brand-light: #fb923c;
+    --color-border: #e5e7eb;
+    --color-card-bg: #f9fafb;
+    --color-card-border: #e5e7eb;
+    --color-text: #111827;
+    --color-text-dim: #6b7280;
+    --color-text-muted: #9ca3af;
+    --c-green: #22c55e;
+    --c-blue: #3b82f6;
+    --c-purple: #a855f7;
+    --c-cyan: #06b6d4;
+    --c-yellow: #eab308;
+  }
+  .dark {
+    --color-border: #334155;
+    --color-card-bg: #1e293b;
+    --color-card-border: #334155;
+    --color-text: #e2e8f0;
+    --color-text-dim: #94a3b8;
+    --color-text-muted: #64748b;
   }
 
-  .year-btn {
+  /* ── Year pills ─────────────────────────────────────────────────── */
+  .year-pills { display: flex; gap: 0.5rem; }
+  .year-pill {
     padding: 0.25rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    background: #fff;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    color: var(--color-text-dim);
     cursor: pointer;
-    font-size: 0.875rem;
-    color: #374151;
+    font-family: inherit;
+    transition: all 0.15s;
   }
-
-  .year-btn:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-  }
-
-  .year-btn.active {
-    background: #f97316;
-    border-color: #f97316;
+  .year-pill:hover { border-color: var(--color-text-muted); }
+  .year-pill.active {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
     color: #fff;
     font-weight: 600;
   }
+
+  /* ── KPI Row ────────────────────────────────────────────────────── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .kpi {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .kpi-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+  .kpi-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .kpi-delta { font-size: 0.72rem; color: var(--c-green); }
+  .kpi-delta.down { color: #ef4444; }
+
+  /* ── Token chart ────────────────────────────────────────────────── */
+  .chart-area {
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding-top: 0.5rem;
+  }
+  .chart-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-width: 4px;
+    transition: opacity 0.15s;
+    cursor: default;
+  }
+  .chart-bar:hover { opacity: 0.8; }
+  .chart-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  /* ── Donut chart ────────────────────────────────────────────────── */
+  .donut-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .donut {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .donut::after {
+    content: '';
+    position: absolute;
+    inset: 30%;
+    border-radius: 50%;
+    background: var(--color-card-bg);
+  }
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--color-text-dim);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Sparklines ─────────────────────────────────────────────────── */
+  .spark-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-card-border);
+  }
+  .spark-row:last-child { border-bottom: none; }
+  .spark-label {
+    width: 90px;
+    font-size: 0.78rem;
+    color: var(--color-text-dim);
+  }
+  .spark-value {
+    width: 70px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: right;
+    color: var(--color-text);
+  }
+  .sparkline {
+    flex: 1;
+    height: 28px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .spark-bar {
+    flex: 1;
+    border-radius: 1.5px;
+    min-height: 2px;
+  }
+
+  /* ── Streak ─────────────────────────────────────────────────────── */
+  .streak-visual {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .streak-day {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 600;
+  }
+  .streak-day.active {
+    background: var(--color-brand);
+    color: white;
+  }
+  .streak-day.inactive {
+    background: var(--color-border);
+    color: var(--color-text-muted);
+  }
+  .streak-day.today {
+    box-shadow: 0 0 0 2px var(--color-brand-light);
+  }
+
+  /* ── Timeline ───────────────────────────────────────────────────── */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .timeline-item:hover {
+    background: rgba(249, 115, 22, 0.06);
+  }
+  .timeline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    flex-shrink: 0;
+  }
+  .timeline-time {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    width: 55px;
+    flex-shrink: 0;
+  }
+  .timeline-detail {
+    font-size: 0.8rem;
+    flex: 1;
+    color: var(--color-text);
+  }
+  .timeline-tokens {
+    font-size: 0.72rem;
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+  }
+
+  /* ── Cal-heatmap container ──────────────────────────────────────── */
+  #cal-heatmap { overflow-x: auto; }
 </style>
