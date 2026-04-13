@@ -36,7 +36,7 @@ teardown() {
 # Write the default _gh() stub to ${HOME}/stub_env.sh.
 # Default behaviour:
 #   auth token              → echo "ghp_FAKE_MACHINE_TOKEN"
-#   api /user               → echo "testuser"   (matches --jq '.login' usage)
+#   api /user               → echo '{"login":"testuser"}'  (JSON for python3 parsing in install.sh)
 #   repo view               → return 1          (repo does NOT exist — first-install)
 #   repo create             → log + return 0
 #   api repos/*             → log + return 0    (Contents API PUT)
@@ -59,8 +59,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      # Return only the login field to match --jq '.login' usage in install.sh
-      echo "testuser"
+      echo '{"login":"testuser"}'
       ;;
     "repo view")
       return 1
@@ -70,9 +69,37 @@ _gh() {
       return 0
       ;;
     "api repos"*)
-      echo "gh api repos: \$*" >> "${HOME}/gh_calls.log"
-      cat >> "${HOME}/gh_api_body.log" 2>/dev/null || true
-      return 0
+      echo "gh api repos: \$1 \$2" >> "${HOME}/gh_calls.log"
+      # For PUT calls (registry.json update), decode the content field and log it.
+      # For GET calls (registry.json fetch), return non-zero so install.sh
+      # treats the file as not found (NOT_FOUND path — first machine).
+      _is_put=0
+      _prev_arg=""
+      _content_b64=""
+      for _arg in "\$@"; do
+        if [ "\$_prev_arg" = "--method" ] && [ "\$_arg" = "PUT" ]; then
+          _is_put=1
+        fi
+        if [ "\$_prev_arg" = "--field" ]; then
+          case "\$_arg" in
+            content=*)
+              _content_b64="\${_arg#content=}"
+              ;;
+          esac
+        fi
+        _prev_arg="\$_arg"
+      done
+      if [ "\$_is_put" = "1" ]; then
+        if [ -n "\$_content_b64" ]; then
+          case "\$(uname -s)" in
+            Darwin) printf '%s' "\$_content_b64" | base64 -D >> "${HOME}/gh_api_body.log" 2>/dev/null || true ;;
+            *)      printf '%s' "\$_content_b64" | base64 -d >> "${HOME}/gh_api_body.log" 2>/dev/null || true ;;
+          esac
+        fi
+        return 0
+      else
+        return 1
+      fi
       ;;
     "api /user/personal_access_tokens"*)
       echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
@@ -182,7 +209,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
       ;;
     "repo view")
       return 1
@@ -259,7 +286,19 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
+      ;;
+    "api repos"*)
+      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
+      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
+      case "$*" in
+        *"--method PUT"*)
+          return 0
+          ;;
+        *)
+          return 1
+          ;;
+      esac
       ;;
     *)
       return 0
@@ -272,7 +311,7 @@ STUB
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
     source '${INSTALL_SH}'
-    store_machine_token
+    register_machine
   " 2>&1
 
   [ "$status" -eq 0 ]
@@ -292,7 +331,19 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
+      ;;
+    "api repos"*)
+      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
+      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
+      case "$*" in
+        *"--method PUT"*)
+          return 0
+          ;;
+        *)
+          return 1
+          ;;
+      esac
       ;;
     *)
       return 0
@@ -305,7 +356,7 @@ STUB
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
     source '${INSTALL_SH}'
-    store_machine_token
+    register_machine
   " 2>&1
 
   [ "$status" -eq 0 ]
@@ -336,6 +387,21 @@ _gh() {
       echo "Error: not authenticated" >&2
       return 1
       ;;
+    "api /user")
+      echo '{"login":"testuser"}'
+      ;;
+    "api repos"*)
+      echo "gh api repos: $*" >> "${HOME}/gh_calls.log"
+      # PUT calls succeed; GET calls return 1 so registry.json is treated as not found
+      case "$*" in
+        *"--method PUT"*)
+          return 0
+          ;;
+        *)
+          return 1
+          ;;
+      esac
+      ;;
     *)
       return 0
       ;;
@@ -347,7 +413,7 @@ STUB
   run bash --noprofile --norc -c "
     source '${HOME}/stub_env.sh'
     source '${INSTALL_SH}'
-    store_machine_token
+    register_machine
   " 2>&1
 
   [ "$status" -ne 0 ]
@@ -437,7 +503,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
       ;;
     "repo view")
       return 1
@@ -475,7 +541,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
       ;;
     "api /user/personal_access_tokens"*)
       echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
@@ -513,7 +579,7 @@ _gh() {
       echo "ghp_FAKE_MACHINE_TOKEN_12345"
       ;;
     "api /user")
-      echo "testuser"
+      echo '{"login":"testuser"}'
       ;;
     "repo view")
       return 1
@@ -524,7 +590,14 @@ _gh() {
       ;;
     "api repos"*)
       echo "api repos: \$*" >> "${HOME}/gh_calls.log"
-      return 0
+      case "\$*" in
+        *"--method PUT"*)
+          return 0
+          ;;
+        *)
+          return 1
+          ;;
+      esac
       ;;
     "api /user/personal_access_tokens"*)
       echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN_67890"}'
