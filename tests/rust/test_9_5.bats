@@ -26,14 +26,10 @@ setup() {
 # P0 — Story 9.5, AC #1
 # ---------------------------------------------------------------------------
 @test "[P0] no module-level allow(dead_code) suppressors remain in src/" {
-  # This test will FAIL (RED) until all six #![allow(dead_code)] lines are removed.
-  # Expected files with suppressors at story creation time:
+  # Passes when no #![allow(dead_code)] lines exist anywhere in src/.
+  # Expected pre-implementation files (all now removed):
   #   src/config.rs:1, src/logger.rs:16, src/checkpoint.rs:1,
   #   src/jsonl_parser.rs:1, src/github_api.rs:22, src/hooks/mod.rs:1
-  run grep -rn "#!\[allow(dead_code)\]" src/
-  [ "$status" -eq 0 ]  # grep exits 0 when it finds matches — should find 0 matches after fix
-  # After implementation: grep should find NO matches and exit 1 (no matches found)
-  # Restate: the test passes when grep finds nothing (exits non-zero with no output)
   run grep -rn "#!\[allow(dead_code)\]" src/
   [ "$status" -ne 0 ]  # grep exits 1 when no matches — this is the passing condition
   [ -z "$output" ]      # no output means no suppressors found
