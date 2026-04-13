@@ -30,7 +30,18 @@ import Base from '../layouts/Base.astro';
 
     <section id="dashboard-content" hidden>
       <div id="year-toggle" class="year-toggle" aria-label="Select year"></div>
-      <div id="cal-heatmap"></div>
+      <div class="heatmap-wrapper">
+        <div class="day-labels" aria-hidden="true">
+          <span></span>
+          <span>Mon</span>
+          <span></span>
+          <span>Wed</span>
+          <span></span>
+          <span>Fri</span>
+          <span></span>
+        </div>
+        <div id="cal-heatmap"></div>
+      </div>
     </section>
   </main>
 </Base>
@@ -61,9 +72,6 @@ import Base from '../layouts/Base.astro';
   const yearToggleEl = document.getElementById('year-toggle') as HTMLElement;
 
   // ── Username discovery ─────────────────────────────────────────────────────
-  // GitHub usernames: 1–39 chars, alphanumerics or hyphens, may not start with
-  // a hyphen.  Validating client-side prevents path-traversal-style segments
-  // (e.g. `foo%2F..%2Fevil`) from reaching the fetch URL.
   const GH_USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
   const rawSegment = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
   const username = GH_USERNAME_RE.test(rawSegment) ? rawSegment : '';
@@ -85,23 +93,30 @@ import Base from '../layouts/Base.astro';
     errorEl.hidden = false;
   }
 
-  // ── Render heatmap for a given year ───────────────────────────────────────
+  // ── Render GitHub-style heatmap for a given year ────────────────────────────
   async function renderHeatmap(selectedYear: string): Promise<void> {
     if (!vibestatsData) return;
 
-    // Destroy previous instance
     if (calInstance) {
       calInstance.destroy();
       calInstance = null;
     }
 
-    // Filter days to selected year and convert to cal-heatmap data array
     const calData = Object.entries(vibestatsData.days)
       .filter(([date]) => date.startsWith(selectedYear))
       .map(([date, v]) => ({ date, value: v.sessions }));
 
-    // Compute max sessions for this year to set the quantize scale domain
     const maxSessions = calData.reduce((m, d) => Math.max(m, d.value), 1);
+
+    const now = new Date();
+    const yearNum = parseInt(selectedYear, 10);
+    const isCurrentYear = yearNum === now.getFullYear();
+
+    // Current year: rolling view from ~1 year ago. Past years: Jan 1 – Dec 31.
+    const startDate = isCurrentYear
+      ? new Date(yearNum - 1, now.getMonth(), now.getDate())
+      : new Date(`${selectedYear}-01-01`);
+    const range = isCurrentYear ? 13 : 12;
 
     const cal = new CalHeatmap();
     await cal.paint(
@@ -113,18 +128,18 @@ import Base from '../layouts/Base.astro';
           y: 'value',
           defaultValue: 0,
         },
-        date: { start: new Date(`${selectedYear}-01-01`) },
-        range: 12,
+        date: { start: startDate },
+        range,
         domain: {
           type: 'month',
-          label: { text: 'MMM' },
+          label: { text: 'MMM', textAlign: 'start', position: 'top' },
           gutter: 4,
         },
         subDomain: {
-          type: 'day',
+          type: 'ghDay',
           radius: 2,
-          width: 12,
-          height: 12,
+          width: 11,
+          height: 11,
           gutter: 2,
         },
         scale: {
@@ -157,7 +172,6 @@ import Base from '../layouts/Base.astro';
 
   // ── Year toggle ────────────────────────────────────────────────────────────
   function renderYearToggle(years: string[], selectedYear: string): void {
-    // Clear existing buttons using safe DOM removal
     while (yearToggleEl.firstChild) {
       yearToggleEl.removeChild(yearToggleEl.firstChild);
     }
@@ -168,7 +182,6 @@ import Base from '../layouts/Base.astro';
       btn.className = 'year-btn' + (year === selectedYear ? ' active' : '');
       btn.setAttribute('aria-pressed', String(year === selectedYear));
       btn.addEventListener('click', async () => {
-        // Update active state without re-fetching
         for (const b of yearToggleEl.querySelectorAll('.year-btn')) {
           b.classList.remove('active');
           b.setAttribute('aria-pressed', 'false');
@@ -188,8 +201,6 @@ import Base from '../layouts/Base.astro';
   // ── Main: fetch data.json and boot dashboard ───────────────────────────────
   async function init(): Promise<void> {
     if (!username) {
-      // Either no segment in URL or it failed the GitHub-username regex check.
-      // Show the standard error so the message stays consistent.
       const display = rawSegment || 'unknown';
       showError(`No vibestats data found for @${display}`);
       return;
@@ -222,7 +233,6 @@ import Base from '../layouts/Base.astro';
       return;
     }
 
-    // Schema sanity check — guards against malformed JSON or schema drift.
     if (!data || typeof data.days !== 'object' || data.days === null) {
       showError(`No vibestats data found for @${username}`);
       return;
@@ -230,7 +240,6 @@ import Base from '../layouts/Base.astro';
 
     vibestatsData = data;
 
-    // Extract unique years descending
     const years = [
       ...new Set(Object.keys(data.days).map(d => d.slice(0, 4))),
     ].sort((a, b) => b.localeCompare(a));
@@ -260,7 +269,7 @@ import Base from '../layouts/Base.astro';
 
 <style>
   .dashboard {
-    max-width: 900px;
+    max-width: 960px;
     margin: 2rem auto;
     padding: 0 1rem;
   }
@@ -301,6 +310,28 @@ import Base from '../layouts/Base.astro';
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .heatmap-wrapper {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+  }
+
+  .day-labels {
+    display: flex;
+    flex-direction: column;
+    padding-top: 22px;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+
+  .day-labels span {
+    height: 11px;
+    margin-bottom: 2px;
+    font-size: 9px;
+    line-height: 11px;
+    color: #9ca3af;
   }
 
   #cal-heatmap {
