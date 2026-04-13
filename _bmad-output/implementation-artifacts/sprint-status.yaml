@@ -36,7 +36,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10
-last_updated: 2026-04-13 (story 9.9 review)
+last_updated: 2026-04-13 (stories 9.7-9.9 done, epic-9 done)
 project: vibestats
 project_key: NOKEY
 tracking_system: file-system
@@ -148,7 +148,7 @@ development_status:
   # Recommended order: 9.1 → 9.2 → 9.3 → 9.5 → 9.4 → 9.6 → 9.7 → 9.8 → 9.9
   # (9.3 must complete before 9.6; 9.5 recommended before 9.6)
   # ──────────────────────────────────────────────────────────────
-  epic-9: in-progress
+  epic-9: done
   9-1-artifact-hygiene-fix-stale-story-statuses-and-missing-records: done
   9-2-retrospective-code-reviews-for-stories-4-3-and-4-4: done
   9-3-fix-test-6-2-bats-pre-existing-failures: done
@@ -157,5 +157,5 @@ development_status:
   9-6-first-release-push-v0-1-0-tag-and-create-v1-floating-tag: done
   9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: done
   9-8-architecture-documentation-capture-post-sprint-lessons: done
-  9-9-python-script-hardening-update-readme-and-aggregate-improvements: review
+  9-9-python-script-hardening-update-readme-and-aggregate-improvements: done
   epic-9-retrospective: optional
