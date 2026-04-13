@@ -148,8 +148,22 @@ pub fn run() {
                                         );
                                     }
                                     Ok(updated) => {
-                                        match std::fs::write(&path, updated + "\n") {
+                                        // Write atomically via a sibling .tmp file then
+                                        // rename, so a crash or disk-full mid-write can
+                                        // never leave settings.json truncated/corrupt.
+                                        let mut tmp_path = path.clone();
+                                        let mut tmp_name = path
+                                            .file_name()
+                                            .unwrap_or_default()
+                                            .to_os_string();
+                                        tmp_name.push(".tmp");
+                                        tmp_path.set_file_name(tmp_name);
+                                        let write_result = std::fs::write(&tmp_path, updated + "\n")
+                                            .and_then(|()| std::fs::rename(&tmp_path, &path));
+                                        match write_result {
                                             Err(e) => {
+                                                // Clean up the temp file on failure (best effort).
+                                                let _ = std::fs::remove_file(&tmp_path);
                                                 println!(
                                                     "vibestats: could not write ~/.claude/settings.json: {e}"
                                                 );
