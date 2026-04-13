@@ -1,6 +1,6 @@
 # Story 9.7: aggregate.yml — Add concurrency group to prevent concurrent push conflicts
 
-Status: review
+Status: done
 
 <!-- GH Issue: #87 | Epic: #80 | PR must include: Closes #87 -->
 
