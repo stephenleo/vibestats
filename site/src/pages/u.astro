@@ -177,8 +177,8 @@ import Base from '../layouts/Base.astro';
         btn.setAttribute('aria-pressed', 'true');
         try {
           await renderHeatmap(year);
-        } catch {
-          showError(`Failed to render dashboard for @${username}`);
+        } catch (err) {
+          showError(`Failed to render dashboard for @${username}: ${err instanceof Error ? err.message : String(err)}`);
         }
       });
       yearToggleEl.appendChild(btn);
@@ -250,8 +250,8 @@ import Base from '../layouts/Base.astro';
 
       renderYearToggle(years, defaultYear);
       await renderHeatmap(defaultYear);
-    } catch {
-      showError(`Failed to render dashboard for @${username}`);
+    } catch (err) {
+      showError(`Failed to render dashboard for @${username}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
