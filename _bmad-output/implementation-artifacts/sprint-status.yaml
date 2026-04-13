@@ -156,6 +156,6 @@ development_status:
   9-5-rust-remove-dead-code-suppressors-and-verify-lint-clean: done
   9-6-first-release-push-v0-1-0-tag-and-create-v1-floating-tag: done
   9-7-aggregate-yml-add-concurrency-group-to-prevent-push-conflicts: atdd-done
-  9-8-architecture-documentation-capture-post-sprint-lessons: ready-for-dev
+  9-8-architecture-documentation-capture-post-sprint-lessons: atdd-done
   9-9-python-script-hardening-update-readme-and-aggregate-improvements: ready-for-dev
   epic-9-retrospective: optional
