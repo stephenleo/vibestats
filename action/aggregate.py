@@ -66,7 +66,18 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
     """Aggregate all Hive partition files under root/machines/. Returns public data.json dict."""
     purged_machines = load_purged_machines(root)
 
-    days = collections.defaultdict(lambda: {"sessions": 0, "active_minutes": 0})
+    days = collections.defaultdict(lambda: {
+        "sessions": 0,
+        "active_minutes": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_read_tokens": 0,
+        "cache_creation_tokens": 0,
+        "models": {},
+        "longest_session_minutes": 0,
+        "message_count": 0,
+        "tool_uses": 0,
+    })
 
     machines_dir = root / "machines"
     if machines_dir.exists():
@@ -84,6 +95,18 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
 
             days[date_key]["sessions"] += record["sessions"]
             days[date_key]["active_minutes"] += record["active_minutes"]
+            days[date_key]["input_tokens"] += record.get("input_tokens", 0)
+            days[date_key]["output_tokens"] += record.get("output_tokens", 0)
+            days[date_key]["cache_read_tokens"] += record.get("cache_read_tokens", 0)
+            days[date_key]["cache_creation_tokens"] += record.get("cache_creation_tokens", 0)
+            days[date_key]["message_count"] += record.get("message_count", 0)
+            days[date_key]["tool_uses"] += record.get("tool_uses", 0)
+            for model, count in record.get("models", {}).items():
+                days[date_key]["models"][model] = days[date_key]["models"].get(model, 0) + count
+            days[date_key]["longest_session_minutes"] = max(
+                days[date_key]["longest_session_minutes"],
+                record.get("longest_session_minutes", 0),
+            )
 
     generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
