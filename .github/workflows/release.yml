@@ -85,6 +85,11 @@ jobs:
             vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz
             vibestats-x86_64-unknown-linux-gnu/vibestats-x86_64-unknown-linux-gnu.tar.gz.sha256
 
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Update floating major-version tag
         # Keeps stephenleo/vibestats@v1 pointing at the latest v1.x release,
         # matching the pattern used by first-party Actions (e.g. actions/checkout@v4).
