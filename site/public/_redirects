@@ -1,2 +1,9 @@
-# Routing is handled by _worker.js edge middleware.
-# This file is kept as documentation only — _worker.js takes precedence.
+# Pass-through rules: keep static assets untouched.
+# These MUST come before the /:username catch-all below.
+/favicon.ico  /favicon.ico  200
+/favicon.svg  /favicon.svg  200
+/install.sh   /install.sh   200
+/_astro/*     /_astro/:splat  200
+
+# Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
+/:username    /u  200
