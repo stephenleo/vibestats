@@ -2,7 +2,7 @@
 
 **GH Issue:** #40
 
-Status: review
+Status: done
 
 ## Story
 
@@ -219,6 +219,32 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+No debug log — recovered from git history.
+
 ### Completion Notes List
 
+Created `.github/workflows/deploy-site.yml` with:
+- `workflow_dispatch`-only trigger with `ref` input (branch or tag, default `main`)
+- Checkout step using `${{ github.event.inputs.ref }}`
+- Node 22 setup with npm cache
+- `npm ci` + `npm run build` in `site/` working directory
+- Cloudflare Pages deploy using `cloudflare/pages-action@v1` (later updated to `cloudflare/wrangler-action@v3`)
+- `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets referenced by exact names
+- Build step precedes deploy step — build failure prevents deploy (AC3)
+- All `uses:` action references pinned to semver tags
+
+ATDD tests in `action/tests/test_deploy_site_yml.py`: 11 pytest schema/unit tests asserting workflow_dispatch-only trigger, exact Cloudflare secret names, build-gates-deploy step ordering, ref input declaration, and site/ working directory. All 11 tests pass.
+
+Story status moved to `review` after implementation, then merged via PR #74 on 2026-04-12.
+
+*Note: Dev Agent Record recovered from git history (commits bb0c596, e2ebac4, PR #74 merged 2026-04-12).*
+
 ### File List
+
+- `.github/workflows/deploy-site.yml` (created)
+- `action/tests/test_deploy_site_yml.py` (created)
+
+## Change Log
+
+- 2026-04-12: Story 8.2 implemented and merged via PR #74. Cloudflare Pages deploy workflow created. 11 ATDD tests passing. (Recovered from git history.)
+- 2026-04-13: Dev Agent Record filled retroactively as part of story 9.1 artifact hygiene work.

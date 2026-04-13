@@ -1,6 +1,6 @@
 # Story 5.5: Implement aggregate.yml (user vibestats-data workflow template)
 
-Status: review
+Status: done
 
 <!-- GH Issue: #30 | Epic: #5 | PR must include: Closes #30 -->
 

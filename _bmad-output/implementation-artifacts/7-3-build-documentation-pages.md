@@ -1,6 +1,6 @@
 # Story 7.3: Build documentation pages
 
-Status: review
+Status: done
 
 <!-- GH Issue: #37 | Epic: #7 | PR must include: Closes #37 -->
 

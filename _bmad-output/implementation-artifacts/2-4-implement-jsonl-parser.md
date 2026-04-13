@@ -1,6 +1,6 @@
 # Story 2.4: Implement JSONL Parser
 
-Status: review
+Status: done
 
 <!-- GH Issue: #16 | Epic: #2 | PR must include: Closes #16 -->
 
