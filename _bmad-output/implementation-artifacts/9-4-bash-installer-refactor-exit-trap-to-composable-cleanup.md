@@ -1,6 +1,6 @@
 # Story 9.4: Bash installer — Refactor EXIT trap to composable cleanup
 
-Status: review
+Status: done
 
 <!-- GH Issue: #84 | Epic: #80 | PR must include: Closes #84 -->
 
