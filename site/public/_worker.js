@@ -17,9 +17,14 @@ export default {
     if (segments.length === 1 && !segments[0].includes('.')) {
       const assetUrl = new URL('/u.html', url.origin);
       const response = await env.ASSETS.fetch(assetUrl);
+      // Override cache headers — the CDN must not edge-cache username routes
+      // or redeployments won't take effect until the long TTL expires.
+      const headers = new Headers(response.headers);
+      headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
+      headers.delete('CDN-Cache-Control');
       return new Response(response.body, {
         status: 200,
-        headers: response.headers,
+        headers,
       });
     }
 
