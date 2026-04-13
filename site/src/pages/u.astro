@@ -20,9 +20,12 @@ import Base from '../layouts/Base.astro';
   <main class="dashboard">
     <!-- Header -->
     <div class="dash-header">
-      <div>
-        <h1 id="dash-title">vibestats dashboard</h1>
-        <p id="dash-subtitle" class="dash-meta"></p>
+      <div class="dash-header-left">
+        <img id="dash-avatar" class="dash-avatar" src="" alt="" hidden />
+        <div>
+          <h1 id="dash-title">vibestats dashboard</h1>
+          <p id="dash-subtitle" class="dash-meta"></p>
+        </div>
       </div>
       <div id="year-toggle" class="year-pills" aria-label="Select year"></div>
     </div>
@@ -130,6 +133,8 @@ import Base from '../layouts/Base.astro';
   const contentEl = document.getElementById('dashboard-content')!;
   const titleEl = document.getElementById('dash-title')!;
   const subtitleEl = document.getElementById('dash-subtitle')!;
+  const avatarEl = document.getElementById('dash-avatar') as HTMLImageElement;
+  avatarEl.onerror = () => { avatarEl.hidden = true; };
   const yearToggleEl = document.getElementById('year-toggle')!;
   const kpiRowEl = document.getElementById('kpi-row')!;
   const tokenChartEl = document.getElementById('token-chart')!;
@@ -153,6 +158,9 @@ import Base from '../layouts/Base.astro';
     document.title = `vibestats — @${username}`;
     titleEl.textContent = `@${username}`;
     subtitleEl.textContent = 'Claude Code Analytics';
+    avatarEl.alt = `${username}'s GitHub avatar`;
+    avatarEl.src = `https://github.com/${username}.png?size=80`;
+    avatarEl.hidden = false;
   }
 
   // ── State ──────────────────────────────────────────────────────────
@@ -803,6 +811,19 @@ import Base from '../layouts/Base.astro';
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1.5rem;
+  }
+  .dash-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .dash-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    object-fit: cover;
+    flex-shrink: 0;
   }
   .dash-header h1 {
     font-size: 1.5rem;
