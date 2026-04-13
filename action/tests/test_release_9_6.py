@@ -352,6 +352,21 @@ def test_tc4_release_yml_references_tar_gz_assets() -> None:
     )
 
 
+def test_tc4_release_yml_references_sha256_checksums() -> None:
+    """[P0] 9.6-UNIT-042: release.yml must produce .sha256 checksum files for each binary.
+
+    AC #1: The GitHub Release must contain six assets — three .tar.gz binaries
+    and three corresponding .sha256 checksums. The workflow must generate and
+    upload a .sha256 file alongside each binary archive.
+    """
+    sha256_count = _RELEASE_YML_TEXT.count(".sha256")
+    # Expect at least 3 occurrences (one per target platform)
+    assert sha256_count >= 3, (
+        f"release.yml contains {sha256_count} reference(s) to '.sha256' but expected at least 3. "
+        "AC #1 requires three .sha256 checksum files alongside the three .tar.gz binaries."
+    )
+
+
 # ---------------------------------------------------------------------------
 # [AC #3 partial] Cargo.toml: ureq dependency for TLS/network requests
 # The rustls fallback path is documented in Dev Notes; the test verifies ureq

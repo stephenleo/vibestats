@@ -1,6 +1,6 @@
 # Story 9.6: First release — push v0.1.0 tag and create v1 floating tag
 
-Status: review
+Status: done
 
 <!-- GH Issue: #86 | Epic: #80 | PR must include: Closes #86 -->
 
