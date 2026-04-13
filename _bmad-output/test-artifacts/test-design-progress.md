@@ -2,6 +2,7 @@
 stepsCompleted: ['step-01-detect-mode', 'step-02-load-context', 'step-03-risk-and-testability', 'step-04-coverage-plan', 'step-05-generate-output']
 lastStep: 'step-05-generate-output'
 lastSaved: '2026-04-13'
+epic9SecondUpdate: '2026-04-13'
 epic6Completed: '2026-04-12'
 epic7Completed: '2026-04-12'
 epic8Completed: '2026-04-12'
@@ -333,3 +334,42 @@ Active high risks: R-001 (release.yml first run) and R-002 (dead_code suppressor
 - Entry criteria checkboxes updated for done stories
 - Execution order checkboxes updated for done stories (9.1, 9.2, 9.3)
 - Mitigation plan statuses for R-003 and R-004 updated to MITIGATED
+
+---
+
+# Test Design Re-Run #2 — Epic 9: Post-Sprint Quality & Technical Debt (2026-04-13)
+
+**Mode:** Create (existing document updated in-place)
+**Trigger:** Sprint status confirms stories 9-4, 9-5, 9-6 are now `done`; test design refreshed to reflect current state.
+**Completed:** 2026-04-13
+
+## Status Update
+
+Stories completed since previous test design update (2026-04-13 first update):
+- **9.4 (EXIT trap refactor):** done — test_9_4.bats reviewed; quality score 96/100; R-005 fully verified; bats suite still passes; Bash 3.2 compatibility confirmed
+- **9.5 (dead_code suppressors):** done — test_9_5.bats (11 tests, 8 P0 + 3 P1) reviewed; all module-level `#![allow(dead_code)]` removed from src/ including `src/hooks/mod.rs`; R-002 mitigated; `cargo clippy --all-targets -- -D warnings` exits 0
+- **9.6 (first release v0.1.0):** done — test_release_9_6.py (21 pytest tests) reviewed; R-001 mitigated; GitHub Release at v0.1.0 published with 6 assets (3 `.tar.gz` + 3 `.sha256`); `v0` floating tag created (not `v1` — workflow extracts major version, so `v0.1.0` → `v0`)
+
+**Key correction:** Story 9.6 AC and release workflow both confirm a `v0` floating tag is created, not `v1`. The test design now reflects this throughout.
+
+**All 4 high-priority risks (R-001 through R-004) are now MITIGATED.**
+**All 8 P0 scenarios are verified complete.**
+
+Remaining work: stories 9.7–9.9 (backlog).
+- 9.7: aggregate.yml concurrency group (3 P1 tests, 1 P2 test)
+- 9.8: architecture documentation (2 P2 tests)
+- 9.9: Python script hardening (3 P1 tests, 1 P3 test)
+
+**Output file updated:** `_bmad-output/test-artifacts/test-design-epic-9.md`
+- `Last Updated` header updated to reflect stories 9-1 through 9-6 done
+- Executive summary: sprint state, risk summary, and coverage summary updated
+- Entry criteria: all 8 checkboxes now marked done (including tooling verification)
+- Exit criteria: 7 of 9 items now checked; floating tag corrected from `v1` to `v0`; asset count corrected from 3 to 6
+- P0 table: story 9.6 row updated to reflect 6 assets; total P0 marked ALL COMPLETE
+- P1 table: stories 9.4 and 9.6 rows marked verified; floating tag corrected to v0; total updated (9 of 12 done)
+- P2 table: stories 9.4 and 9.5 rows marked verified; total updated (3 of 7 done)
+- P3 table: story 9.6 binary smoke row marked verified
+- Execution order: stories 9.4, 9.5, 9.6 marked DONE with corrected details
+- Risk mitigation plans: R-001 and R-002 statuses updated to MITIGATED
+- Non-Negotiable Requirements: all 5 items now checked
+- Interworking table: install.sh, auth.rs, uninstall.rs, src/*.rs rows marked verified

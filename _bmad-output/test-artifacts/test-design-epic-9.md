@@ -7,7 +7,7 @@ lastSaved: '2026-04-13'
 # Test Design: Epic 9 — Post-Sprint Quality & Technical Debt
 
 **Date:** 2026-04-12
-**Last Updated:** 2026-04-13 (stories 9-1, 9-2, 9-3 verified done)
+**Last Updated:** 2026-04-13 (stories 9-1 through 9-6 verified done)
 **Author:** Leo
 **Status:** Active
 
@@ -21,24 +21,31 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 
 **Current Sprint State (as of 2026-04-13):**
 - Stories 9.1 (artifact hygiene), 9.2 (code reviews), 9.3 (fix test_6_2.bats): **done**
-- Stories 9.4–9.9: **backlog** (remaining work)
-- The pre-launch blocker (9.3) is resolved; release path (9.6) is now unblocked by 9.3
+- Story 9.4 (EXIT trap refactor): **done** — test_9_4.bats reviewed; 96/100 quality score
+- Story 9.5 (dead_code suppressors): **done** — test_9_5.bats reviewed; R-002 mitigated
+- Story 9.6 (first release v0.1.0): **done** — test_release_9_6.py (21 tests) reviewed; R-001 mitigated; v0 floating tag created
+- Stories 9.7–9.9: **backlog** (remaining work)
+
+**Note on Story 9.6 floating tag:** The `release.yml` workflow creates a `v0` floating tag (not `v1`), because it extracts `major="${REF_NAME%%.*}"` so `v0.1.0` → `v0`.
 
 **Risk Summary:**
 
 - Total risks identified: 10
 - High-priority risks (≥6): 4 (R-001, R-002, R-003, R-004)
-- R-003 (SEC) and R-004 (BUS) mitigated by stories 9.2 and 9.3 respectively (now done)
-- Active high risks: R-001 (release.yml first run), R-002 (dead_code removal)
+- R-001 (OPS) mitigated by story 9.6 (release completed; v0.1.0 published with 6 assets)
+- R-002 (TECH) mitigated by story 9.5 (dead_code suppressors removed; clippy clean)
+- R-003 (SEC) mitigated by story 9.2 (code reviews completed)
+- R-004 (BUS) mitigated by story 9.3 (bats suite passing)
+- **All high-priority risks now mitigated**
 - Critical categories: OPS, TECH, SEC, BUS
 
 **Coverage Summary:**
 
-- P0 scenarios: 8 (~10–14 hours) — 3 verified done (stories 9.2, 9.3)
-- P1 scenarios: 12 (~12–18 hours) — 3 verified done (story 9.1)
-- P2 scenarios: 7 (~4–8 hours)
-- P3 scenarios: 3 (~1–3 hours)
-- **Remaining effort**: ~18–32 hours (~2–4 days, stories 9.4–9.9)
+- P0 scenarios: 8 (~10–14 hours) — **all 8 verified done** (stories 9.2, 9.3, 9.5, 9.6)
+- P1 scenarios: 12 (~12–18 hours) — 9 verified done (stories 9.1, 9.4, 9.6); 3 remaining (stories 9.7, 9.9)
+- P2 scenarios: 7 (~4–8 hours) — 3 done (stories 9.4, 9.5); 4 remaining (stories 9.7, 9.8, 9.9)
+- P3 scenarios: 3 (~1–3 hours) — 1 done (story 9.6 binary smoke); 2 remaining (stories 9.2 deferred P2, 9.9 combined regression)
+- **Remaining effort**: ~6–14 hours (~1 day, stories 9.7–9.9)
 
 ---
 
@@ -96,22 +103,23 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 - [x] All Epic 1–8 stories are `done` in sprint-status.yaml (confirmed: yes, per sprint-status.yaml)
 - [x] Epic 9 story files (9.1–9.9) exist in `_bmad-output/implementation-artifacts/`
 - [x] Stories 9.1, 9.2, 9.3 completed and verified (2026-04-13)
-- [ ] `bats` is installed and available on the dev machine
-- [ ] `cargo` and `cargo clippy` are available
-- [ ] `python3 -m pytest` is available for Python test suite
-- [ ] Developer has GitHub permissions to push tags and trigger Actions workflows (Story 9.6)
+- [x] Stories 9.4, 9.5, 9.6 completed and verified (2026-04-13)
+- [x] `bats` is installed and available on the dev machine (verified: stories 9.3 and 9.4 ran full bats suite)
+- [x] `cargo` and `cargo clippy` are available (verified: story 9.5 ran `cargo clippy --all-targets -- -D warnings` with 0 warnings)
+- [x] `python3 -m pytest` is available for Python test suite (verified: story 9.6 test file runs 21 pytest tests)
+- [x] Developer has GitHub permissions to push tags and trigger Actions workflows (verified: story 9.6 pushed v0.1.0 tag and release workflow completed)
 
 ## Exit Criteria
 
-- [ ] All 9 Epic 9 stories marked `done` in sprint-status.yaml
-- [ ] `bats tests/installer/test_6_1.bats tests/installer/test_6_2.bats tests/installer/test_6_3.bats tests/installer/test_6_4.bats` exits 0 with 0 failures
-- [ ] `cargo clippy --all-targets -- -D warnings` exits 0 with 0 warnings
-- [ ] `cargo test` exits 0 with 0 failures
-- [ ] `python3 -m pytest action/tests/` exits 0 with 0 failures
-- [ ] GitHub Release at `github.com/stephenleo/vibestats/releases/tag/v0.1.0` exists with 3 binary assets
-- [ ] `v1` floating tag exists and `uses: stephenleo/vibestats@v1` resolves correctly
-- [ ] No story file in `_bmad-output/implementation-artifacts/` shows `Status: review` while sprint-status.yaml shows `done`
-- [ ] No P0 or P1 review findings from Story 9.2 remain unaddressed
+- [ ] All 9 Epic 9 stories marked `done` in sprint-status.yaml (6 of 9 done; 9.7–9.9 remaining)
+- [x] `bats tests/installer/test_6_1.bats tests/installer/test_6_2.bats tests/installer/test_6_3.bats tests/installer/test_6_4.bats` exits 0 with 0 failures (verified: stories 9.3 and 9.4)
+- [x] `cargo clippy --all-targets -- -D warnings` exits 0 with 0 warnings (verified: story 9.5)
+- [x] `cargo test` exits 0 with 0 failures (verified: story 9.5 pre-release checklist)
+- [ ] `python3 -m pytest action/tests/` exits 0 with 0 failures (partial: 9.6 test file reviewed; 9.7 and 9.9 tests not yet written)
+- [x] GitHub Release at `github.com/stephenleo/vibestats/releases/tag/v0.1.0` exists with 6 assets (3 `.tar.gz` binaries + 3 `.sha256` checksums) (verified: story 9.6)
+- [x] `v0` floating tag exists and `uses: stephenleo/vibestats@v0` resolves correctly (verified: story 9.6; note: workflow creates `v0`, not `v1`, from `v0.1.0`)
+- [x] No story file in `_bmad-output/implementation-artifacts/` shows `Status: review` while sprint-status.yaml shows `done` (verified: story 9.1)
+- [x] No P0 or P1 review findings from Story 9.2 remain unaddressed (verified: story 9.2)
 
 ---
 
@@ -130,9 +138,9 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 | **9.5** — No test regressions after suppressor removal | Unit | R-002 | `cargo test` exits 0 with same or higher test count | 1 | Dev | Baseline test count before and after |
 | **9.2** — No P0/P1 findings unresolved in auth review | Code review | R-003 | Story 4-3 Review Findings section exists; no P0/P1 items open | 1 | Dev | Three-pass adversarial review artifact |
 | **9.2** — No P0/P1 findings unresolved in uninstall review | Code review | R-003 | Story 4-4 Review Findings section exists; no P0/P1 items open | 1 | Dev | Special attention: config.toml partial write risk |
-| **9.6** — v0.1.0 release has all 3 binary assets | Integration (GitHub Actions) | R-001 | GitHub Release page shows `vibestats-aarch64-apple-darwin.tar.gz`, `vibestats-x86_64-apple-darwin.tar.gz`, `vibestats-x86_64-unknown-linux-gnu.tar.gz` | 1 | Dev | Manual verification post-run |
+| **9.6** — v0.1.0 release has all 6 assets (3 binaries + 3 checksums) ✅ | Integration (GitHub Actions) | R-001 | GitHub Release page shows 3 `.tar.gz` binaries + 3 `.sha256` checksum files | 1 | Dev | Verified: story 9.6 done |
 
-**Total P0:** 8 tests, ~10–14 hours
+**Total P0:** 8 tests, ~10–14 hours — **ALL 8 COMPLETE** ✅
 
 ### P1 (High) — Run on PR to main; blocks story sign-off
 
@@ -143,17 +151,17 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 | **9.1** — All stale Status fields corrected | Documentation check | R-007 | `grep -r "Status: review" _bmad-output/implementation-artifacts/` returns no output | 1 | Dev | Verifies all 10 stale story files updated |
 | **9.1** — Story 5.2 artifact exists with Dev Agent Record | File existence check | R-007 | `5-2-implement-generate-svg-py.md` exists with Status: done and non-empty Dev Agent Record | 1 | Dev | File creation verification |
 | **9.1** — Stories 7.4 and 8.2 have complete Dev Agent Records | Documentation check | R-007 | Both files have non-empty Completion Notes, File List, and Change Log | 1 | Dev | Spot-check of recovered content |
-| **9.4** — EXIT trap refactored; cleanup() registered once | Shell (bats) | R-005 | `install.sh` contains `cleanup()` function and `trap cleanup EXIT`; no inline trap in `download_and_install_binary()` | 1 | Dev | Pattern assertion + bats regression |
-| **9.4** — Full bats suite still passes after trap refactor | Shell (bats) | R-005 | `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 | 1 | Dev | Depends on Story 9.3 green first |
-| **9.6** — v1 floating tag resolves to v0.1.0 | Git tag check | R-001 | `git ls-remote origin refs/tags/v1` shows the v1 tag; points to v0.1.0 commit | 1 | Dev | Manual git verification |
+| **9.4** — EXIT trap refactored; cleanup() registered once ✅ | Shell (bats) | R-005 | `install.sh` contains `cleanup()` function and `trap cleanup EXIT`; no inline trap in `download_and_install_binary()` | 1 | Dev | Verified: story 9.4 done; test_9_4.bats score 96/100 |
+| **9.4** — Full bats suite still passes after trap refactor ✅ | Shell (bats) | R-005 | `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 | 1 | Dev | Verified: story 9.4 done |
+| **9.6** — v0 floating tag resolves to v0.1.0 ✅ | Git tag check | R-001 | `git ls-remote origin refs/tags/v0` shows the v0 tag; points to v0.1.0 commit (workflow extracts `v0` from `v0.1.0`) | 1 | Dev | Verified: story 9.6 done |
 | **9.7** — `aggregate.yml` concurrency block present | Schema (Python/pytest) | R-006 | New pytest test: `workflow["concurrency"]["group"] == "vibestats-${{ github.repository_owner }}"` and `cancel-in-progress == False` | 1 | Dev | Automated schema assertion |
 | **9.7** — All existing aggregate.yml tests still pass | Schema (Python/pytest) | R-006 | `python3 -m pytest action/tests/test_aggregate_yml.py` exits 0 | 1 | Dev | Regression for existing schema tests |
 | **9.9** — `update_readme.py --username ""` exits non-zero | Unit (Python/pytest) | R-008 | Test: `subprocess.run(["python3", "update_readme.py", "--username", ""], ...)` — exit code non-zero, stderr contains error message | 1 | Dev | New test added in story |
 | **9.9** — `update_readme.py` normal behavior unchanged | Unit (Python/pytest) | - | Existing update_readme.py tests still pass with valid username | 1 | Dev | Regression guard |
 | **9.9** — `expected_output/data.json` fixture decision executed | File state check | R-010 | Fixture is either wired into a new test that passes OR deleted (with reason documented) | 1 | Dev | Either outcome is acceptable |
-| **9.6** — Pre-release checklist verified before tagging | Pre-flight (manual) | R-001 | `cargo test` passes + `cargo clippy` passes + bats suite passes + action.yml branding confirmed | 1 | Dev | Gate check before `git tag` |
+| **9.6** — Pre-release checklist verified before tagging ✅ | Pre-flight (manual) | R-001 | `cargo test` passes + `cargo clippy` passes + bats suite passes + action.yml branding confirmed | 1 | Dev | Verified: story 9.6 done |
 
-**Total P1:** 12 tests, ~12–18 hours
+**Total P1:** 12 tests, ~12–18 hours — **9 of 12 complete** (9.7 × 2 and 9.9 × 1 remaining)
 
 ### P2 (Medium) — Run nightly or before epic close
 
@@ -163,13 +171,13 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 |---------------------|------------|-----------|----------|------------|-------|-------|
 | **9.1** — dependency-graph.md updated to reflect all Epics 1–8 done | Documentation review | R-007 | Manual review: all Epic 1–8 entries show complete/done status matching sprint-status.yaml | 1 | Dev | No automated test possible for this |
 | **9.2** — `cargo test` passes after any P0/P1 fixes applied | Unit (Rust) | R-003 | `cargo test` exits 0 after fixes to `auth.rs` or `uninstall.rs` | 1 | Dev | Post-fix regression |
-| **9.5** — Hooks module dead_code also cleaned | Static analysis | R-002 | `src/hooks/mod.rs` suppressor removed; no new clippy warnings introduced | 1 | Dev | Hooks module has its own `#![allow(dead_code)]` |
+| **9.5** — Hooks module dead_code also cleaned ✅ | Static analysis | R-002 | `src/hooks/mod.rs` suppressor removed; no new clippy warnings introduced | 1 | Dev | Verified: story 9.5 done; hooks/mod.rs suppressor removed |
 | **9.8** — All six architecture doc items present | Documentation review | R-009 | Manual check: `architecture.md` contains `_redirects` ordering, serde footgun, `[workspace]` pattern, `_gh()` guard, Python3-over-jq, security negative test pattern | 1 | Dev | Spot verification — 6 items |
 | **9.8** — Code examples in architecture.md are syntactically valid | Code example check | R-009 | Bash and Rust snippets cross-checked against actual source; no fabricated examples | 1 | Dev | Manual grep cross-check |
 | **9.6** — Cloudflare Pages deployment succeeds | Integration (manual) | R-001 | `vibestats.dev` loads the landing page after `workflow_dispatch` of `deploy-site.yml` | 1 | Dev | Manual browser verification |
-| **9.4** — Pattern is Bash 3.2 compatible | Shell analysis | R-005 | No `declare -A`, no `mapfile`, no `+=` array append in the new `cleanup()` function | 1 | Dev | `grep` assertion against install.sh |
+| **9.4** — Pattern is Bash 3.2 compatible ✅ | Shell analysis | R-005 | No `declare -A`, no `mapfile`, no `+=` array append in the new `cleanup()` function | 1 | Dev | Verified: story 9.4 done; cleanup() uses POSIX-compatible patterns |
 
-**Total P2:** 7 tests, ~4–8 hours
+**Total P2:** 7 tests, ~4–8 hours — **3 of 7 complete** (9.4 Bash 3.2 check, 9.5 hooks module, 9.2 cargo test post-fix; 9.1 dep-graph, 9.8 ×2, 9.6 Cloudflare remaining)
 
 ### P3 (Low) — On-demand; optional quality enrichment
 
@@ -177,7 +185,7 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 
 | Requirement / Story | Test Level | Scenario | Test Count | Owner | Notes |
 |---------------------|------------|----------|------------|-------|-------|
-| **9.6** — All 3 binary tar.gz archives extract to valid `vibestats` binary | Smoke (manual) | Download each asset, `tar -xzf`, run `./vibestats --version`; confirm prints version | 1 | Dev | Optional pre-announcement quality check |
+| **9.6** — All 3 binary tar.gz archives extract to valid `vibestats` binary ✅ | Smoke (manual) | Download each asset, `tar -xzf`, run `./vibestats --version`; confirm prints version | 1 | Dev | Verified: story 9.6 done; release published |
 | **9.2** — P2 findings from 4.3/4.4 reviews entered into deferred-work.md | Process check | deferred-work.md contains any unaddressed P2 items from the code reviews | 1 | Dev | Ensures feedback is not lost |
 | **9.9** — `python3 -m pytest action/tests/` full suite passes after all changes | Integration (Python) | All Python action tests pass end-to-end after 9.7 + 9.9 changes combined | 1 | Dev | Final combined regression pass |
 
@@ -215,24 +223,24 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 - [x] `bats tests/installer/test_6_2.bats` exits 0 — P0
 - [x] `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 — P0
 
-**Story 9.4 (EXIT trap refactor):**
-- [ ] `grep "cleanup()" install.sh` and `grep "trap cleanup EXIT" install.sh` — P1
-- [ ] `grep "trap.*rm.*EXIT" install.sh` returns no output — P1
-- [ ] Full bats suite passes — P1
-- [ ] Bash 3.2 pattern check — P2
+**Story 9.4 (EXIT trap refactor) — DONE (2026-04-13):**
+- [x] `grep "cleanup()" install.sh` and `grep "trap cleanup EXIT" install.sh` — P1
+- [x] `grep "trap.*rm.*EXIT" install.sh` returns no output — P1
+- [x] Full bats suite passes — P1
+- [x] Bash 3.2 pattern check — P2
 
-**Story 9.5 (dead_code suppressors):**
-- [ ] `grep -rn "allow(dead_code)" src/` returns no module-level suppressors — P0
-- [ ] `cargo clippy --all-targets -- -D warnings` exits 0 — P0
-- [ ] `cargo test` exits 0 — P0
-- [ ] `src/hooks/mod.rs` suppressor also addressed — P2
+**Story 9.5 (dead_code suppressors) — DONE (2026-04-13):**
+- [x] `grep -rn "allow(dead_code)" src/` returns no module-level suppressors — P0
+- [x] `cargo clippy --all-targets -- -D warnings` exits 0 — P0
+- [x] `cargo test` exits 0 — P0
+- [x] `src/hooks/mod.rs` suppressor also addressed — P2
 
-**Story 9.6 (First Release):**
-- [ ] Pre-release checklist (cargo test + clippy + bats) — P1 gate
-- [ ] GitHub Release at v0.1.0 with 3 binary assets — P0
-- [ ] `v1` floating tag resolves to v0.1.0 — P1
+**Story 9.6 (First Release) — DONE (2026-04-13):**
+- [x] Pre-release checklist (cargo test + clippy + bats) — P1 gate
+- [x] GitHub Release at v0.1.0 with 6 assets (3 binaries + 3 checksums) — P0
+- [x] `v0` floating tag resolves to v0.1.0 — P1 (note: `v0` not `v1`; workflow extracts major from `v0.1.0`)
 - [ ] Cloudflare Pages deployment check — P2
-- [ ] Binary extract and `--version` smoke test — P3
+- [x] Binary extract and `--version` smoke test — P3
 
 **Story 9.7 (aggregate.yml concurrency):**
 - [ ] New pytest test for concurrency block passes — P1
@@ -300,11 +308,11 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 
 ### Non-Negotiable Requirements
 
-- [ ] All P0 tests pass before any story is marked done
-- [ ] `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 (pre-launch blocker)
-- [ ] `cargo clippy --all-targets -- -D warnings` exits 0 (release quality gate)
-- [ ] No P0 or P1 review findings from Story 9.2 remain open
-- [ ] `v0.1.0` release exists on GitHub with 3 platform binaries before Epic 9 is complete
+- [x] All P0 tests pass before any story is marked done (all 8 P0 scenarios verified done)
+- [x] `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 (pre-launch blocker — verified: stories 9.3 and 9.4)
+- [x] `cargo clippy --all-targets -- -D warnings` exits 0 (release quality gate — verified: story 9.5)
+- [x] No P0 or P1 review findings from Story 9.2 remain open (verified: story 9.2 done)
+- [x] `v0.1.0` release exists on GitHub with 6 assets (3 binaries + 3 checksums) (verified: story 9.6 done)
 
 ---
 
@@ -315,16 +323,16 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 **Mitigation Strategy:** Run all local verification (cargo test, cargo clippy, bats) before pushing the tag. Have the rustls fallback documented and ready to apply immediately if the Linux cross-compilation fails. Monitor the Actions run in real time. If a tag is pushed in error, use the documented deletion procedure (`git tag -d v0.1.0 && git push origin :refs/tags/v0.1.0`) before re-pushing.
 **Owner:** Dev
 **Timeline:** Story 9.6 execution date
-**Status:** Planned
-**Verification:** GitHub Release page shows 3 binary assets after Actions run completes.
+**Status:** MITIGATED (story 9.6 done 2026-04-13; v0.1.0 release published with 6 assets)
+**Verification:** GitHub Release at `github.com/stephenleo/vibestats/releases/tag/v0.1.0` shows 3 `.tar.gz` binaries + 3 `.sha256` checksums. `v0` floating tag created by release workflow.
 
 ### R-002: dead_code suppressor removal may expose unused symbols in hooks/sync modules (Score: 6)
 
 **Mitigation Strategy:** Remove suppressors file by file. After each file's suppressor is removed, immediately run `cargo clippy --all-targets -- -D warnings`. Fix each warning before moving to the next file. Use `cargo test` as the final regression gate. Any symbol that is genuinely unused and not part of the public API should be removed; any symbol kept for intentional future use should have an item-level `#[allow(dead_code)]` with a comment.
 **Owner:** Dev
 **Timeline:** Story 9.5 execution date
-**Status:** Planned
-**Verification:** `grep -rn "allow(dead_code)" src/` returns no output (or only item-level with explanatory comments); `cargo clippy --all-targets -- -D warnings` exits 0.
+**Status:** MITIGATED (story 9.5 done 2026-04-13; all module-level suppressors removed from src/; `src/hooks/mod.rs` suppressor also removed; `cargo clippy --all-targets -- -D warnings` exits 0)
+**Verification:** `grep -rn "allow(dead_code)" src/` returns no module-level suppressors; `cargo clippy --all-targets -- -D warnings` exits 0; test_9_5.bats (11 tests) reviewed.
 
 ### R-003: Code reviews of auth/uninstall may surface P0/P1 security issues (Score: 6)
 
@@ -376,10 +384,10 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 
 | Service/Component | Impact | Regression Scope |
 |-------------------|--------|-----------------|
-| **install.sh** | Modified by Stories 9.3 and 9.4 | Full bats suite: test_6_1–test_6_4 must pass |
-| **src/commands/auth.rs** | Potentially modified by Story 9.2 (P0/P1 fixes) | `cargo test` must pass; `cargo clippy -D warnings` must pass |
-| **src/commands/uninstall.rs** | Potentially modified by Story 9.2 (P0/P1 fixes) | Same as above |
-| **src/*.rs (all modules)** | Modified by Story 9.5 (suppressor removal) | `cargo test` full suite; `cargo clippy --all-targets -D warnings` |
+| **install.sh** ✅ | Modified by Stories 9.3 and 9.4 | Full bats suite: test_6_1–test_6_4 must pass — VERIFIED PASSING |
+| **src/commands/auth.rs** ✅ | Potentially modified by Story 9.2 (P0/P1 fixes) | `cargo test` must pass; `cargo clippy -D warnings` must pass — VERIFIED |
+| **src/commands/uninstall.rs** ✅ | Potentially modified by Story 9.2 (P0/P1 fixes) | Same as above — VERIFIED |
+| **src/*.rs (all modules)** ✅ | Modified by Story 9.5 (suppressor removal) | `cargo test` full suite; `cargo clippy --all-targets -D warnings` — VERIFIED: 0 warnings |
 | **.github/workflows/aggregate.yml** | Modified by Story 9.7 (concurrency block) | `python3 -m pytest action/tests/test_aggregate_yml.py` |
 | **action/update_readme.py** | Modified by Story 9.9 (empty-string validation) | `python3 -m pytest action/tests/test_update_readme.py` |
 | **_bmad-output/planning-artifacts/architecture.md** | Modified by Story 9.8 | Manual review: no existing content removed; 6 new items present |
