@@ -1,11 +1,12 @@
 ---
 stepsCompleted: ['step-01-detect-mode', 'step-02-load-context', 'step-03-risk-and-testability', 'step-04-coverage-plan', 'step-05-generate-output']
 lastStep: 'step-05-generate-output'
-lastSaved: '2026-04-12'
+lastSaved: '2026-04-13'
 epic6Completed: '2026-04-12'
 epic7Completed: '2026-04-12'
 epic8Completed: '2026-04-12'
 epic9Completed: '2026-04-12'
+epic9Updated: '2026-04-13'
 ---
 
 # Test Design Progress — Epic 5: GitHub Actions Pipeline
@@ -307,3 +308,28 @@ Execution strategy: per-story verification tests run immediately after each stor
 - R-004 (BUS): test_6_2.bats root cause may be production regression in install.sh
 
 **Gate threshold:** P0 100% pass rate, R-001 to R-004 mitigations complete before Epic 9 stories marked done; bats suite 0 failures + cargo clippy 0 warnings + v0.1.0 release with 3 binary assets required for epic close.
+
+---
+
+# Test Design Re-Run — Epic 9: Post-Sprint Quality & Technical Debt (2026-04-13)
+
+**Mode:** Create (existing document updated in-place)
+**Trigger:** Sprint status confirms stories 9-1, 9-2, 9-3 are now `done`; test design refreshed to reflect current state.
+**Completed:** 2026-04-13
+
+## Status Update
+
+Stories completed since initial test design (2026-04-12):
+- **9.1 (artifact hygiene):** done — P1 checks verified; no `Status: review` in implementation-artifacts
+- **9.2 (code reviews):** done — R-003 mitigated; three-pass reviews of auth.rs and uninstall.rs complete
+- **9.3 (fix test_6_2.bats):** done — R-004 mitigated; bats suite passing; pre-launch blocker resolved
+
+Remaining work: stories 9.4–9.9 (backlog).
+Active high risks: R-001 (release.yml first run) and R-002 (dead_code suppressor removal).
+
+**Output file updated:** `_bmad-output/test-artifacts/test-design-epic-9.md`
+- Frontmatter `lastSaved` updated to 2026-04-13
+- Executive summary updated with current sprint state and remaining effort
+- Entry criteria checkboxes updated for done stories
+- Execution order checkboxes updated for done stories (9.1, 9.2, 9.3)
+- Mitigation plan statuses for R-003 and R-004 updated to MITIGATED

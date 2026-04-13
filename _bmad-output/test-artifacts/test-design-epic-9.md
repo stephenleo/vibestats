@@ -1,14 +1,15 @@
 ---
 stepsCompleted: ['step-01-detect-mode', 'step-02-load-context', 'step-03-risk-and-testability', 'step-04-coverage-plan', 'step-05-generate-output']
 lastStep: 'step-05-generate-output'
-lastSaved: '2026-04-12'
+lastSaved: '2026-04-13'
 ---
 
 # Test Design: Epic 9 — Post-Sprint Quality & Technical Debt
 
 **Date:** 2026-04-12
+**Last Updated:** 2026-04-13 (stories 9-1, 9-2, 9-3 verified done)
 **Author:** Leo
-**Status:** Draft
+**Status:** Active
 
 ---
 
@@ -18,19 +19,26 @@ lastSaved: '2026-04-12'
 
 Epic 9 is a quality-consolidation epic with no new product features. Its 9 stories address stale artifact state, missing code reviews, a pre-launch blocker in the bats test suite, two refactors (EXIT trap composability, dead_code suppressors), the first public release (v0.1.0), a YAML workflow fix, documentation updates, and two Python script hardening items. Because Epic 9 is a debt-clearing epic, the dominant test type is verification-and-regression: confirm the fix works, confirm nothing was broken.
 
+**Current Sprint State (as of 2026-04-13):**
+- Stories 9.1 (artifact hygiene), 9.2 (code reviews), 9.3 (fix test_6_2.bats): **done**
+- Stories 9.4–9.9: **backlog** (remaining work)
+- The pre-launch blocker (9.3) is resolved; release path (9.6) is now unblocked by 9.3
+
 **Risk Summary:**
 
 - Total risks identified: 10
 - High-priority risks (≥6): 4 (R-001, R-002, R-003, R-004)
+- R-003 (SEC) and R-004 (BUS) mitigated by stories 9.2 and 9.3 respectively (now done)
+- Active high risks: R-001 (release.yml first run), R-002 (dead_code removal)
 - Critical categories: OPS, TECH, SEC, BUS
 
 **Coverage Summary:**
 
-- P0 scenarios: 8 (~10–14 hours)
-- P1 scenarios: 12 (~12–18 hours)
+- P0 scenarios: 8 (~10–14 hours) — 3 verified done (stories 9.2, 9.3)
+- P1 scenarios: 12 (~12–18 hours) — 3 verified done (story 9.1)
 - P2 scenarios: 7 (~4–8 hours)
 - P3 scenarios: 3 (~1–3 hours)
-- **Total effort**: ~27–43 hours (~3–5 days)
+- **Remaining effort**: ~18–32 hours (~2–4 days, stories 9.4–9.9)
 
 ---
 
@@ -85,8 +93,9 @@ Epic 9 is a quality-consolidation epic with no new product features. Its 9 stori
 
 ## Entry Criteria
 
-- [ ] All Epic 1–8 stories are `done` in sprint-status.yaml (confirmed: yes, per sprint-status.yaml)
-- [ ] Epic 9 story files (9.1–9.9) exist in `_bmad-output/implementation-artifacts/`
+- [x] All Epic 1–8 stories are `done` in sprint-status.yaml (confirmed: yes, per sprint-status.yaml)
+- [x] Epic 9 story files (9.1–9.9) exist in `_bmad-output/implementation-artifacts/`
+- [x] Stories 9.1, 9.2, 9.3 completed and verified (2026-04-13)
 - [ ] `bats` is installed and available on the dev machine
 - [ ] `cargo` and `cargo clippy` are available
 - [ ] `python3 -m pytest` is available for Python test suite
@@ -190,21 +199,21 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 
 ### Per-Story Test Execution Sequence
 
-**Story 9.1 (Artifact Hygiene):**
-- [ ] After story complete: `grep -r "Status: review" _bmad-output/implementation-artifacts/` (expect no output) — P1
-- [ ] Verify `5-2-implement-generate-svg-py.md` exists with Dev Agent Record — P1
-- [ ] Spot-check `7-4-build-landing-page.md` and `8-2-implement-cloudflare-pages-deploy-workflow.md` for non-empty records — P1
-- [ ] Review dependency-graph.md manually — P2
+**Story 9.1 (Artifact Hygiene) — DONE (2026-04-13):**
+- [x] After story complete: `grep -r "Status: review" _bmad-output/implementation-artifacts/` (expect no output) — P1
+- [x] Verify `5-2-implement-generate-svg-py.md` exists with Dev Agent Record — P1
+- [x] Spot-check `7-4-build-landing-page.md` and `8-2-implement-cloudflare-pages-deploy-workflow.md` for non-empty records — P1
+- [x] Review dependency-graph.md manually — P2
 
-**Story 9.2 (Code Reviews):**
-- [ ] Perform three-pass review of `src/commands/auth.rs` — P0
-- [ ] Perform three-pass review of `src/commands/uninstall.rs` — P0 (special attention: JSON surgery)
-- [ ] `cargo test` after any P0/P1 fixes — P2
-- [ ] Any P2 findings documented in deferred-work.md — P3
+**Story 9.2 (Code Reviews) — DONE (2026-04-13):**
+- [x] Perform three-pass review of `src/commands/auth.rs` — P0
+- [x] Perform three-pass review of `src/commands/uninstall.rs` — P0 (special attention: JSON surgery)
+- [x] `cargo test` after any P0/P1 fixes — P2
+- [x] Any P2 findings documented in deferred-work.md — P3
 
-**Story 9.3 (Fix test_6_2.bats):**
-- [ ] `bats tests/installer/test_6_2.bats` exits 0 — P0
-- [ ] `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 — P0
+**Story 9.3 (Fix test_6_2.bats) — DONE (2026-04-13):**
+- [x] `bats tests/installer/test_6_2.bats` exits 0 — P0
+- [x] `bats tests/installer/test_6_1.bats test_6_2.bats test_6_3.bats test_6_4.bats` exits 0 — P0
 
 **Story 9.4 (EXIT trap refactor):**
 - [ ] `grep "cleanup()" install.sh` and `grep "trap cleanup EXIT" install.sh` — P1
@@ -322,7 +331,7 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 **Mitigation Strategy:** Execute three-pass adversarial review for both story files. For auth: focus on token write paths, `gh secret set` failure handling, `Config::save()` atomicity, and `set_permissions` call. For uninstall: focus on `remove_vibestats_hooks` JSON surgery on malformed input, file deletion race conditions, and empty hook array handling. Apply all P0/P1 fixes immediately; run `cargo test` and `cargo clippy` after fixes.
 **Owner:** Dev
 **Timeline:** Story 9.2 execution date
-**Status:** Planned
+**Status:** MITIGATED (story 9.2 done 2026-04-13)
 **Verification:** Both story files have `## Review Findings` sections; no open P0/P1 items; `cargo test` passes.
 
 ### R-004: test_6_2.bats root cause may be a production code regression (Score: 6)
@@ -330,7 +339,7 @@ Independent stories (9.7, 9.8, 9.9) can run in parallel once pre-requisite stori
 **Mitigation Strategy:** Follow the diagnostic protocol in Story 9.3: reproduce failures, identify whether isolation/mock/regression/environment issue, document root cause before applying fix. Fix the root cause — not the symptom. Never delete, skip, or xfail a test. Verify both isolated run (`bats test_6_2.bats`) and full regression suite pass before closing the story.
 **Owner:** Dev
 **Timeline:** Story 9.3 execution date (pre-launch blocker — must complete before Story 9.6)
-**Status:** Planned
+**Status:** MITIGATED (story 9.3 done 2026-04-13; bats suite passing)
 **Verification:** `bats tests/installer/test_6_2.bats` exits 0; full bats suite exits 0; root cause documented in Dev Agent Record.
 
 ---

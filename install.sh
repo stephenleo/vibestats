@@ -6,6 +6,22 @@ set -euo pipefail
 # Pattern: rustup-style installer — each logical step in its own function.
 
 # ---------------------------------------------------------------------------
+# Composable cleanup — accumulates cleanup tasks in global variables.
+# Registered once at the top level so future additions to install.sh
+# can set these variables without silently dropping earlier cleanup tasks.
+# Pattern is Bash 3.2 compatible (no declare -A, no arrays, no +=).
+# ---------------------------------------------------------------------------
+_CLEANUP_TMPDIR=""
+
+cleanup() {
+  if [ -n "$_CLEANUP_TMPDIR" ]; then
+    rm -rf "$_CLEANUP_TMPDIR"
+  fi
+}
+
+trap cleanup EXIT
+
+# ---------------------------------------------------------------------------
 # gh CLI wrapper — ALL gh calls go through this helper for testability.
 # Only define _gh if it hasn't already been defined (allows test overrides).
 # ---------------------------------------------------------------------------
@@ -134,7 +150,7 @@ download_and_install_binary() {
   CHECKSUM="${ARCHIVE}.sha256"
 
   TMPDIR_WORK="$(mktemp -d)"
-  trap 'rm -rf "$TMPDIR_WORK"' EXIT
+  _CLEANUP_TMPDIR="$TMPDIR_WORK"
 
   echo "Downloading ${ARCHIVE}..."
   curl -fsSL "${BASE_URL}/${ARCHIVE}" -o "${TMPDIR_WORK}/${ARCHIVE}"
