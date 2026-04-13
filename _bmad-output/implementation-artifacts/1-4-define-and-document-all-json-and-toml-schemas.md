@@ -1,6 +1,6 @@
 # Story 1.4: Define and Document All JSON and TOML Schemas
 
-Status: review
+Status: done
 
 <!-- GH Issue: #12 | Epic: #1 | PR must include: Closes #12 -->
 

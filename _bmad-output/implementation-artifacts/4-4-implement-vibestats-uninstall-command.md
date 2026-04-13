@@ -1,6 +1,6 @@
 # Story 4.4: Implement vibestats uninstall Command
 
-Status: review
+Status: done
 
 <!-- GH Issue: #25 | Epic: #4 | PR must include: Closes #25 -->
 

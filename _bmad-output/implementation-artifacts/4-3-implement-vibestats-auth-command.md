@@ -1,6 +1,6 @@
 # Story 4.3: Implement vibestats auth Command
 
-Status: review
+Status: done
 
 <!-- GH Issue: #24 | Epic: #4 | PR must include: Closes #24 -->
 

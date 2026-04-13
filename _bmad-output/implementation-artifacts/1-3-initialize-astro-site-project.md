@@ -1,6 +1,6 @@
 # Story 1.3: Initialize Astro Site Project
 
-Status: review
+Status: done
 
 <!-- GH Issue: #11 | Epic: #1 | PR must include: Closes #11 -->
 

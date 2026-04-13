@@ -1,6 +1,6 @@
 # Story 7.4: Build landing page
 
-Status: ready-for-dev
+Status: done
 
 <!-- GH Issue: #38 | Epic: #7 | PR must include: Closes #38 -->
 
@@ -165,6 +165,36 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+No debug log — recovered from git history.
+
 ### Completion Notes List
 
+Implemented landing page at `site/src/pages/index.astro`:
+- Hero section with tagline "Track your Claude Code sessions"
+- Install command section with exact curl command per AC #2: `curl -sSf https://vibestats.dev/install.sh | bash`
+- Copy-to-clipboard button using `navigator.clipboard.writeText()` via inline `<script>` tag
+- Example heatmap SVG embedded via `<img src="/heatmap-example.svg" />`
+- Three-bullet "why vibestats" section: Zero effort, Cross-machine, GitHub profile
+- Minimal scoped CSS styles, no external frameworks
+- `npm run build` and `npm run check` both pass with 0 errors
+
+Code review fixes applied (commit 23c46ae):
+- Read install command from DOM (#install-cmd) instead of hardcoded literal
+- Await `navigator.clipboard.writeText()` and surface failures as "Copy failed"
+- Guard script with instanceof/null checks
+- Added `type="button"` and `aria-live="polite"` to copy button
+- Added `width`, `height`, and `loading="lazy"` to heatmap `<img>`
+
+All 3 ACs verified. Build gate passes. Test review score: 96/100 (A).
+
+*Note: Dev Agent Record recovered from git history (commits 4d3d5d6, 23c46ae, merged in PR #70 on 2026-04-12).*
+
 ### File List
+
+- `site/src/pages/index.astro` (modified — landing page implementation)
+- `site/public/heatmap-example.svg` (created — copied from action/tests/fixtures/expected_output/heatmap.svg)
+
+## Change Log
+
+- 2026-04-12: Story 7.4 implemented and merged via PR #70. Landing page with hero, install command, heatmap SVG, and three-bullet "why" section. Code review hardening applied. (Recovered from git history.)
+- 2026-04-13: Dev Agent Record filled retroactively as part of story 9.1 artifact hygiene work.

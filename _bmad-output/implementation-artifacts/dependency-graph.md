@@ -1,5 +1,5 @@
 # Story Dependency Graph
-_Last updated: 2026-04-12T10:20:00Z_
+_Last updated: 2026-04-13T00:00:00Z (story 9.1 artifact hygiene — all Epics 1–8 complete)_
 
 ## Stories
 
@@ -30,7 +30,7 @@ _Last updated: 2026-04-12T10:20:00Z_
 | 6.1 | 6 | Implement dependency detection and gh authentication | done | #31 | #76 | merged | epic 8 complete | ✅ Yes (done) |
 | 6.2 | 6 | Implement first-install path | done | #32 | #77 | merged | 6.1 | ✅ Yes (done) |
 | 6.3 | 6 | Implement multi-machine install path | done | #33 | #78 | merged | 6.1 | ✅ Yes (done) |
-| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | backlog | #34 | — | — | 6.1, 6.2, 6.3 | ✅ Yes |
+| 6.4 | 6 | Implement hook configuration, README markers, and backfill trigger | done | #34 | #79 | merged | 6.1, 6.2, 6.3 | ✅ Yes (done) |
 | 7.1 | 7 | Build base layouts and shared Astro components | done | #35 | #69 | merged | epic 1 complete | ✅ Yes (done) |
 | 7.2 | 7 | Build per-user dashboard (u/index.astro + cal-heatmap) | done | #36 | #71 | merged | 7.1 | ✅ Yes (done) |
 | 7.3 | 7 | Build documentation pages | done | #37 | #72 | merged | 7.1 | ✅ Yes (done) |
@@ -113,7 +113,8 @@ _Last updated: 2026-04-12T10:20:00Z_
 - **Story 6.1 done** — PR #76 merged 2026-04-12T09:28:17Z. Issue #31 closed. Remote branch deleted. Worktree already cleaned up.
 - **Story 6.2 done** — PR #77 merged 2026-04-12T10:09:15Z. Issue #32 closed. Worktree and remote branch cleaned up.
 - **Story 6.3 done** — PR #78 merged 2026-04-12T10:12:42Z. Issue #33 closed. Worktree and remote branch cleaned up.
-- **Story 6.4 now unblocked** — 6.1, 6.2, and 6.3 are all done/merged; 6.4 is Ready to Work.
-- **Current bottleneck:** Only Epic 6 story 6.4 remains. Story 6.4 is the last story before epic-6 completes.
+- **Story 6.4 done** — PR #79 merged 2026-04-13. Hook configuration, README markers, and backfill trigger implemented. Issue #34 closed.
+- **Epic 6 complete** — All stories (6.1–6.4) done.
+- **All Epics 1–8 complete** — The sprint is fully done. Epic 9 (Post-Sprint Quality & Technical Debt) is in progress.
 - **GitHub auth:** `gh auth status` confirmed working (keyring). All PR/issue lookups use `gh` CLI directly.
 - **`bad` label:** Exists in repo. All story issues (#9–#41) and epic issues (#1–#8) already created.

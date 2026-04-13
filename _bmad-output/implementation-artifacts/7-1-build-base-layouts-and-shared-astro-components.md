@@ -1,6 +1,6 @@
 # Story 7.1: Build base layouts and shared Astro components
 
-Status: review
+Status: done
 
 <!-- GH Issue: #35 | Epic: #7 | PR must include: Closes #35 -->
 

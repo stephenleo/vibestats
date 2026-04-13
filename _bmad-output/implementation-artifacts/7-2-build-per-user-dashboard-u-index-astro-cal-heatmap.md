@@ -1,6 +1,6 @@
 # Story 7.2: Build per-user dashboard (u/index.astro + cal-heatmap)
 
-Status: review
+Status: done
 
 <!-- GH Issue: #36 | Epic: #7 | PR must include: Closes #36 -->
 

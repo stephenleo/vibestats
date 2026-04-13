@@ -1,6 +1,6 @@
 # Story 3.2: Implement Stop Hook Integration
 
-Status: review
+Status: done
 
 <!-- GH Issue: #19 | Epic: #3 | PR must include: Closes #19 -->
 
