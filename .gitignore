@@ -31,3 +31,4 @@ site/.astro/
 _bmad/
 .claude/
 .agents/
+.playwright-mcp/

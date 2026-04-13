@@ -106,7 +106,6 @@ import Base from '../layouts/Base.astro';
       .filter(([date]) => date.startsWith(selectedYear))
       .map(([date, v]) => ({ date, value: v.sessions }));
 
-    const maxSessions = calData.reduce((m, d) => Math.max(m, d.value), 1);
 
     const now = new Date();
     const yearNum = parseInt(selectedYear, 10);
@@ -144,9 +143,9 @@ import Base from '../layouts/Base.astro';
         },
         scale: {
           color: {
-            type: 'quantize',
+            type: 'threshold',
             range: ['#ebedf0', '#fef3e8', '#fed7aa', '#fb923c', '#f97316'],
-            domain: [0, maxSessions],
+            domain: [1, 10, 50, 100],
           },
         },
       },
