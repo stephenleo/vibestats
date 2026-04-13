@@ -24,7 +24,7 @@ def _run(args: list[str], readme_content: str, tmp_path: Path) -> subprocess.Com
     readme = tmp_path / "README.md"
     readme.write_text(readme_content, encoding="utf-8")
     cmd = [sys.executable, str(UPDATE_README)] + args + ["--readme-path", str(readme)]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
 
 README_WITH_MARKERS = """\
@@ -147,7 +147,7 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
     mtime_before = readme.stat().st_mtime
 
     cmd = [sys.executable, str(UPDATE_README), "--username", USERNAME, "--readme-path", str(readme)]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
     assert result.returncode == 0, (
         f"Expected exit 0 on no-op run, got {result.returncode}.\n"

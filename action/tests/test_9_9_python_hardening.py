@@ -1,11 +1,9 @@
-"""ATDD failing tests for Story 9.9: Python script hardening.
+"""ATDD tests for Story 9.9: Python script hardening.
 
 Story 9.9: update_readme.py and aggregate.py improvements
 GH Issue: #89 | Epic: #80
 
-TDD RED PHASE — all tests are skipped with @pytest.mark.skip.
-Remove @pytest.mark.skip after the feature is implemented to run
-the green phase and verify correctness.
+GREEN PHASE — implementation complete, all tests pass.
 
 Acceptance Criteria:
   AC1: `update_readme.py --username ""` exits non-zero with a clear error message to stderr.
@@ -50,12 +48,11 @@ def _run(args: list[str], readme_content: str, tmp_path: Path) -> subprocess.Com
     readme = tmp_path / "README.md"
     readme.write_text(readme_content, encoding="utf-8")
     cmd = [sys.executable, str(UPDATE_README)] + args + ["--readme-path", str(readme)]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
 
 # ---------------------------------------------------------------------------
 # TC-6 (P1): empty --username exits non-zero with clear stderr message (AC1, AC2)
-# THIS TEST WILL FAIL — validation not yet implemented in update_readme.py
 # ---------------------------------------------------------------------------
 
 
@@ -64,13 +61,6 @@ def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
     and write a clear error message to stderr.
 
     Expected: returncode != 0; stderr contains 'empty' or '--username'
-    Actual (before fix): update_readme.py proceeds silently with empty username,
-    writing malformed URLs to the README.
-
-    Implementation hint (action/update_readme.py, main() after args = parse_args()):
-        if not args.username or not args.username.strip():
-            print("Error: --username cannot be empty", file=sys.stderr)
-            sys.exit(1)
     """
     result = _run(["--username", ""], README_WITH_MARKERS, tmp_path)
 
@@ -89,7 +79,6 @@ def test_tc6_empty_username_exits_nonzero(tmp_path: Path) -> None:
 
 # ---------------------------------------------------------------------------
 # TC-7 (P2): whitespace-only --username exits non-zero (AC1 edge case)
-# THIS TEST WILL FAIL — validation not yet implemented
 # ---------------------------------------------------------------------------
 
 
@@ -115,7 +104,6 @@ def test_tc7_whitespace_only_username_exits_nonzero(tmp_path: Path) -> None:
 
 # ---------------------------------------------------------------------------
 # 9.9-UNIT-003 (P1): dead fixture expected_output/data.json must be absent (AC3)
-# THIS TEST WILL FAIL — fixture not yet deleted
 # ---------------------------------------------------------------------------
 
 
@@ -140,7 +128,6 @@ def test_expected_output_fixture_removed() -> None:
 
 # ---------------------------------------------------------------------------
 # 9.9-UNIT-004 (P1): expected_output directory absent after fixture removal (AC3)
-# THIS TEST WILL FAIL — directory not yet removed
 # ---------------------------------------------------------------------------
 
 
@@ -167,7 +154,6 @@ def test_expected_output_directory_removed() -> None:
 
 # ---------------------------------------------------------------------------
 # 9.9-UNIT-005 (P3): full Python test suite passes — regression guard (AC4)
-# THIS TEST WILL FAIL until all previous ACs are implemented
 # ---------------------------------------------------------------------------
 
 
@@ -176,8 +162,8 @@ def test_full_pytest_suite_passes() -> None:
     must pass with 0 failures after all story 9.9 changes are applied.
 
     This meta-test verifies the suite as a whole — it passes once:
-    - TC-6 (empty username guard) is implemented and TC-6/TC-7 @skip removed
-    - data.json fixture is deleted (tests above @skip removed)
+    - TC-6 (empty username guard) is implemented
+    - data.json fixture is deleted
     - No regressions in existing TC-1 through TC-5 or aggregate tests
     """
     action_dir = UPDATE_README.parent
