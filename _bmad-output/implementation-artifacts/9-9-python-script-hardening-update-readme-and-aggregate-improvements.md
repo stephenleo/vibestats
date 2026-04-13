@@ -1,6 +1,6 @@
 # Story 9.9: Python script hardening — update_readme.py and aggregate.py improvements
 
-Status: review
+Status: done
 
 <!-- GH Issue: #89 | Epic: #80 | PR must include: Closes #89 -->
 
@@ -174,6 +174,11 @@ None.
 - `action/tests/test_9_9_python_hardening.py` (modified — removed @pytest.mark.skip decorators, fixed directory and meta-test logic)
 - `action/tests/fixtures/expected_output/data.json` (deleted — dead fixture, rationale in Completion Notes)
 
+### Review Findings
+
+- [x] [Review][Patch] Inconsistent error message casing: new guard uses `"Error:"` while all other error paths use `"ERROR:"` [action/update_readme.py:40] — fixed to `"ERROR:"` for consistency
+
 ## Change Log
 
 - 2026-04-13: Story 9.9 implemented — added empty-username validation to `update_readme.py`, added TC-6/TC-7 tests, removed dead `data.json` fixture, all 147 tests pass.
+- 2026-04-13: Code review complete — 1 patch (error casing consistency) fixed, 0 deferred, 0 dismissed. Story status → done.
