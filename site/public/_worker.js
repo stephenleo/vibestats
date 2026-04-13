@@ -22,6 +22,7 @@ export default {
       const headers = new Headers(response.headers);
       headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
       headers.delete('CDN-Cache-Control');
+      headers.set('X-Vibestats-Worker', 'v3');
       return new Response(response.body, {
         status: 200,
         headers,
