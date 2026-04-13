@@ -42,7 +42,7 @@ import Base from '../layouts/Base.astro';
 
       <!-- Activity Heatmap (full width) -->
       <div class="card full-width">
-        <h3 class="card-title">Activity Heatmap</h3>
+        <h3 class="card-title">Activity Heatmap <span class="info-icon" role="img" aria-label="GitHub-style heatmap of daily activity. Use the tabs to switch between metrics. Shows the selected year across all machines.">i<span class="info-tooltip">GitHub-style heatmap of daily activity. Use the tabs to switch between metrics. Shows the selected year across all machines.</span></span></h3>
         <div id="heatmap-tabs" class="tabs">
           <button class="tab active" data-metric="sessions">Sessions</button>
           <button class="tab" data-metric="tokens">Tokens</button>
@@ -60,12 +60,12 @@ import Base from '../layouts/Base.astro';
       <!-- Token Trend + Model Mix -->
       <div class="grid-2">
         <div class="card">
-          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span></h3>
+          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span> <span class="info-icon" role="img" aria-label="Daily input + output tokens over the last 30 days. Darker bars = more output tokens relative to input.">i<span class="info-tooltip">Daily input + output tokens over the last 30 days, all machines. Darker bars = more output tokens relative to input.</span></span></h3>
           <div id="token-chart" class="chart-area"></div>
           <div id="token-chart-labels" class="chart-labels"></div>
         </div>
         <div class="card">
-          <h3 class="card-title">Model Usage Breakdown</h3>
+          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of output tokens by Claude model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by Claude model, all time across all machines.</span></span></h3>
           <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
@@ -73,7 +73,7 @@ import Base from '../layouts/Base.astro';
       <!-- Sparkline Trends + Streak -->
       <div class="grid-2">
         <div class="card">
-          <h3 class="card-title">Weekly Trends</h3>
+          <h3 class="card-title">Weekly Trends <span class="info-icon" role="img" aria-label="Sparklines showing the last 12 weeks. Each bar is one week's total. The value on the right is the most recent week.">i<span class="info-tooltip">Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.</span></span></h3>
           <div id="sparklines"></div>
         </div>
         <div class="card">
@@ -86,11 +86,11 @@ import Base from '../layouts/Base.astro';
       <!-- Recent Activity + Efficiency -->
       <div class="grid-2">
         <div class="card">
-          <h3 class="card-title">Recent Active Days</h3>
+          <h3 class="card-title">Recent Active Days <span class="info-icon" role="img" aria-label="The 5 most recent days with at least one session, across all machines.">i<span class="info-tooltip">The 5 most recent days with at least one session, across all machines.</span></span></h3>
           <div id="recent-days" class="timeline"></div>
         </div>
         <div class="card">
-          <h3 class="card-title">Efficiency Metrics</h3>
+          <h3 class="card-title">Efficiency Metrics <span class="info-icon" role="img" aria-label="Derived ratios over 12 weeks. Tokens/min = throughput, cache hit % = prompt cache reuse, tools/session = tool invocations per session.">i<span class="info-tooltip">Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse. Tools/session = tool invocations per session.</span></span></h3>
           <div id="efficiency"></div>
         </div>
       </div>
@@ -269,26 +269,39 @@ import Base from '../layouts/Base.astro';
 
     const avgMin = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
 
-    const kpis: Array<{ label: string; value: string; delta?: string; up?: boolean }> = [
-      { label: 'Total Tokens', value: fmtTokens(totalTokens), delta: dTokens.text, up: dTokens.up },
-      { label: 'Sessions', value: totalSessions.toLocaleString(), delta: dSessions.text, up: dSessions.up },
-      { label: 'Active Time', value: fmtMinutes(totalMinutes), delta: dMinutes.text, up: dMinutes.up },
-      { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—' },
-      { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—' },
-      { label: 'Tool Uses', value: fmtTokens(totalToolUses) },
+    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean }> = [
+      { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
+      { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total Claude Code sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
+      { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
+      { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
+      { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—', info: 'Average session duration: total active time / total sessions.' },
+      { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
     ];
 
     clearEl(kpiRowEl);
     for (const k of kpis) {
       const card = document.createElement('div');
       card.className = 'kpi';
+      const header = document.createElement('div');
+      header.className = 'kpi-header';
       const label = document.createElement('span');
       label.className = 'kpi-label';
       label.textContent = k.label;
+      const infoBtn = document.createElement('span');
+      infoBtn.className = 'info-icon';
+      infoBtn.textContent = 'i';
+      infoBtn.setAttribute('role', 'img');
+      infoBtn.setAttribute('aria-label', k.info);
+      const tooltip = document.createElement('span');
+      tooltip.className = 'info-tooltip';
+      tooltip.textContent = k.info;
+      infoBtn.appendChild(tooltip);
+      header.appendChild(label);
+      header.appendChild(infoBtn);
       const value = document.createElement('span');
       value.className = 'kpi-value';
       value.textContent = k.value;
-      card.appendChild(label);
+      card.appendChild(header);
       card.appendChild(value);
       if (k.delta && k.delta !== '—') {
         const delta = document.createElement('span');
@@ -939,6 +952,70 @@ import Base from '../layouts/Base.astro';
     font-weight: 600;
   }
 
+  /* ── Info tooltips ───────────────────────────────────────────────── */
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--color-text-muted);
+    font-size: 0.55rem;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-text-muted);
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+  .info-icon:hover {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+  }
+  .info-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-text, #111827);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    width: max-content;
+    max-width: 240px;
+    z-index: 100;
+    pointer-events: none;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .dark .info-tooltip {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .info-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--color-text, #111827);
+  }
+  .dark .info-tooltip::after {
+    border-top-color: #e2e8f0;
+  }
+  .info-icon:hover .info-tooltip {
+    display: block;
+  }
+
   /* ── KPI Row ────────────────────────────────────────────────────── */
   .kpi-row {
     display: grid;
@@ -954,6 +1031,11 @@ import Base from '../layouts/Base.astro';
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+  }
+  .kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
   .kpi-label {
     font-size: 0.65rem;
