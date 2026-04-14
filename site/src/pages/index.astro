@@ -84,6 +84,20 @@ import 'cal-heatmap/cal-heatmap.css';
       const isDark = () => document.documentElement.classList.contains('dark');
       const emptyColor = () => isDark() ? '#2a3346' : '#ebedf0';
 
+      // Scroll the horizontally-overflowing demo card to the right edge so the
+      // most recent months are visible by default on narrow (mobile) viewports.
+      // On wider viewports where the heatmap fits, the browser clamps
+      // scrollLeft to 0, so this is a harmless no-op.
+      const demoCardEl = document.querySelector<HTMLElement>('.demo-card');
+      function scrollDemoToEnd(): void {
+        if (!demoCardEl) return;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            demoCardEl.scrollLeft = demoCardEl.scrollWidth;
+          });
+        });
+      }
+
       const cal = new CalHeatmap();
       cal.paint(
         {
@@ -122,7 +136,13 @@ import 'cal-heatmap/cal-heatmap.css';
             },
           ],
         ]
-      );
+      ).then(scrollDemoToEnd);
+
+      let demoResizeTimer = 0;
+      window.addEventListener('resize', () => {
+        window.clearTimeout(demoResizeTimer);
+        demoResizeTimer = window.setTimeout(scrollDemoToEnd, 100);
+      });
 
       // Re-render heatmap on theme toggle so empty cell colors match
       document.getElementById('theme-toggle')?.addEventListener('click', () => {
@@ -139,7 +159,7 @@ import 'cal-heatmap/cal-heatmap.css';
               scale: { color: { type: 'threshold', range: [emptyColor(), '#fed7aa', '#fb923c', '#f97316', '#c2410c'], domain: [1, 3, 7, 12] } },
             },
             [[Tooltip, { text: (_t: number, v: number | null, d: { format: (f: string) => string }) => { const l = d.format('MMM D, YYYY'); return v ? `${v} session${v === 1 ? '' : 's'} · ${l}` : `No sessions · ${l}`; } }]]
-          );
+          ).then(scrollDemoToEnd);
         });
       });
     </script>

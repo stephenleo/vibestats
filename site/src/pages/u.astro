@@ -322,6 +322,19 @@ import Base from '../layouts/Base.astro';
   }
 
   // ── Heatmap ────────────────────────────────────────────────────────
+  const heatmapWrapperEl = document.querySelector<HTMLElement>('.heatmap-wrapper');
+
+  function scrollHeatmapToEnd(): void {
+    if (!heatmapWrapperEl) return;
+    // Double rAF: cal-heatmap's SVG layout completes across the next
+    // paint, so we wait two frames to read a stable scrollWidth.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        heatmapWrapperEl.scrollLeft = heatmapWrapperEl.scrollWidth;
+      });
+    });
+  }
+
   async function renderHeatmap(selectedYear: string, metric: string): Promise<void> {
     if (!vibestatsData) return;
 
@@ -388,7 +401,15 @@ import Base from '../layouts/Base.astro';
       ]
     );
     calInstance = cal;
+    scrollHeatmapToEnd();
   }
+
+  // ── Re-scroll heatmap to most-recent on viewport changes ───────────
+  let heatmapResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(heatmapResizeTimer);
+    heatmapResizeTimer = window.setTimeout(scrollHeatmapToEnd, 100);
+  });
 
   // ── Heatmap tabs ───────────────────────────────────────────────────
   heatmapTabsEl.addEventListener('click', (e) => {
