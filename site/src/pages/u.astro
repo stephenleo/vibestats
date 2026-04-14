@@ -322,15 +322,19 @@ import Base from '../layouts/Base.astro';
   }
 
   // ── Heatmap ────────────────────────────────────────────────────────
-  const heatmapWrapperEl = document.querySelector<HTMLElement>('.heatmap-wrapper');
+  // #cal-heatmap is the actual overflow container (it has `overflow-x: auto`
+  // in the stylesheet), so the cal-heatmap SVG scrolls inside it — not
+  // inside .heatmap-wrapper. Scroll that element to show the most recent
+  // months on narrow viewports.
+  const calHeatmapEl = document.getElementById('cal-heatmap');
 
   function scrollHeatmapToEnd(): void {
-    if (!heatmapWrapperEl) return;
+    if (!calHeatmapEl) return;
     // Double rAF: cal-heatmap's SVG layout completes across the next
     // paint, so we wait two frames to read a stable scrollWidth.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        heatmapWrapperEl.scrollLeft = heatmapWrapperEl.scrollWidth;
+        calHeatmapEl.scrollLeft = calHeatmapEl.scrollWidth;
       });
     });
   }
