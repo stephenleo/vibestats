@@ -32,3 +32,5 @@ _bmad/
 .claude/
 .agents/
 .playwright-mcp/
+package-lock.json
+skills-lock.json

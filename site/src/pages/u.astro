@@ -500,9 +500,37 @@ import Base from '../layouts/Base.astro';
       return;
     }
 
-    const colors = ['var(--color-brand)', 'var(--c-blue)', 'var(--c-purple)', 'var(--c-cyan)', 'var(--color-text-muted)'];
-    const top: Array<[string, number]> = sorted.slice(0, 4);
-    const otherTotal = sorted.slice(4).reduce((s, [, v]) => s + v, 0);
+    const colors = [
+      'var(--color-brand)',
+      'var(--c-blue)',
+      'var(--c-purple)',
+      'var(--c-cyan)',
+      'var(--c-green)',
+      'var(--c-yellow)',
+      '#ef4444',
+      'var(--color-text-muted)',
+    ];
+    const isCodexModel = (model: string): boolean => /^(gpt-|o\d|codex)/i.test(model);
+    const formatModelLabel = (model: string): string =>
+      model === 'Other'
+        ? model
+        : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
+
+    const selected = new Map<string, number>();
+    for (const [model, count] of sorted.slice(0, 4)) {
+      selected.set(model, count);
+    }
+    for (const [model, count] of sorted.filter(([model]) => isCodexModel(model)).slice(0, 3)) {
+      selected.set(model, count);
+    }
+
+    const top: Array<[string, number]> = Array.from(selected.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, colors.length - 1);
+    const visibleModels = new Set(top.map(([model]) => model));
+    const otherTotal = sorted
+      .filter(([model]) => !visibleModels.has(model))
+      .reduce((s, [, v]) => s + v, 0);
     if (otherTotal > 0) top.push(['Other', otherTotal]);
 
     const gradientParts: string[] = [];
@@ -528,7 +556,7 @@ import Base from '../layouts/Base.astro';
       dot.className = 'legend-dot';
       dot.style.background = s.color;
       const label = document.createElement('span');
-      label.textContent = `${s.name.replace(/^claude-/, '').replace(/-(\d)/, ' $1')} — ${s.pct}%`;
+      label.textContent = `${formatModelLabel(s.name)} — ${s.pct}%`;
       item.appendChild(dot);
       item.appendChild(label);
       legend.appendChild(item);
