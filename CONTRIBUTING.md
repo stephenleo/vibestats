@@ -49,20 +49,23 @@ This project follows semantic versioning: `vMAJOR.MINOR.PATCH` tags (e.g., `v1.0
 
 ### Floating Major Tag Pattern
 
-The `v1` major-version tag is kept in sync with the latest `v1.x.x` release. Users pinned to
-`uses: stephenleo/vibestats@v1` automatically receive patch and minor updates within the `v1` line.
+The current major-version tag is kept in sync with the latest release in that major line. Users pinned to
+`uses: stephenleo/vibestats@v2` automatically receive patch and minor updates within the `v2` line.
 
-When `v2` is released, `v1` is **not** deleted or force-updated — users pinned to `@v1` continue
-to receive the last `v1.x.x` release unchanged. This is the same versioning contract used by
+When a new major is released, older major tags are **not** deleted or force-updated — users pinned to
+`@v1` continue to receive the last `v1.x.x` release unchanged. This is the same versioning contract used by
 `actions/checkout@v4`, `actions/setup-python@v5`, and other community actions.
 
 ### Maintainer Checklist (After Every Release)
 
-After publishing a new `v1.x.x` release, maintainers must update the floating major tag:
+Before publishing, ensure the Cargo package version matches the release tag without the leading `v`
+(for example, `version = "2.0.0"` for tag `v2.0.0`). The release workflow enforces this.
+
+After publishing a new `v2.x.x` release, maintainers must update the floating major tag:
 
 ```bash
-git tag -f v1 v1.x.x          # replace v1.x.x with the new version
-git push --force origin v1
+git tag -f v2 v2.x.x          # replace v2.x.x with the new version
+git push --force origin v2
 ```
 
 The GitHub Actions Marketplace listing always references the latest stable major tag. Never force-update

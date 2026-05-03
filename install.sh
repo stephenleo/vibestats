@@ -248,7 +248,7 @@ jobs:
   aggregate:
     runs-on: ubuntu-latest
     steps:
-      - uses: stephenleo/vibestats@v1
+      - uses: stephenleo/vibestats@v2
         with:
           token: ${{ secrets.VIBESTATS_TOKEN }}
           profile-repo: ${{ github.repository_owner }}/${{ github.repository_owner }}

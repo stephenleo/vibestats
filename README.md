@@ -12,7 +12,7 @@ Track your Claude Code and Codex session activity and display a GitHub contribut
 vibestats has three components that work together:
 
 1. **CLI** — installed locally, hooks into Claude Code and Codex to record session activity into a private `vibestats-data` GitHub repo after each session.
-2. **GitHub Action** (`stephenleo/vibestats@v1`) — runs daily in your `vibestats-data` repo, aggregates the recorded sessions, and pushes an SVG heatmap to your GitHub profile repo.
+2. **GitHub Action** (`stephenleo/vibestats@v2`) — runs daily in your `vibestats-data` repo, aggregates the recorded sessions, and pushes an SVG heatmap to your GitHub profile repo.
 3. **Profile heatmap** — the SVG is embedded in your profile `README.md` between marker comments, updated automatically.
 
 ## Quickstart
@@ -55,7 +55,7 @@ Commands:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, and the release process (including how the floating `v1` tag works).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, and the release process (including how floating major tags work).
 
 ## License
 
