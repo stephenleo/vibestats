@@ -7,6 +7,15 @@ fn settings_path() -> Option<std::path::PathBuf> {
     })
 }
 
+/// Returns the path to ~/.codex/hooks.json, or None if HOME is not set.
+fn codex_hooks_path() -> Option<std::path::PathBuf> {
+    std::env::var("HOME").ok().map(|h| {
+        std::path::PathBuf::from(h)
+            .join(".codex")
+            .join("hooks.json")
+    })
+}
+
 /// Returns the path to the installed vibestats binary at ~/.local/bin/vibestats,
 /// or None if HOME is not set.
 fn binary_path() -> Option<std::path::PathBuf> {
@@ -125,9 +134,7 @@ pub fn run() {
         }
         Some(path) => {
             if !path.exists() {
-                println!(
-                    "vibestats: no vibestats hooks found in settings.json (already clean)"
-                );
+                println!("vibestats: no vibestats hooks found in settings.json (already clean)");
             } else {
                 match std::fs::read_to_string(&path) {
                     Err(e) => {
@@ -152,14 +159,13 @@ pub fn run() {
                                         // rename, so a crash or disk-full mid-write can
                                         // never leave settings.json truncated/corrupt.
                                         let mut tmp_path = path.clone();
-                                        let mut tmp_name = path
-                                            .file_name()
-                                            .unwrap_or_default()
-                                            .to_os_string();
+                                        let mut tmp_name =
+                                            path.file_name().unwrap_or_default().to_os_string();
                                         tmp_name.push(".tmp");
                                         tmp_path.set_file_name(tmp_name);
-                                        let write_result = std::fs::write(&tmp_path, updated + "\n")
-                                            .and_then(|()| std::fs::rename(&tmp_path, &path));
+                                        let write_result =
+                                            std::fs::write(&tmp_path, updated + "\n")
+                                                .and_then(|()| std::fs::rename(&tmp_path, &path));
                                         match write_result {
                                             Err(e) => {
                                                 // Clean up the temp file on failure (best effort).
@@ -184,6 +190,57 @@ pub fn run() {
                         }
                     },
                 }
+            }
+        }
+    }
+
+    // Step 1b: Remove vibestats hooks from ~/.codex/hooks.json
+    if let Some(path) = codex_hooks_path() {
+        if path.exists() {
+            match std::fs::read_to_string(&path) {
+                Err(e) => {
+                    println!("vibestats: could not read ~/.codex/hooks.json: {e}");
+                    println!("Codex hook removal skipped.");
+                }
+                Ok(contents) => match serde_json::from_str::<serde_json::Value>(&contents) {
+                    Err(e) => {
+                        println!("vibestats: could not parse ~/.codex/hooks.json: {e}");
+                        println!("Codex hook removal skipped.");
+                    }
+                    Ok(mut settings) => {
+                        if remove_vibestats_hooks(&mut settings) {
+                            match serde_json::to_string_pretty(&settings) {
+                                Err(e) => {
+                                    println!(
+                                        "vibestats: could not serialize ~/.codex/hooks.json: {e}"
+                                    );
+                                }
+                                Ok(updated) => {
+                                    let mut tmp_path = path.clone();
+                                    let mut tmp_name =
+                                        path.file_name().unwrap_or_default().to_os_string();
+                                    tmp_name.push(".tmp");
+                                    tmp_path.set_file_name(tmp_name);
+                                    let write_result = std::fs::write(&tmp_path, updated + "\n")
+                                        .and_then(|()| std::fs::rename(&tmp_path, &path));
+                                    match write_result {
+                                        Err(e) => {
+                                            let _ = std::fs::remove_file(&tmp_path);
+                                            println!(
+                                                "vibestats: could not write ~/.codex/hooks.json: {e}"
+                                            );
+                                        }
+                                        Ok(()) => {
+                                            println!(
+                                                "vibestats: removed Stop and SessionStart hooks from ~/.codex/hooks.json"
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
             }
         }
     }
@@ -288,7 +345,9 @@ mod tests {
         assert!(!is_vibestats_hook(
             &json!({ "command": "my-tool --arg vibestats-fake" })
         ));
-        assert!(!is_vibestats_hook(&json!({ "command": "vibestats-killer" })));
+        assert!(!is_vibestats_hook(
+            &json!({ "command": "vibestats-killer" })
+        ));
         assert!(!is_vibestats_hook(&json!({ "command": "not-vibestats" })));
         // Missing / non-string command:
         assert!(!is_vibestats_hook(&json!({})));

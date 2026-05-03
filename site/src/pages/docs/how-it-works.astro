@@ -3,18 +3,18 @@ import Docs from '../../layouts/Docs.astro';
 ---
 <Docs title="How it works — vibestats">
   <h1>How it works</h1>
-  <p>vibestats tracks your Claude Code usage across machines and surfaces it as a public heatmap on your GitHub profile and on <code>vibestats.dev</code>.</p>
+  <p>vibestats tracks your Claude Code and Codex usage across machines and surfaces it as a public heatmap on your GitHub profile and on <code>vibestats.dev</code>.</p>
 
   <h2>Architecture</h2>
-  <pre>Claude Code sessions
+<pre>Claude Code and Codex sessions
         │
         ▼  Stop/SessionStart hooks
   Rust binary (vibestats)
-        │  reads ~/.claude/projects/**/*.jsonl
+        │  reads ~/.claude/projects/**/*.jsonl and ~/.codex/state_*.sqlite
         │  pushes per-machine daily JSON
         ▼
   vibestats-data (private GitHub repo)
-  └── machines/year=.../day=.../machine_id=.../data.json
+  └── machines/year=.../day=.../harness=.../machine_id=.../data.json
         │
         ▼  daily GitHub Actions cron
   stephenleo/vibestats@v1
@@ -29,10 +29,10 @@ import Docs from '../../layouts/Docs.astro';
   <h2>Data flow explained</h2>
   <ol>
     <li>
-      <strong>Claude Code writes JSONL files</strong> — Every Claude Code session appends conversation events to <code>~/.claude/projects/**/*.jsonl</code> on your local machine.
+      <strong>Local tools write usage state</strong> — Claude Code writes JSONL files under <code>~/.claude/projects/</code>; Codex writes thread usage state under <code>~/.codex/</code>.
     </li>
     <li>
-      <strong>Rust binary syncs on session end</strong> — The <code>vibestats</code> binary is invoked via Stop and SessionStart hooks in <code>~/.claude/settings.json</code>. It reads the JSONL files and pushes per-machine daily JSON to your private <code>vibestats-data</code> GitHub repository.
+      <strong>Rust binary syncs on session end</strong> — The <code>vibestats</code> binary is invoked via Stop and SessionStart hooks. It reads all supported harnesses and pushes per-machine daily JSON to your private <code>vibestats-data</code> GitHub repository.
     </li>
     <li>
       <strong>GitHub Actions aggregates daily</strong> — A scheduled cron workflow in <code>vibestats-data</code> runs <code>stephenleo/vibestats@v1</code> daily. It runs <code>aggregate.py</code> to combine data across machines, <code>generate_svg.py</code> to produce a heatmap SVG, and <code>update_readme.py</code> to embed the heatmap in your GitHub profile README.

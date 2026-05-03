@@ -15,7 +15,7 @@ This document is the canonical data contract for all vibestats components. Every
 Stored in the user's `vibestats-data` GitHub repository using a Hive-style partition path:
 
 ```
-machines/year=YYYY/month=MM/day=DD/harness=claude/machine_id=<id>/data.json
+machines/year=YYYY/month=MM/day=DD/harness=<harness>/machine_id=<id>/data.json
 ```
 
 **Zero-padding rule:** `month` and `day` are always two digits (e.g., `month=04`, `day=09`). This is required for correct lexicographic sort order in glob patterns and Athena/BigQuery partition pruning.
@@ -46,7 +46,7 @@ machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| `sessions` | integer | ≥ 0 | Number of Claude Code sessions active on this machine on this day |
+| `sessions` | integer | ≥ 0 | Number of AI coding sessions active on this machine on this day |
 | `active_minutes` | integer | ≥ 0 | Approximate active working minutes (derived from session durations) |
 | `input_tokens` | integer | ≥ 0 | Total input tokens across all assistant turns |
 | `output_tokens` | integer | ≥ 0 | Total output tokens across all assistant turns |
@@ -54,15 +54,15 @@ machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3
 | `cache_creation_tokens` | integer | ≥ 0 | Total cache_creation_input_tokens from the usage object |
 | `models` | object | — | Map of model name → output_tokens for that model. Keys are alphabetically ordered. |
 | `longest_session_minutes` | integer | ≥ 0 | Duration in minutes of the longest single session on this day |
-| `message_count` | integer | ≥ 0 | Total message count (from `turn_duration.messageCount`) |
-| `tool_uses` | integer | ≥ 0 | Total count of `tool_use` content blocks across all turns |
+| `message_count` | integer | ≥ 0 | Total message count where available (Claude uses `turn_duration.messageCount`; Codex currently reports `0`) |
+| `tool_uses` | integer | ≥ 0 | Total tool use count where available (Codex currently reports `0`) |
 
 **Backward compatibility:** Old files with only `sessions` and `active_minutes` remain valid. The aggregation layer uses `.get(field, 0)` / `.get("models", {})` for all new fields, defaulting to zero.
 
 ### Design Notes
 
 - Partition metadata is encoded in the path, not the file. This enables Athena/BigQuery external tables with no transformation.
-- `harness=claude` enables future multi-tool support (Codex, Cursor, Copilot) with zero schema changes. The Actions aggregator globs `harness=*` automatically.
+- `harness=<harness>` identifies the source tool. Supported values are currently `claude` and `codex`. The Actions aggregator globs `harness=*` automatically.
 - One file per machine per day. Each push is an independent overwrite; no merge of historical data is required.
 
 ---
@@ -164,8 +164,8 @@ machine_status = "active"
 auth_error = false
 
 [date_hashes]
-"2026-04-10" = "a3f5c2e1b9d04e8f7c2a1b3d5e6f9012345678901234567890abcdef01234567"
-"2026-04-09" = "7b2d1c4e8a093f5c6d2e1b4a9f0e3d8c7a5b6c2d1e0f4a3b9c8d7e6f5a4b3c21"
+"claude:2026-04-10" = "a3f5c2e1b9d04e8f7c2a1b3d5e6f9012345678901234567890abcdef01234567"
+"codex:2026-04-10" = "7b2d1c4e8a093f5c6d2e1b4a9f0e3d8c7a5b6c2d1e0f4a3b9c8d7e6f5a4b3c21"
 ```
 
 **Fields:**
@@ -175,7 +175,7 @@ auth_error = false
 | `throttle_timestamp` | string (ISO 8601 UTC) | Any valid UTC timestamp | Last successful sync time. The Stop hook skips sync if the current time is within 5 minutes of this value (NFR2). |
 | `machine_status` | string enum | `"active"` \| `"retired"` \| `"purged"` | Current machine state. If `"retired"`, the Stop hook skips all network calls. |
 | `auth_error` | boolean | `true` \| `false` | Set to `true` when the GitHub API returns 401. Triggers a warning at the next SessionStart. Cleared on successful `vibestats auth`. |
-| `[date_hashes]` | TOML table | — | Keys are `YYYY-MM-DD` date strings; values are SHA256 hex strings of the last-pushed payload. Used to skip PUT requests when data is unchanged (NFR12). |
+| `[date_hashes]` | TOML table | — | Keys are `<harness>:YYYY-MM-DD`; legacy Claude-only `YYYY-MM-DD` keys remain readable. Values are SHA256 hex strings of the last-pushed payload. Used to skip PUT requests when data is unchanged (NFR12). |
 
 ---
 

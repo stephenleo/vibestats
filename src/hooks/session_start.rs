@@ -100,8 +100,7 @@ fn parse_iso8601_utc(s: &str) -> Option<std::time::SystemTime> {
     let y = if month <= 2 { year - 1 } else { year };
     let era = y / 400;
     let yoe = y - era * 400;
-    let doy =
-        (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5 + day - 1;
+    let doy = (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5 + day - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     let days_since_epoch = era * 146097 + doe - 719468;
     let secs = days_since_epoch * 86400 + hour * 3600 + min * 60 + sec;
@@ -120,10 +119,7 @@ fn parse_iso8601_utc(s: &str) -> Option<std::time::SystemTime> {
 pub fn run() {
     let config = Config::load_or_exit();
     let cp_path = checkpoint_path();
-    let mut checkpoint = cp_path
-        .as_deref()
-        .map(Checkpoint::load)
-        .unwrap_or_default();
+    let mut checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
 
@@ -147,9 +143,7 @@ pub fn run() {
                                     ));
                                 }
                             }
-                            println!(
-                                "vibestats: this machine has been retired. Sync skipped."
-                            );
+                            println!("vibestats: this machine has been retired. Sync skipped.");
                             return; // Steps 2–4 are skipped
                         }
                         break;
@@ -171,9 +165,7 @@ pub fn run() {
 
     // ── Step 2: Auth error surface ───────────────────────────────────────────
     if checkpoint.auth_error {
-        println!(
-            "vibestats: auth error detected. Run `vibestats auth` to re-authenticate."
-        );
+        println!("vibestats: auth error detected. Run `vibestats auth` to re-authenticate.");
         checkpoint.clear_auth_error();
         // Save checkpoint now — auth_error must be cleared even if subsequent steps also call save
         if let Some(ref path) = cp_path {
@@ -201,10 +193,7 @@ pub fn run() {
 
     // ── Step 4: Staleness warning ────────────────────────────────────────────
     // Reload checkpoint from disk after sync::run (sync may have updated throttle_timestamp)
-    let checkpoint = cp_path
-        .as_deref()
-        .map(Checkpoint::load)
-        .unwrap_or_default();
+    let checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
     if let Some(ref ts) = checkpoint.throttle_timestamp {
         if let Some(days) = days_since_timestamp(ts) {
@@ -233,10 +222,18 @@ mod tests {
     fn test_yesterday_returns_valid_date_string() {
         let y = yesterday();
         // Must be exactly "YYYY-MM-DD" format (10 chars)
-        assert_eq!(y.len(), 10, "yesterday() must return 10-char string, got: {y}");
+        assert_eq!(
+            y.len(),
+            10,
+            "yesterday() must return 10-char string, got: {y}"
+        );
         // Must match YYYY-MM-DD pattern
         let parts: Vec<&str> = y.split('-').collect();
-        assert_eq!(parts.len(), 3, "yesterday() must contain two '-' separators");
+        assert_eq!(
+            parts.len(),
+            3,
+            "yesterday() must contain two '-' separators"
+        );
         assert_eq!(parts[0].len(), 4, "year must be 4 digits");
         assert_eq!(parts[1].len(), 2, "month must be 2 digits");
         assert_eq!(parts[2].len(), 2, "day must be 2 digits");
@@ -254,10 +251,7 @@ mod tests {
     fn test_days_since_timestamp_epoch_is_large() {
         // Unix epoch is far in the past — days must be >= 365*50 (> 18000)
         let days = days_since_timestamp("1970-01-01T00:00:00Z");
-        assert!(
-            days.is_some(),
-            "epoch timestamp should parse successfully"
-        );
+        assert!(days.is_some(), "epoch timestamp should parse successfully");
         assert!(
             days.unwrap() > 18000,
             "epoch timestamp should be thousands of days ago"
@@ -306,7 +300,10 @@ mod tests {
         };
         assert!(cp.auth_error);
         cp.clear_auth_error();
-        assert!(!cp.auth_error, "auth_error must be false after clear_auth_error()");
+        assert!(
+            !cp.auth_error,
+            "auth_error must be false after clear_auth_error()"
+        );
     }
 
     // ── retirement guard: catch-up sync skipped when machine is retired ───────
@@ -317,7 +314,10 @@ mod tests {
         let mut cp = Checkpoint::default();
         assert!(!cp.is_retired());
         cp.set_machine_status("retired");
-        assert!(cp.is_retired(), "machine must be retired after set_machine_status(\"retired\")");
+        assert!(
+            cp.is_retired(),
+            "machine must be retired after set_machine_status(\"retired\")"
+        );
     }
 
     // ── staleness warning threshold ───────────────────────────────────────────
@@ -351,7 +351,10 @@ mod tests {
 
         let days = days_since_timestamp(&ts_str);
         assert!(days.is_some(), "2-days-ago timestamp should parse");
-        assert!(days.unwrap() >= 1, "2-days-ago timestamp should be >= 1 day ago");
+        assert!(
+            days.unwrap() >= 1,
+            "2-days-ago timestamp should be >= 1 day ago"
+        );
     }
 
     #[test]

@@ -19,14 +19,15 @@ Machines:
   - work-desktop     last seen: 2026-04-11</code></pre>
 
   <h2><code>vibestats sync</code></h2>
-  <p>Forces an immediate sync of today's JSONL data to <code>vibestats-data</code>. Respects a 5-minute throttle to avoid redundant pushes.</p>
+  <p>Forces an immediate sync of today's Claude Code and Codex data to <code>vibestats-data</code>. Respects a 5-minute throttle to avoid redundant pushes.</p>
   <h3>Flags</h3>
   <table>
     <thead>
       <tr><th>Flag</th><th>Description</th></tr>
     </thead>
     <tbody>
-      <tr><td><code>--backfill</code></td><td>Walk all historical JSONL files and push complete history (see below)</td></tr>
+      <tr><td><code>--backfill</code></td><td>Walk all historical local usage data and push complete history (see below)</td></tr>
+      <tr><td><code>--harness claude|codex|all</code></td><td>Limit sync to one harness, or sync all supported harnesses. Defaults to <code>all</code>.</td></tr>
     </tbody>
   </table>
   <h3>Example output</h3>
@@ -36,13 +37,12 @@ Syncing machine macbook-pro-m3...
 Pushed 3 day files to vibestats-data. Done.</code></pre>
 
   <h2><code>vibestats sync --backfill</code></h2>
-  <p>Walks all historical JSONL files under <code>~/.claude/projects/</code> and pushes complete history to <code>vibestats-data</code>. Use this after a new install or if data is missing.</p>
+  <p>Walks all historical Claude Code and Codex local history and pushes complete history to <code>vibestats-data</code>. Use this after a new install or if data is missing.</p>
   <h3>Example output</h3>
   <pre><code>vibestats sync --backfill
 
 Backfilling machine macbook-pro-m3...
-Scanned 142 JSONL files across 38 days.
-Pushed 38 day files to vibestats-data. Done.</code></pre>
+vibestats: backfill complete — processed 38 date(s)</code></pre>
 
   <h2><code>vibestats machines list</code></h2>
   <p>Lists all machines registered in <code>vibestats-data/registry.json</code>, showing hostname and last-seen date.</p>
@@ -83,7 +83,7 @@ Launching GitHub OAuth flow via gh...
 ✓ Token saved to ~/.config/vibestats/config.toml</code></pre>
 
   <h2><code>vibestats uninstall</code></h2>
-  <p>Removes the Stop and SessionStart hooks from <code>~/.claude/settings.json</code>. Optionally removes the config file and binary.</p>
+  <p>Removes the Stop and SessionStart hooks from <code>~/.claude/settings.json</code> and <code>~/.codex/hooks.json</code>. Optionally removes the config file and binary.</p>
   <h3>Flags</h3>
   <p>None. The command prompts interactively for whether to remove the config file and binary.</p>
   <h3>Example output</h3>

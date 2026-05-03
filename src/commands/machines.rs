@@ -261,17 +261,15 @@ fn update_local_checkpoint(status: &str) {
 fn purge_self(api: &GithubApi, machine_id: &str) -> usize {
     let mut deleted = 0usize;
     let cp_path = checkpoint_path();
-    let checkpoint = cp_path
-        .as_deref()
-        .map(Checkpoint::load)
-        .unwrap_or_default();
+    let checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
-    for date in checkpoint.date_hashes.keys() {
+    for key in checkpoint.date_hashes.keys() {
+        let (harness, date) = key.split_once(':').unwrap_or(("claude", key.as_str()));
         let parts: Vec<&str> = date.split('-').collect();
         if parts.len() == 3 {
             let hive_path = format!(
-                "machines/year={}/month={}/day={}/harness=claude/machine_id={}/data.json",
-                parts[0], parts[1], parts[2], machine_id
+                "machines/year={}/month={}/day={}/harness={}/machine_id={}/data.json",
+                parts[0], parts[1], parts[2], harness, machine_id
             );
             match api.delete_file(&hive_path) {
                 Ok(()) => {
@@ -279,10 +277,7 @@ fn purge_self(api: &GithubApi, machine_id: &str) -> usize {
                 }
                 Err(e) => {
                     // Log errors but continue — best-effort cleanup
-                    logger::error(&format!(
-                        "machines: failed to delete {}: {}",
-                        hive_path, e
-                    ));
+                    logger::error(&format!("machines: failed to delete {}: {}", hive_path, e));
                 }
             }
         }
@@ -432,7 +427,10 @@ mod tests {
         assert_eq!(machines.len(), 1);
         let m = &machines[0];
         assert_eq!(m["machine_id"].as_str().unwrap(), "stephens-mbp-a1b2c3");
-        assert_eq!(m["hostname"].as_str().unwrap(), "Stephens-MacBook-Pro.local");
+        assert_eq!(
+            m["hostname"].as_str().unwrap(),
+            "Stephens-MacBook-Pro.local"
+        );
         assert_eq!(m["status"].as_str().unwrap(), "active");
         assert_eq!(m["last_seen"].as_str().unwrap(), "2026-04-10T14:23:00Z");
     }
@@ -480,7 +478,10 @@ mod tests {
 
         let updated: serde_json::Value =
             serde_json::from_str(&serde_json::to_string_pretty(&json).unwrap()).unwrap();
-        assert_eq!(updated["machines"][0]["status"].as_str().unwrap(), "retired");
+        assert_eq!(
+            updated["machines"][0]["status"].as_str().unwrap(),
+            "retired"
+        );
         // Other fields must be preserved
         assert_eq!(
             updated["machines"][0]["machine_id"].as_str().unwrap(),
@@ -511,7 +512,10 @@ mod tests {
         let found = machines
             .iter()
             .position(|m| m["machine_id"].as_str() == Some("nonexistent-machine-id"));
-        assert!(found.is_none(), "machine_id not in registry must return None");
+        assert!(
+            found.is_none(),
+            "machine_id not in registry must return None"
+        );
     }
 
     // ── stdin confirmation acceptance ──────────────────────────────────────────
@@ -533,12 +537,18 @@ mod tests {
 
     #[test]
     fn test_confirm_rejects_empty() {
-        assert!(!is_confirmed(""), "empty input must not be accepted (default is N)");
+        assert!(
+            !is_confirmed(""),
+            "empty input must not be accepted (default is N)"
+        );
     }
 
     #[test]
     fn test_confirm_rejects_yes() {
-        assert!(!is_confirmed("yes"), "'yes' must not be accepted (only 'y' or 'Y')");
+        assert!(
+            !is_confirmed("yes"),
+            "'yes' must not be accepted (only 'y' or 'Y')"
+        );
     }
 
     #[test]

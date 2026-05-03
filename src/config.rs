@@ -207,7 +207,8 @@ vibestats_data_repo = "user/vibestats-data"
 
         // Should only contain lowercase letters, digits, and hyphens
         assert!(
-            id1.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
+            id1.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
             "machine_id should only contain [a-z0-9-], got: {id1}"
         );
 
@@ -236,7 +237,11 @@ vibestats_data_repo = "user/repo"
 
         let metadata = std::fs::metadata(&path).unwrap();
         let mode = metadata.permissions().mode() & 0o777;
-        assert_eq!(mode, 0o600, "config.toml must have 600 permissions, got {:o}", mode);
+        assert_eq!(
+            mode, 0o600,
+            "config.toml must have 600 permissions, got {:o}",
+            mode
+        );
 
         // Cleanup
         std::fs::remove_dir_all(&temp_dir).ok();
@@ -256,7 +261,11 @@ vibestats_data_repo = "user/repo"
         write_file_mode_600(&path, b"new contents").unwrap();
 
         let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
-        assert_eq!(mode, 0o600, "existing file must be narrowed to 600, got {:o}", mode);
+        assert_eq!(
+            mode, 0o600,
+            "existing file must be narrowed to 600, got {:o}",
+            mode
+        );
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "new contents");
 
         std::fs::remove_dir_all(&temp_dir).ok();
@@ -270,8 +279,14 @@ vibestats_data_repo = "user/repo"
         // starts with a '-' (which would have happened for a non-alphanumeric
         // hostname under the pre-fix code).
         let id = generate_machine_id();
-        assert!(!id.starts_with('-'), "machine_id must not start with '-', got: {id}");
-        assert!(!id.contains("--"), "machine_id must not contain '--', got: {id}");
+        assert!(
+            !id.starts_with('-'),
+            "machine_id must not start with '-', got: {id}"
+        );
+        assert!(
+            !id.contains("--"),
+            "machine_id must not contain '--', got: {id}"
+        );
     }
 
     #[test]
@@ -281,6 +296,9 @@ vibestats_data_repo = "user/repo"
         assert_eq!(h1, h2, "FNV-1a hash should be deterministic");
 
         let h3 = fnv1a_hash("other-machine");
-        assert_ne!(h1, h3, "different inputs should (likely) produce different hashes");
+        assert_ne!(
+            h1, h3,
+            "different inputs should (likely) produce different hashes"
+        );
     }
 }

@@ -96,8 +96,14 @@ mod tests {
         let machines = machines.unwrap();
         assert_eq!(machines.len(), 2, "should have 2 machines");
 
-        assert_eq!(machines[0]["machine_id"].as_str().unwrap_or(""), "mbp-abc123");
-        assert_eq!(machines[0]["hostname"].as_str().unwrap_or(""), "my-macbook.local");
+        assert_eq!(
+            machines[0]["machine_id"].as_str().unwrap_or(""),
+            "mbp-abc123"
+        );
+        assert_eq!(
+            machines[0]["hostname"].as_str().unwrap_or(""),
+            "my-macbook.local"
+        );
         assert_eq!(machines[0]["status"].as_str().unwrap_or(""), "active");
         assert_eq!(
             machines[0]["last_seen"].as_str().unwrap_or(""),

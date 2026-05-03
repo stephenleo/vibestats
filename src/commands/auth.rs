@@ -84,9 +84,7 @@ pub fn run() {
         child
             .stdin
             .as_mut()
-            .ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stdin not piped")
-            })?
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stdin not piped"))?
             .write_all(config.oauth_token.as_bytes())?;
         // Drop stdin to close the pipe and signal EOF to the child process.
         // Without this, `gh secret set --body-file -` would block waiting for
@@ -141,7 +139,10 @@ mod tests {
     fn checkpoint_path_returns_some_when_home_is_set() {
         // HOME should be set in a normal test environment
         let result = checkpoint_path();
-        assert!(result.is_some(), "checkpoint_path() should return Some when HOME is set");
+        assert!(
+            result.is_some(),
+            "checkpoint_path() should return Some when HOME is set"
+        );
         let path = result.unwrap();
         let path_str = path.to_string_lossy();
         assert!(
@@ -169,7 +170,10 @@ mod tests {
             }
         }
 
-        assert!(result.is_none(), "checkpoint_path() should return None when HOME is unset");
+        assert!(
+            result.is_none(),
+            "checkpoint_path() should return None when HOME is unset"
+        );
     }
 
     #[test]
@@ -178,6 +182,9 @@ mod tests {
         let result = std::process::Command::new("/nonexistent/gh")
             .args(["auth", "token"])
             .output();
-        assert!(result.is_err(), "Expected Err for non-existent binary, got Ok");
+        assert!(
+            result.is_err(),
+            "Expected Err for non-existent binary, got Ok"
+        );
     }
 }

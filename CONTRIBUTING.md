@@ -21,6 +21,24 @@ Thank you for your interest in contributing to vibestats!
 
 Use clear, imperative commit messages (e.g., `add aggregate.py stub`, `fix config parsing`).
 
+## Running checks before submitting a PR
+
+CI enforces four checks. Run them locally before pushing:
+
+```sh
+# 1. Format - CI runs `cargo fmt --check`; fix formatting first
+cargo fmt
+
+# 2. Lint - all Clippy warnings are treated as errors
+cargo clippy -- -D warnings
+
+# 3. Tests
+cargo test
+
+# 4. Release build
+cargo build --release
+```
+
 ## Reporting Issues
 
 Please open a GitHub issue with a clear description of the problem and steps to reproduce it.

@@ -83,9 +83,8 @@ where
     // Seed with a synthetic "retry exhausted" error so we never rely on
     // `unwrap()` in the fallthrough path. This is overwritten on every
     // retriable failure; the seed only surfaces if `max_attempts == 0`.
-    let mut last_err: GithubApiError = Box::<dyn std::error::Error>::from(
-        "github_api: retry exhausted with no recorded error",
-    );
+    let mut last_err: GithubApiError =
+        Box::<dyn std::error::Error>::from("github_api: retry exhausted with no recorded error");
 
     for attempt in 0..max_attempts {
         // Sleep before retry (not before the first attempt)
@@ -147,14 +146,16 @@ impl GithubApi {
         let current_sha = match with_retry(|| get_file_sha_inner(&self.token, &self.repo, path)) {
             Ok(sha) => sha,
             Err(e) => {
-                logger::error(&format!("github_api: get_file_sha failed for {}: {}", path, e));
+                logger::error(&format!(
+                    "github_api: get_file_sha failed for {}: {}",
+                    path, e
+                ));
                 return Err(e);
             }
         };
 
         // Step 2: PUT file (with retry)
-        match with_retry(|| put_file_inner(&self.token, &self.repo, path, &encoded, &current_sha))
-        {
+        match with_retry(|| put_file_inner(&self.token, &self.repo, path, &encoded, &current_sha)) {
             Ok(()) => Ok(()),
             Err(e) => {
                 logger::error(&format!("github_api: put_file failed for {}: {}", path, e));
@@ -199,7 +200,10 @@ impl GithubApi {
             Ok(Some(sha)) => sha,
             Ok(None) => return Ok(()), // Already deleted — idempotent
             Err(e) => {
-                logger::error(&format!("github_api: get_file_sha failed for {}: {}", path, e));
+                logger::error(&format!(
+                    "github_api: get_file_sha failed for {}: {}",
+                    path, e
+                ));
                 return Err(e);
             }
         };
@@ -207,7 +211,10 @@ impl GithubApi {
         match with_retry(|| delete_file_inner(&self.token, &self.repo, path, &sha)) {
             Ok(()) => Ok(()),
             Err(e) => {
-                logger::error(&format!("github_api: delete_file failed for {}: {}", path, e));
+                logger::error(&format!(
+                    "github_api: delete_file failed for {}: {}",
+                    path, e
+                ));
                 Err(e)
             }
         }
@@ -245,11 +252,7 @@ impl GithubApi {
 /// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
 /// the error for retriability before boxing.
 #[allow(clippy::result_large_err)]
-fn get_file_sha_inner(
-    token: &str,
-    repo: &str,
-    path: &str,
-) -> Result<Option<String>, ureq::Error> {
+fn get_file_sha_inner(token: &str, repo: &str, path: &str) -> Result<Option<String>, ureq::Error> {
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
     let response = ureq::get(&url)
@@ -399,12 +402,7 @@ fn get_file_content_inner(
 /// Returns `ureq::Error` directly (not boxed) so `with_retry` can classify
 /// the error for retriability before boxing.
 #[allow(clippy::result_large_err)]
-fn delete_file_inner(
-    token: &str,
-    repo: &str,
-    path: &str,
-    sha: &str,
-) -> Result<(), ureq::Error> {
+fn delete_file_inner(token: &str, repo: &str, path: &str, sha: &str) -> Result<(), ureq::Error> {
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
     let body = serde_json::json!({
         "message": "vibestats: remove machine data",
@@ -448,7 +446,10 @@ fn list_directory_all_inner(
             let json: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
                 ureq::Error::from(std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    format!("github_api: malformed JSON from Contents API directory: {}", e),
+                    format!(
+                        "github_api: malformed JSON from Contents API directory: {}",
+                        e
+                    ),
                 ))
             })?;
             let entries = match json.as_array() {
@@ -671,17 +672,26 @@ mod tests {
 
     #[test]
     fn test_status_retriable_429() {
-        assert!(is_status_retriable(429), "429 (rate limit) must be retriable");
+        assert!(
+            is_status_retriable(429),
+            "429 (rate limit) must be retriable"
+        );
     }
 
     #[test]
     fn test_status_retriable_500() {
-        assert!(is_status_retriable(500), "500 (server error) must be retriable");
+        assert!(
+            is_status_retriable(500),
+            "500 (server error) must be retriable"
+        );
     }
 
     #[test]
     fn test_status_retriable_503() {
-        assert!(is_status_retriable(503), "503 (service unavailable) must be retriable");
+        assert!(
+            is_status_retriable(503),
+            "503 (service unavailable) must be retriable"
+        );
     }
 
     #[test]
@@ -691,12 +701,18 @@ mod tests {
 
     #[test]
     fn test_status_not_retriable_401() {
-        assert!(!is_status_retriable(401), "401 (unauthorized) must NOT be retriable");
+        assert!(
+            !is_status_retriable(401),
+            "401 (unauthorized) must NOT be retriable"
+        );
     }
 
     #[test]
     fn test_status_not_retriable_404() {
-        assert!(!is_status_retriable(404), "404 (not found) must NOT be retriable");
+        assert!(
+            !is_status_retriable(404),
+            "404 (not found) must NOT be retriable"
+        );
     }
 
     #[test]
@@ -714,7 +730,10 @@ mod tests {
 
     #[test]
     fn test_status_not_retriable_400() {
-        assert!(!is_status_retriable(400), "400 (bad request) must NOT be retriable");
+        assert!(
+            !is_status_retriable(400),
+            "400 (bad request) must NOT be retriable"
+        );
     }
 
     // ── with_retry: success on first attempt ──────────────────────────────────
@@ -768,7 +787,10 @@ mod tests {
     fn test_classify_transport_error_is_retriable() {
         let err = make_transport_error();
         let (retriable, _) = classify(err);
-        assert!(retriable, "transport errors must be classified as retriable");
+        assert!(
+            retriable,
+            "transport errors must be classified as retriable"
+        );
     }
 
     #[test]
@@ -925,10 +947,7 @@ mod tests {
         let sha = "deadbeef1234";
         let body = build_delete_body(sha);
         let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert_eq!(
-            parsed["sha"], sha,
-            "delete body must include the sha field"
-        );
+        assert_eq!(parsed["sha"], sha, "delete body must include the sha field");
         assert_eq!(
             parsed["message"], "vibestats: remove machine data",
             "delete body must include the correct commit message"

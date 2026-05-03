@@ -3,7 +3,7 @@ import Docs from '../../layouts/Docs.astro';
 ---
 <Docs title="Quickstart — vibestats">
   <h1>Quickstart</h1>
-  <p>Get vibestats tracking your Claude Code sessions in under 5 minutes.</p>
+  <p>Get vibestats tracking your Claude Code and Codex sessions in under 5 minutes.</p>
 
   <h2>Install</h2>
   <p>Run this command in your terminal:</p>
@@ -14,9 +14,9 @@ import Docs from '../../layouts/Docs.astro';
     <li>Creates a private <code>vibestats-data</code> repository in your GitHub account to store your stats.</li>
     <li>Writes a GitHub Actions workflow to <code>vibestats-data/.github/workflows/aggregate.yml</code> that runs daily to aggregate your data.</li>
     <li>Authenticates with GitHub via <code>gh auth login</code> and stores your OAuth token at <code>~/.config/vibestats/config.toml</code>.</li>
-    <li>Configures <code>~/.claude/settings.json</code> with Stop and SessionStart hooks so vibestats syncs automatically after every Claude Code session.</li>
+    <li>Configures Claude Code and Codex Stop and SessionStart hooks when those tools are installed.</li>
     <li>Adds <code>&lt;!-- vibestats-start --&gt;</code> / <code>&lt;!-- vibestats-end --&gt;</code> markers to your profile README so your heatmap is embedded automatically.</li>
-    <li>Triggers an initial backfill to push your full Claude Code history to <code>vibestats-data</code>.</li>
+    <li>Triggers an initial backfill to push your full supported local history to <code>vibestats-data</code>.</li>
   </ol>
 
   <h2>Next steps</h2>
