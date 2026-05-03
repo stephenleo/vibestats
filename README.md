@@ -15,6 +15,17 @@ vibestats has three components that work together:
 2. **GitHub Action** (`stephenleo/vibestats@v2`) — runs daily in your `vibestats-data` repo, aggregates the recorded sessions, and pushes an SVG heatmap to your GitHub profile repo.
 3. **Profile heatmap** — the SVG is embedded in your profile `README.md` between marker comments, updated automatically.
 
+## Long-term retention
+
+Claude Code [clears local session transcripts after 30 days by default](https://code.claude.com/docs/en/data-usage) (configurable via `cleanupPeriodDays` in `~/.claude/settings.json`). vibestats syncs aggregated daily stats — tokens, sessions, minutes, model breakdown — to your private `vibestats-data` GitHub repo on every session, *before* that cleanup fires. The sync is non-destructive by design: once a day's stats are uploaded, they stay there indefinitely.
+
+What that gets you:
+
+- **History past 30 days** — months and years of usage stats, without changing Claude Code's defaults.
+- **Privacy by default** — Claude Code's transcript cleanup keeps doing its thing; only small JSON aggregates ever leave your machine. No prompt or response content is stored or synced.
+- **Survives machine wipes and reinstalls** — your archive lives in your private GitHub repo, not on your laptop.
+- **Per-machine breakdown** — every machine writes its own slice; the aggregation step combines them into one heatmap.
+
 ## Quickstart
 
 ```bash

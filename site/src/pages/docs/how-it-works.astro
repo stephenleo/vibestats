@@ -47,4 +47,13 @@ import Docs from '../../layouts/Docs.astro';
 
   <h2>Multi-machine support</h2>
   <p>Each machine writes to its own path in <code>vibestats-data</code> using a unique machine ID. The aggregation step merges data from all machines before generating the heatmap, so your activity from every machine is reflected in a single view.</p>
+
+  <h2>Long-term retention</h2>
+  <p>By default, <a href="https://code.claude.com/docs/en/data-usage">Claude Code deletes local session transcripts in <code>~/.claude/projects/</code> after 30 days</a> (controlled by the <code>cleanupPeriodDays</code> setting). vibestats persists aggregated daily stats to your private <code>vibestats-data</code> repo on every session, before that cleanup fires. The sync is non-destructive by design: a date that's been pruned locally never overwrites or deletes the remote archive (see the invariant comment in <code>src/sync.rs</code>). Once a day's stats are in <code>vibestats-data</code>, they stay there indefinitely.</p>
+  <p>That means:</p>
+  <ul>
+    <li>You keep Claude Code's privacy default — local transcripts continue to auto-expire as Anthropic intends, and only small JSON aggregates leave your machine.</li>
+    <li>Your usage history survives machine wipes, reinstalls, and any local cleanup.</li>
+    <li>vibestats stores aggregates only — tokens, sessions, minutes, and model names. No prompt or response content is ever synced.</li>
+  </ul>
 </Docs>

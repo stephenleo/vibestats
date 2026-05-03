@@ -162,6 +162,13 @@ pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
         let mut dates: Vec<&String> = activities.keys().collect();
         dates.sort();
 
+        // INVARIANT: this loop is the only path that mutates remote state, and it
+        // only ever calls put_file — never delete. Combined with iterating solely
+        // over dates the parser actually returned, this makes sync non-destructive:
+        // a date that is fully pruned locally produces no entry in `activities`,
+        // so the remote `data.json` for that date is left untouched. Future edits
+        // must preserve both halves — adding a "reconcile/trim" path that deletes
+        // remote dates absent from local would silently destroy archived history.
         for date in dates {
             let activity = &activities[date];
             // serde_json serializes struct fields in definition order; BTreeMap keys sort
