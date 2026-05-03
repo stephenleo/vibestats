@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::{BufRead, BufReader};
 
 /// Per-day aggregated session activity.
@@ -45,6 +45,8 @@ struct AssistantMessage {
     #[serde(default)]
     model: Option<String>,
     #[serde(default)]
+    id: Option<String>,
+    #[serde(default)]
     usage: Option<MessageUsage>,
     #[serde(default)]
     content: Option<Vec<ContentBlock>>,
@@ -80,6 +82,11 @@ struct ClaudeEntry {
     /// JSON field name is "messageCount" (camelCase).
     #[serde(rename = "messageCount", default)]
     message_count: Option<u32>,
+
+    /// Claude request identifier. Together with message.id, this is the
+    /// stable duplicate key used by ccusage.
+    #[serde(rename = "requestId", default)]
+    request_id: Option<String>,
 }
 
 /// Return the path to `~/.claude/projects` using `HOME` env var.
@@ -107,6 +114,24 @@ fn collect_jsonl_files(dir: &std::path::Path, acc: &mut Vec<std::path::PathBuf>)
     }
 }
 
+fn earliest_timestamp(path: &std::path::Path) -> Option<String> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut earliest: Option<String> = None;
+    for line in BufReader::new(file).lines().map_while(Result::ok) {
+        let entry: ClaudeEntry = match serde_json::from_str(&line) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        let Some(ts) = entry.timestamp else {
+            continue;
+        };
+        if earliest.as_ref().is_none_or(|prev| ts < *prev) {
+            earliest = Some(ts);
+        }
+    }
+    earliest
+}
+
 /// Parse a single JSONL file (one session) and accumulate its activity
 /// into `result` if its date falls within `[start, end]` (inclusive).
 ///
@@ -118,6 +143,7 @@ fn parse_file(
     start: &str,
     end: &str,
     result: &mut HashMap<String, DailyActivity>,
+    processed_hashes: &mut HashSet<String>,
 ) {
     let file = match std::fs::File::open(path) {
         Ok(f) => f,
@@ -153,15 +179,27 @@ fn parse_file(
         if entry.entry_type.as_deref() == Some("assistant") {
             if let Some(msg) = &entry.message {
                 if let Some(usage) = &msg.usage {
-                    input_tokens += usage.input_tokens.unwrap_or(0);
-                    let out = usage.output_tokens.unwrap_or(0);
-                    output_tokens += out;
-                    cache_read_tokens += usage.cache_read_tokens.unwrap_or(0);
-                    cache_creation_tokens += usage.cache_creation_tokens.unwrap_or(0);
+                    if let (Some(input), Some(out)) = (usage.input_tokens, usage.output_tokens) {
+                        let is_duplicate = if let (Some(message_id), Some(request_id)) =
+                            (&msg.id, &entry.request_id)
+                        {
+                            let unique_hash = format!("{message_id}:{request_id}");
+                            !processed_hashes.insert(unique_hash)
+                        } else {
+                            false
+                        };
 
-                    // Tally output tokens per model.
-                    if let Some(model) = &msg.model {
-                        *session_models.entry(model.clone()).or_insert(0) += out;
+                        if !is_duplicate {
+                            input_tokens += input;
+                            output_tokens += out;
+                            cache_read_tokens += usage.cache_read_tokens.unwrap_or(0);
+                            cache_creation_tokens += usage.cache_creation_tokens.unwrap_or(0);
+
+                            // Tally output tokens per model.
+                            if let Some(model) = &msg.model {
+                                *session_models.entry(model.clone()).or_insert(0) += out;
+                            }
+                        }
                     }
                 }
 
@@ -227,9 +265,21 @@ pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity
 
     let mut jsonl_files: Vec<std::path::PathBuf> = Vec::new();
     collect_jsonl_files(&projects_dir, &mut jsonl_files);
+    jsonl_files.sort_by(|a, b| {
+        let a_ts = earliest_timestamp(a);
+        let b_ts = earliest_timestamp(b);
+        match (a_ts, b_ts) {
+            (Some(a_ts), Some(b_ts)) => a_ts.cmp(&b_ts),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+        .then_with(|| a.to_string_lossy().cmp(&b.to_string_lossy()))
+    });
 
+    let mut processed_hashes: HashSet<String> = HashSet::new();
     for path in &jsonl_files {
-        parse_file(path, start, end, &mut result);
+        parse_file(path, start, end, &mut result, &mut processed_hashes);
     }
 
     result
@@ -263,6 +313,28 @@ mod tests {
         path
     }
 
+    fn parse_test_file(
+        path: &std::path::Path,
+        start: &str,
+        end: &str,
+        result: &mut HashMap<String, DailyActivity>,
+    ) {
+        let mut processed_hashes = HashSet::new();
+        parse_file(path, start, end, result, &mut processed_hashes);
+    }
+
+    fn parse_test_files(
+        paths: &[std::path::PathBuf],
+        start: &str,
+        end: &str,
+        result: &mut HashMap<String, DailyActivity>,
+    ) {
+        let mut processed_hashes = HashSet::new();
+        for path in paths {
+            parse_file(path, start, end, result, &mut processed_hashes);
+        }
+    }
+
     // Minimal valid JSONL session: one assistant entry with timestamp,
     // one system/turn_duration entry with durationMs.
     const SAMPLE_VALID: &[&str] = &[
@@ -274,7 +346,7 @@ mod tests {
     fn valid_file_within_range_accumulates() {
         let path = write_temp_jsonl(SAMPLE_VALID);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date must be present");
         assert_eq!(day.sessions, 1);
@@ -285,7 +357,7 @@ mod tests {
     fn file_outside_range_not_included() {
         let path = write_temp_jsonl(SAMPLE_VALID);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-11", "2026-04-11", &mut result);
+        parse_test_file(&path, "2026-04-11", "2026-04-11", &mut result);
         let _ = std::fs::remove_file(&path);
         assert!(result.is_empty());
     }
@@ -298,7 +370,7 @@ mod tests {
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date must be present");
         assert_eq!(day.sessions, 1);
@@ -313,7 +385,7 @@ mod tests {
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result
             .get("2026-04-10")
@@ -326,7 +398,7 @@ mod tests {
     fn empty_file_returns_no_entry() {
         let path = write_temp_jsonl(&[]);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         assert!(result.is_empty());
     }
@@ -336,8 +408,12 @@ mod tests {
         let path1 = write_temp_jsonl(SAMPLE_VALID);
         let path2 = write_temp_jsonl(SAMPLE_VALID);
         let mut result = HashMap::new();
-        parse_file(&path1, "2026-04-10", "2026-04-10", &mut result);
-        parse_file(&path2, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_files(
+            &[path1.clone(), path2.clone()],
+            "2026-04-10",
+            "2026-04-10",
+            &mut result,
+        );
         let _ = std::fs::remove_file(&path1);
         let _ = std::fs::remove_file(&path2);
         let day = result.get("2026-04-10").expect("date present");
@@ -353,7 +429,7 @@ mod tests {
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date present");
         assert_eq!(day.sessions, 1);
@@ -368,7 +444,7 @@ mod tests {
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date present");
         assert_eq!(day.sessions, 1);
@@ -394,7 +470,7 @@ mod tests {
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date present");
         assert_eq!(day.sessions, 1);
@@ -419,8 +495,12 @@ mod tests {
         let p1 = write_temp_jsonl(long_session);
         let p2 = write_temp_jsonl(short_session);
         let mut result = HashMap::new();
-        parse_file(&p1, "2026-04-10", "2026-04-10", &mut result);
-        parse_file(&p2, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_files(
+            &[p1.clone(), p2.clone()],
+            "2026-04-10",
+            "2026-04-10",
+            &mut result,
+        );
         let _ = std::fs::remove_file(&p1);
         let _ = std::fs::remove_file(&p2);
         let day = result.get("2026-04-10").expect("date present");
@@ -433,13 +513,13 @@ mod tests {
     fn models_accumulated_across_multiple_assistant_entries() {
         // Two assistant entries with different models in one session.
         let lines = &[
-            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","uuid":"a","message":{"model":"claude-sonnet-4-5","usage":{"output_tokens":30},"content":[]}}"#,
-            r#"{"type":"assistant","timestamp":"2026-04-10T14:01:00.000Z","uuid":"b","message":{"model":"claude-opus-4","usage":{"output_tokens":70},"content":[]}}"#,
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","uuid":"a","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":10,"output_tokens":30},"content":[]}}"#,
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:01:00.000Z","uuid":"b","message":{"model":"claude-opus-4","usage":{"input_tokens":20,"output_tokens":70},"content":[]}}"#,
             r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"uuid":"c","timestamp":"2026-04-10T14:02:00.000Z"}"#,
         ];
         let path = write_temp_jsonl(lines);
         let mut result = HashMap::new();
-        parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date present");
         assert_eq!(
@@ -447,6 +527,50 @@ mod tests {
             30
         );
         assert_eq!(day.models.get("claude-opus-4").copied().unwrap_or(0), 70);
+        assert_eq!(day.input_tokens, 30);
         assert_eq!(day.output_tokens, 100);
+    }
+
+    #[test]
+    fn duplicate_message_id_request_id_counted_once() {
+        let session_a = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","requestId":"req-1","message":{"id":"msg-1","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":50}}}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"timestamp":"2026-04-10T14:01:00.000Z"}"#,
+        ];
+        let session_b = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T15:00:00.000Z","requestId":"req-1","message":{"id":"msg-1","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":50}}}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"timestamp":"2026-04-10T15:01:00.000Z"}"#,
+        ];
+        let p1 = write_temp_jsonl(session_a);
+        let p2 = write_temp_jsonl(session_b);
+        let mut result = HashMap::new();
+        parse_test_files(
+            &[p1.clone(), p2.clone()],
+            "2026-04-10",
+            "2026-04-10",
+            &mut result,
+        );
+        let _ = std::fs::remove_file(&p1);
+        let _ = std::fs::remove_file(&p2);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.sessions, 2);
+        assert_eq!(day.input_tokens, 100);
+        assert_eq!(day.output_tokens, 50);
+    }
+
+    #[test]
+    fn usage_without_input_or_output_tokens_is_ignored() {
+        let lines = &[
+            r#"{"type":"assistant","timestamp":"2026-04-10T14:00:00.000Z","message":{"model":"claude-sonnet-4-5","usage":{"output_tokens":50},"content":[{"type":"tool_use"}]}}"#,
+            r#"{"type":"system","subtype":"turn_duration","durationMs":60000,"timestamp":"2026-04-10T14:01:00.000Z"}"#,
+        ];
+        let path = write_temp_jsonl(lines);
+        let mut result = HashMap::new();
+        parse_test_file(&path, "2026-04-10", "2026-04-10", &mut result);
+        let _ = std::fs::remove_file(&path);
+        let day = result.get("2026-04-10").expect("date present");
+        assert_eq!(day.input_tokens, 0);
+        assert_eq!(day.output_tokens, 0);
+        assert_eq!(day.tool_uses, 1);
     }
 }
