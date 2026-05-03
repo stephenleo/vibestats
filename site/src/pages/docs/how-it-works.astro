@@ -10,14 +10,14 @@ import Docs from '../../layouts/Docs.astro';
         │
         ▼  Stop/SessionStart hooks
   Rust binary (vibestats)
-        │  reads ~/.claude/projects/**/*.jsonl and ~/.codex/state_*.sqlite
+        │  reads ~/.claude/projects/**/*.jsonl and ~/.codex/sessions/**/*.jsonl
         │  pushes per-machine daily JSON
         ▼
   vibestats-data (private GitHub repo)
   └── machines/year=.../day=.../harness=.../machine_id=.../data.json
         │
         ▼  daily GitHub Actions cron
-  stephenleo/vibestats@v1
+  stephenleo/vibestats@v2
   (aggregate.py + generate_svg.py + update_readme.py)
         │
         ├──► username/username/vibestats/heatmap.svg
@@ -29,13 +29,13 @@ import Docs from '../../layouts/Docs.astro';
   <h2>Data flow explained</h2>
   <ol>
     <li>
-      <strong>Local tools write usage state</strong> — Claude Code writes JSONL files under <code>~/.claude/projects/</code>; Codex writes thread usage state under <code>~/.codex/</code>.
+      <strong>Local tools write usage state</strong> — Claude Code writes JSONL files under <code>~/.claude/projects/</code>; Codex writes rollout JSONL files under <code>~/.codex/sessions/</code>.
     </li>
     <li>
       <strong>Rust binary syncs on session end</strong> — The <code>vibestats</code> binary is invoked via Stop and SessionStart hooks. It reads all supported harnesses and pushes per-machine daily JSON to your private <code>vibestats-data</code> GitHub repository.
     </li>
     <li>
-      <strong>GitHub Actions aggregates daily</strong> — A scheduled cron workflow in <code>vibestats-data</code> runs <code>stephenleo/vibestats@v1</code> daily. It runs <code>aggregate.py</code> to combine data across machines, <code>generate_svg.py</code> to produce a heatmap SVG, and <code>update_readme.py</code> to embed the heatmap in your GitHub profile README.
+      <strong>GitHub Actions aggregates daily</strong> — A scheduled cron workflow in <code>vibestats-data</code> runs <code>stephenleo/vibestats@v2</code> daily. It runs <code>aggregate.py</code> to combine data across machines, <code>generate_svg.py</code> to produce a heatmap SVG, and <code>update_readme.py</code> to embed the heatmap in your GitHub profile README.
     </li>
     <li>
       <strong>Profile README is updated</strong> — The <code>update_readme.py</code> script patches the <code>&lt;!-- vibestats-start --&gt;</code> / <code>&lt;!-- vibestats-end --&gt;</code> section in your <code>username/username</code> profile README with the freshly generated <code>heatmap.svg</code>.
