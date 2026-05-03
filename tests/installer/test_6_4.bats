@@ -174,6 +174,49 @@ print('Pre-existing hooks preserved and vibestats hooks added')
   [ "$status" -eq 0 ]
 }
 
+@test "[P1][6.4-UNIT-004B] configure_hooks: configures Codex hooks when ~/.codex exists" {
+  mkdir -p "${HOME}/.codex"
+  cat > "${HOME}/.codex/hooks.json" <<'JSON'
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo keep-me"
+          }
+        ]
+      }
+    ]
+  }
+}
+JSON
+
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+
+  run python3 -c "
+import json
+from pathlib import Path
+hooks = json.loads(Path('${HOME}/.codex/hooks.json').read_text())
+stop = hooks.get('hooks', {}).get('Stop', [])
+session = hooks.get('hooks', {}).get('SessionStart', [])
+assert any(h.get('command') == 'vibestats sync --quiet' for g in stop for h in g.get('hooks', []))
+assert any(h.get('command') == 'vibestats sync --quiet' for g in session for h in g.get('hooks', []))
+assert hooks['hooks']['PostToolUse'][0]['hooks'][0]['command'] == 'echo keep-me'
+config = Path('${HOME}/.codex/config.toml').read_text()
+assert '[features]' in config
+assert 'codex_hooks = true' in config
+print('Codex hooks valid')
+"
+  [ "$status" -eq 0 ]
+}
+
 # ---------------------------------------------------------------------------
 # P2 — AC #2 (FR9, R-009): inject_readme_markers adds markers + SVG img + link
 # Mock _gh api returning sample README content and SHA; assert PUT body contains

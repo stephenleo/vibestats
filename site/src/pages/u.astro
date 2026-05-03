@@ -9,9 +9,9 @@ import Base from '../layouts/Base.astro';
       var seg = window.location.pathname.split('/').filter(Boolean)[0] || '';
       var user = RE.test(seg) ? seg : '';
       if (user) {
-        window.__vibestatsData = fetch(
-          'https://raw.githubusercontent.com/' + user + '/' + user + '/main/vibestats/data.json'
-        ).then(function(r) { return r.ok ? r.json() : null; })
+        var url = 'https://raw.githubusercontent.com/' + user + '/' + user + '/main/vibestats/data.json?v=' + Date.now();
+        window.__vibestatsData = fetch(url, { cache: 'no-store' })
+          .then(function(r) { return r.ok ? r.json() : null; })
          .catch(function() { return null; });
       }
     })();
@@ -68,7 +68,7 @@ import Base from '../layouts/Base.astro';
           <div id="token-chart-labels" class="chart-labels"></div>
         </div>
         <div class="card">
-          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of output tokens by Claude model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by Claude model, all time across all machines.</span></span></h3>
+          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of output tokens by model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by model, all time across all machines.</span></span></h3>
           <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
@@ -157,7 +157,7 @@ import Base from '../layouts/Base.astro';
   if (username) {
     document.title = `vibestats — @${username}`;
     titleEl.textContent = `@${username}`;
-    subtitleEl.textContent = 'Claude Code Analytics';
+    subtitleEl.textContent = 'AI Coding Analytics';
     avatarEl.alt = `${username}'s GitHub avatar`;
     avatarEl.src = `https://github.com/${username}.png?size=80`;
     avatarEl.hidden = false;
@@ -279,7 +279,7 @@ import Base from '../layouts/Base.astro';
 
     const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean }> = [
       { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
-      { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total Claude Code sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
+      { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
       { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
       { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—', info: 'Average session duration: total active time / total sessions.' },
@@ -780,8 +780,8 @@ import Base from '../layouts/Base.astro';
         if (!result) { showError(`No vibestats data found for @${username}`); return; }
         data = result;
       } else {
-        const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json`;
-        const resp = await fetch(url);
+        const url = `https://raw.githubusercontent.com/${username}/${username}/main/vibestats/data.json?v=${Date.now()}`;
+        const resp = await fetch(url, { cache: 'no-store' });
         if (!resp.ok) { showError(`No vibestats data found for @${username}`); return; }
         data = (await resp.json()) as VibestatsData;
       }
@@ -803,7 +803,7 @@ import Base from '../layouts/Base.astro';
     const dayCount = Object.keys(data.days).length;
     const generated = new Date(data.generated_at);
     const ago = Math.round((Date.now() - generated.getTime()) / 3_600_000);
-    subtitleEl.textContent = `Claude Code Analytics \u00B7 ${dayCount} active days \u00B7 updated ${ago < 1 ? 'just now' : `${ago}h ago`}`;
+    subtitleEl.textContent = `AI Coding Analytics \u00B7 ${dayCount} active days \u00B7 updated ${ago < 1 ? 'just now' : `${ago}h ago`}`;
 
     loadingEl.hidden = true;
     contentEl.hidden = false;

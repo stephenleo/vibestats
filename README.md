@@ -1,6 +1,6 @@
 # vibestats
 
-Track your Claude Code session activity and display a GitHub contributions-style heatmap on your profile.
+Track your Claude Code and Codex session activity and display a GitHub contributions-style heatmap on your profile.
 
 <!-- vibestats heatmap screenshot placeholder -->
 
@@ -11,7 +11,7 @@ Track your Claude Code session activity and display a GitHub contributions-style
 
 vibestats has three components that work together:
 
-1. **CLI** — installed locally, hooks into Claude Code to record session activity into a private `vibestats-data` GitHub repo after each session.
+1. **CLI** — installed locally, hooks into Claude Code and Codex to record session activity into a private `vibestats-data` GitHub repo after each session.
 2. **GitHub Action** (`stephenleo/vibestats@v1`) — runs daily in your `vibestats-data` repo, aggregates the recorded sessions, and pushes an SVG heatmap to your GitHub profile repo.
 3. **Profile heatmap** — the SVG is embedded in your profile `README.md` between marker comments, updated automatically.
 
@@ -25,7 +25,7 @@ The installer handles everything in one step:
 
 - Creates a private `vibestats-data` repo in your GitHub account
 - Installs the daily aggregation workflow
-- Configures Claude Code hooks to sync after each session
+- Configures Claude Code and Codex hooks to sync after each session when those tools are installed
 - Adds the heatmap to your profile `README.md`
 - Runs an initial backfill of existing session data
 
@@ -40,7 +40,7 @@ vibestats <COMMAND>
 
 Commands:
   auth           Authenticate with GitHub
-  sync           Sync session data to vibestats-data
+  sync           Sync all supported session data to vibestats-data
   status         Show current sync status and last sync time
   machines       Manage registered machines
   uninstall      Uninstall vibestats

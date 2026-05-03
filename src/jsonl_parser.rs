@@ -379,7 +379,10 @@ mod tests {
         assert_eq!(day.cache_creation_tokens, 10);
         assert_eq!(day.message_count, 4);
         assert_eq!(day.tool_uses, 1);
-        assert_eq!(day.models.get("claude-sonnet-4-5").copied().unwrap_or(0), 50);
+        assert_eq!(
+            day.models.get("claude-sonnet-4-5").copied().unwrap_or(0),
+            50
+        );
     }
 
     #[test]
@@ -439,7 +442,10 @@ mod tests {
         parse_file(&path, "2026-04-10", "2026-04-10", &mut result);
         let _ = std::fs::remove_file(&path);
         let day = result.get("2026-04-10").expect("date present");
-        assert_eq!(day.models.get("claude-sonnet-4-5").copied().unwrap_or(0), 30);
+        assert_eq!(
+            day.models.get("claude-sonnet-4-5").copied().unwrap_or(0),
+            30
+        );
         assert_eq!(day.models.get("claude-opus-4").copied().unwrap_or(0), 70);
         assert_eq!(day.output_tokens, 100);
     }

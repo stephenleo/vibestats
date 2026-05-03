@@ -235,7 +235,7 @@ create_vibestats_data_repo() {
 generate_aggregate_workflow_content() {
   cat <<'WORKFLOW'
 # aggregate.yml — Copy this file to your vibestats-data/.github/workflows/ directory.
-# It runs the vibestats community action daily to aggregate your Claude Code session data
+# It runs the vibestats community action daily to aggregate your AI coding session data
 # and update your GitHub profile heatmap automatically.
 name: Aggregate vibestats data
 
@@ -491,6 +491,105 @@ with open(settings_path, 'w') as f:
     f.write('\n')
 PYEOF
   echo "Claude Code hooks configured in ~/.claude/settings.json"
+  configure_codex_hooks
+}
+
+# Configure Codex hooks when Codex is installed on this machine.
+# Codex hook output is protocol-sensitive, so use --quiet.
+configure_codex_hooks() {
+  CODEX_DIR="${HOME}/.codex"
+  if [ ! -d "${CODEX_DIR}" ]; then
+    return 0
+  fi
+
+  CODEX_HOOKS="${CODEX_DIR}/hooks.json"
+  CODEX_CONFIG="${CODEX_DIR}/config.toml"
+  python3 - "$CODEX_HOOKS" "$CODEX_CONFIG" <<'PYEOF'
+import json
+import sys
+from pathlib import Path
+
+hooks_path = Path(sys.argv[1])
+config_path = Path(sys.argv[2])
+
+try:
+    with hooks_path.open("r") as f:
+        hooks_doc = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    hooks_doc = {}
+
+if not isinstance(hooks_doc, dict):
+    hooks_doc = {}
+hooks_doc.setdefault("hooks", {})
+
+def ensure_hook(hook_type, command):
+    groups = hooks_doc["hooks"].get(hook_type, [])
+    if not isinstance(groups, list):
+        groups = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        hooks = group.get("hooks", [])
+        if not isinstance(hooks, list):
+            continue
+        for hook in hooks:
+            if not isinstance(hook, dict):
+                continue
+            old_command = hook.get("command")
+            if old_command == "vibestats" or (
+                isinstance(old_command, str) and old_command.startswith("vibestats ")
+            ):
+                hook["command"] = command
+    present = any(
+        isinstance(group, dict)
+        and any(
+            isinstance(hook, dict) and hook.get("command") == command
+            for hook in group.get("hooks", [])
+        )
+        for group in groups
+    )
+    if not present:
+        groups.append({"hooks": [{"type": "command", "command": command}]})
+    hooks_doc["hooks"][hook_type] = groups
+
+ensure_hook("Stop", "vibestats sync --quiet")
+ensure_hook("SessionStart", "vibestats sync --quiet")
+
+hooks_path.parent.mkdir(parents=True, exist_ok=True)
+with hooks_path.open("w") as f:
+    json.dump(hooks_doc, f, indent=2)
+    f.write("\n")
+
+try:
+    config_text = config_path.read_text()
+except FileNotFoundError:
+    config_text = ""
+
+lines = config_text.splitlines()
+features_idx = None
+codex_hooks_idx = None
+for i, line in enumerate(lines):
+    stripped = line.strip()
+    if stripped == "[features]":
+        features_idx = i
+    elif stripped.startswith("codex_hooks"):
+        codex_hooks_idx = i
+
+if codex_hooks_idx is not None:
+    lines[codex_hooks_idx] = "codex_hooks = true"
+elif features_idx is not None:
+    insert_at = features_idx + 1
+    while insert_at < len(lines) and not lines[insert_at].lstrip().startswith("["):
+        insert_at += 1
+    lines.insert(insert_at, "codex_hooks = true")
+else:
+    if lines and lines[-1].strip():
+        lines.append("")
+    lines.extend(["[features]", "codex_hooks = true"])
+
+config_path.write_text("\n".join(lines) + "\n")
+PYEOF
+  echo "Codex hooks configured in ~/.codex/hooks.json"
 }
 
 # ---------------------------------------------------------------------------

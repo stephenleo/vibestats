@@ -169,6 +169,7 @@ impl Checkpoint {
     }
 
     /// Returns true if stored hash for date equals provided hash.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn hash_matches(&self, date: &str, hash: &str) -> bool {
         self.date_hashes
             .get(date)
@@ -176,9 +177,35 @@ impl Checkpoint {
             .unwrap_or(false)
     }
 
+    /// Returns true if stored hash for harness/date equals provided hash.
+    ///
+    /// Date-only keys are kept for backward compatibility with existing
+    /// Claude-only checkpoints created before harness-aware sync.
+    pub fn hash_matches_for_harness(&self, harness: &str, date: &str, hash: &str) -> bool {
+        let key = harness_date_key(harness, date);
+        self.date_hashes
+            .get(&key)
+            .or_else(|| {
+                if harness == "claude" {
+                    self.date_hashes.get(date)
+                } else {
+                    None
+                }
+            })
+            .map(|stored| stored == hash)
+            .unwrap_or(false)
+    }
+
     /// Upserts entry in date_hashes for the given date.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn update_hash(&mut self, date: &str, hash: &str) {
         self.date_hashes.insert(date.to_string(), hash.to_string());
+    }
+
+    /// Upserts entry in date_hashes for the given harness/date.
+    pub fn update_hash_for_harness(&mut self, harness: &str, date: &str, hash: &str) {
+        self.date_hashes
+            .insert(harness_date_key(harness, date), hash.to_string());
     }
 
     /// Sets auth_error to true.
@@ -201,12 +228,39 @@ impl Checkpoint {
         self.machine_status = status.to_string();
     }
 
-    /// Returns the most recent date key in `date_hashes` (format `"YYYY-MM-DD"`).
+    /// Returns the catch-up start date derived from `date_hashes`.
     ///
-    /// Lexicographic max is correct for zero-padded ISO 8601 date strings.
+    /// For harness-aware checkpoints, this returns the oldest latest date across
+    /// harnesses. That prevents one successfully synced harness from masking a
+    /// stale one during SessionStart catch-up.
     /// Returns `None` if `date_hashes` is empty.
     pub fn get_last_sync_date(&self) -> Option<String> {
-        self.date_hashes.keys().max().cloned()
+        let mut latest_by_harness: HashMap<String, String> = HashMap::new();
+        for key in self.date_hashes.keys() {
+            let Some((harness, date)) = harness_and_date_from_hash_key(key) else {
+                continue;
+            };
+            let entry = latest_by_harness
+                .entry(harness)
+                .or_insert_with(|| date.clone());
+            if date > *entry {
+                *entry = date;
+            }
+        }
+        latest_by_harness.into_values().min()
+    }
+}
+
+fn harness_date_key(harness: &str, date: &str) -> String {
+    format!("{harness}:{date}")
+}
+
+fn harness_and_date_from_hash_key(key: &str) -> Option<(String, String)> {
+    let (harness, date) = key.split_once(':').unwrap_or(("claude", key));
+    if date.len() == 10 {
+        Some((harness.to_string(), date.to_string()))
+    } else {
+        None
     }
 }
 
@@ -282,6 +336,26 @@ mod tests {
     }
 
     #[test]
+    fn harness_hashes_do_not_collide_on_same_date() {
+        let mut cp = Checkpoint::default();
+        cp.update_hash_for_harness("claude", "2026-05-03", "claudehash");
+        cp.update_hash_for_harness("codex", "2026-05-03", "codexhash");
+
+        assert!(cp.hash_matches_for_harness("claude", "2026-05-03", "claudehash"));
+        assert!(cp.hash_matches_for_harness("codex", "2026-05-03", "codexhash"));
+        assert!(!cp.hash_matches_for_harness("codex", "2026-05-03", "claudehash"));
+    }
+
+    #[test]
+    fn claude_harness_matches_legacy_date_only_hash() {
+        let mut cp = Checkpoint::default();
+        cp.update_hash("2026-05-03", "legacyhash");
+
+        assert!(cp.hash_matches_for_harness("claude", "2026-05-03", "legacyhash"));
+        assert!(!cp.hash_matches_for_harness("codex", "2026-05-03", "legacyhash"));
+    }
+
+    #[test]
     fn auth_error_roundtrip() {
         let mut cp = Checkpoint::default();
         assert!(!cp.auth_error);
@@ -315,6 +389,15 @@ mod tests {
         cp.update_hash("2026-03-10", "hash1");
         cp.update_hash("2026-04-11", "hash2");
         cp.update_hash("2026-01-01", "hash3");
+        assert_eq!(cp.get_last_sync_date(), Some("2026-04-11".to_string()));
+    }
+
+    #[test]
+    fn get_last_sync_date_handles_harness_keys() {
+        let mut cp = Checkpoint::default();
+        cp.update_hash_for_harness("claude", "2026-03-10", "hash1");
+        cp.update_hash_for_harness("codex", "2026-04-12", "hash2");
+        cp.update_hash("2026-04-11", "hash3");
         assert_eq!(cp.get_last_sync_date(), Some("2026-04-11".to_string()));
     }
 
