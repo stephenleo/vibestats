@@ -279,16 +279,24 @@ import 'cal-heatmap/cal-heatmap.css';
       // ── Mock token bars ───────────────────────────────────────────
       // Mirrors the dashboard's daily-token chart: a hard gradient stop
       // at the output % so each bar shows the dark output band at the
-      // bottom and the lighter input band on top.
+      // bottom and the lighter input band on top. ~15% of days are
+      // rendered as empty (a thin grey sliver) to mirror the no-activity
+      // days users see on their real dashboard and heatmap.
       const tokenBars = document.getElementById('preview-token-bars')!;
       for (let i = 0; i < 30; i++) {
         const bar = document.createElement('div');
         bar.className = 'pbar';
-        const isWeekend = i % 7 === 5 || i % 7 === 6;
-        const h = isWeekend ? 15 + Math.random() * 30 : 35 + Math.random() * 65;
-        const outputPct = 40 + Math.round(Math.random() * 20); // 40–60% output
-        bar.style.height = `${h}%`;
-        bar.style.background = `linear-gradient(to top, #f97316 ${outputPct}%, #fb923c ${outputPct}%)`;
+        const isEmpty = Math.random() < 0.15;
+        if (isEmpty) {
+          bar.classList.add('pbar-empty');
+          bar.style.height = '3%';
+        } else {
+          const isWeekend = i % 7 === 5 || i % 7 === 6;
+          const h = isWeekend ? 15 + Math.random() * 30 : 35 + Math.random() * 65;
+          const outputPct = 40 + Math.round(Math.random() * 20); // 40–60% output
+          bar.style.height = `${h}%`;
+          bar.style.background = `linear-gradient(to top, #f97316 ${outputPct}%, #fb923c ${outputPct}%)`;
+        }
         tokenBars.appendChild(bar);
       }
 
@@ -831,6 +839,8 @@ import 'cal-heatmap/cal-heatmap.css';
     border-radius: 2px 2px 0 0;
     min-width: 3px;
   }
+  .pbar-empty { background: #e5e7eb; }
+  :global(.dark) .pbar-empty { background: #334155; }
   .pspark-row {
     display: flex;
     align-items: center;
