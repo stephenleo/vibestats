@@ -1,8 +1,6 @@
 use crate::checkpoint::Checkpoint;
-use crate::codex_parser;
 use crate::config::Config;
 use crate::github_api::GithubApi;
-use crate::jsonl_parser;
 use crate::logger;
 use std::path::PathBuf;
 
@@ -16,25 +14,10 @@ fn checkpoint_path() -> Option<PathBuf> {
     })
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Harness {
-    Claude,
-    Codex,
-}
-
-impl Harness {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Claude => "claude",
-            Self::Codex => "codex",
-        }
-    }
-}
-
-/// Constructs the Hive path for a given date, harness, and machine_id.
-/// Input: date as "YYYY-MM-DD", machine_id from config.
-/// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness>/machine_id=<id>/data.json"
-fn hive_path(date: &str, harness: Harness, machine_id: &str) -> String {
+/// Constructs the Hive path for a given date, harness id, and machine_id.
+/// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config.
+/// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness_id>/machine_id=<id>/data.json"
+fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
     // date is "YYYY-MM-DD" — indexing is safe because parse_date_range only returns
     // dates extracted from JSONL timestamps in that exact format.
     let year = &date[0..4];
@@ -42,11 +25,7 @@ fn hive_path(date: &str, harness: Harness, machine_id: &str) -> String {
     let day = &date[8..10];
     format!(
         "machines/year={}/month={}/day={}/harness={}/machine_id={}/data.json",
-        year,
-        month,
-        day,
-        harness.as_str(),
-        machine_id
+        year, month, day, harness_id, machine_id
     )
 }
 
@@ -133,27 +112,28 @@ fn sha256_hex(data: &[u8]) -> String {
     )
 }
 
-/// Orchestrates the sync operation for a given date range.
+/// Orchestrates the sync operation for a given date range across all registered harnesses.
 ///
-/// Loads config and checkpoint internally. Calls `jsonl_parser::parse_date_range`,
-/// computes per-date payload hashes, skips unchanged dates, pushes changed dates
-/// via `github_api`, and updates the checkpoint. Always saves checkpoint and
+/// Loads config and checkpoint internally. Calls each harness's `parse_date_range` via
+/// the trait, computes per-date payload hashes, skips unchanged dates, pushes changed
+/// dates via `github_api`, and updates the checkpoint. Always saves checkpoint and
 /// returns `()` — never calls `std::process::exit`.
 pub fn run(start_date: &str, end_date: &str) {
-    run_harnesses(start_date, end_date, &[Harness::Claude, Harness::Codex]);
+    run_harnesses(start_date, end_date, crate::harnesses::all());
 }
 
-pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
+pub fn run_harnesses(
+    start_date: &str,
+    end_date: &str,
+    harnesses: &[&'static dyn crate::harnesses::Harness],
+) {
     let config = Config::load_or_exit();
     let cp_path = checkpoint_path();
     let mut checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
     for harness in harnesses {
-        let activities = match harness {
-            Harness::Claude => jsonl_parser::parse_date_range(start_date, end_date),
-            Harness::Codex => codex_parser::parse_date_range(start_date, end_date),
-        };
+        let activities = harness.parse_date_range(start_date, end_date);
 
         // Iterate dates in sorted order so log output and HTTP call ordering are
         // deterministic across runs (HashMap iteration order is randomized per run).
@@ -178,14 +158,14 @@ pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
             let hash = sha256_hex(payload.as_bytes());
 
             // Skip if hash matches checkpoint (idempotency — NFR12)
-            if checkpoint.hash_matches_for_harness(harness.as_str(), date, &hash) {
+            if checkpoint.hash_matches_for_harness(harness.id(), date, &hash) {
                 continue;
             }
 
-            let path = hive_path(date, *harness, &config.machine_id);
+            let path = hive_path(date, harness.id(), &config.machine_id);
             match api.put_file(&path, &payload) {
                 Ok(()) => {
-                    checkpoint.update_hash_for_harness(harness.as_str(), date, &hash);
+                    checkpoint.update_hash_for_harness(harness.id(), date, &hash);
                     checkpoint.clear_auth_error();
                 }
                 Err(e) => {
@@ -194,7 +174,7 @@ pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
                     checkpoint.set_auth_error();
                     logger::error(&format!(
                         "sync: put_file failed for {} {date}: {e}",
-                        harness.as_str()
+                        harness.id()
                     ));
                 }
             }
@@ -250,7 +230,7 @@ mod tests {
         // format (field order, spacing, new fields) breaks loudly rather than
         // silently violating idempotency (NFR12) against already-synced data.
         // Fields serialized in DailyActivity definition order; BTreeMap models: {}.
-        use crate::jsonl_parser::DailyActivity;
+        use crate::harnesses::DailyActivity;
         let activity = DailyActivity {
             sessions: 4,
             active_minutes: 87,
@@ -267,7 +247,7 @@ mod tests {
     fn payload_format_matches_hashed_bytes() {
         // Verify the exact JSON bytes produced by serde_json for a known DailyActivity.
         // This pins the field order and ensures the payload is byte-for-byte deterministic.
-        use crate::jsonl_parser::DailyActivity;
+        use crate::harnesses::DailyActivity;
         let activity = DailyActivity {
             sessions: 4,
             active_minutes: 87,
@@ -293,7 +273,7 @@ mod tests {
 
     #[test]
     fn hive_path_formats_correctly() {
-        let result = hive_path("2026-04-10", Harness::Claude, "stephens-mbp-a1b2c3");
+        let result = hive_path("2026-04-10", "claude", "stephens-mbp-a1b2c3");
         assert_eq!(
             result,
             "machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3/data.json"
@@ -302,7 +282,7 @@ mod tests {
 
     #[test]
     fn hive_path_preserves_zero_padding() {
-        let result = hive_path("2026-01-05", Harness::Claude, "my-machine-000001");
+        let result = hive_path("2026-01-05", "claude", "my-machine-000001");
         assert_eq!(
             result,
             "machines/year=2026/month=01/day=05/harness=claude/machine_id=my-machine-000001/data.json"
@@ -311,7 +291,7 @@ mod tests {
 
     #[test]
     fn hive_path_uses_selected_harness() {
-        let result = hive_path("2026-05-03", Harness::Codex, "my-machine-000001");
+        let result = hive_path("2026-05-03", "codex", "my-machine-000001");
         assert_eq!(
             result,
             "machines/year=2026/month=05/day=03/harness=codex/machine_id=my-machine-000001/data.json"

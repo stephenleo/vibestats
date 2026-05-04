@@ -1,23 +1,4 @@
-use crate::codex_parser;
-use crate::jsonl_parser;
-use crate::sync::Harness;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum HarnessSelection {
-    All,
-    Claude,
-    Codex,
-}
-
-impl HarnessSelection {
-    fn harnesses(self) -> &'static [Harness] {
-        match self {
-            Self::All => &[Harness::Claude, Harness::Codex],
-            Self::Claude => &[Harness::Claude],
-            Self::Codex => &[Harness::Codex],
-        }
-    }
-}
+use crate::harnesses::Harness;
 
 /// Computes today's date in UTC as "YYYY-MM-DD" using only std.
 /// Uses the civil-from-days algorithm (Howard Hinnant):
@@ -55,10 +36,22 @@ fn today_utc() -> String {
 /// - `backfill = true`: discovers all dates in selected harness history and syncs the
 ///   full range from the earliest date to today.
 ///
+/// `selection = None` means every registered harness; `Some(h)` runs only that one.
+///
 /// NEVER calls `std::process::exit` — `main.rs` handles exit.
-pub fn run(backfill: bool, selection: HarnessSelection, quiet: bool) {
+pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool) {
     let today = today_utc();
-    let harnesses = selection.harnesses();
+    // Resolve the selection into a slice. The `single` array is bound here so
+    // its lifetime extends through the rest of the function — taking a
+    // sub-slice of a temporary array is a borrow-check error.
+    let single: [&'static dyn Harness; 1];
+    let harnesses: &[&'static dyn Harness] = match selection {
+        Some(h) => {
+            single = [h];
+            &single
+        }
+        None => crate::harnesses::all(),
+    };
 
     if !backfill {
         crate::sync::run_harnesses(&today, &today, harnesses);
@@ -71,10 +64,7 @@ pub fn run(backfill: bool, selection: HarnessSelection, quiet: bool) {
         // parse_date_range returns every date present in local history.
         let mut activities = std::collections::HashMap::new();
         for harness in harnesses {
-            let harness_activities = match harness {
-                Harness::Claude => jsonl_parser::parse_date_range("0000-00-00", &today),
-                Harness::Codex => codex_parser::parse_date_range("0000-00-00", &today),
-            };
+            let harness_activities = harness.parse_date_range("0000-00-00", &today);
             for date in harness_activities.keys() {
                 activities.insert(date.clone(), ());
             }

@@ -1,8 +1,32 @@
-use crate::jsonl_parser::DailyActivity;
+//! Codex harness: parses `~/.codex/sessions/**/*.jsonl` rollout files.
+
+use crate::harnesses::{DailyActivity, Harness};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
+
+pub struct Codex;
+
+impl Harness for Codex {
+    fn id(&self) -> &'static str {
+        "codex"
+    }
+
+    fn display_name(&self) -> &'static str {
+        "Codex"
+    }
+
+    fn is_installed(&self) -> bool {
+        codex_sessions_dir().is_some_and(|p| p.is_dir())
+    }
+
+    fn parse_date_range(&self, start: &str, end: &str) -> HashMap<String, DailyActivity> {
+        parse_date_range(start, end)
+    }
+}
+
+// ── Private serde types — moved verbatim from src/codex_parser.rs ───────────
 
 #[derive(Debug, Default, Clone, Copy, Deserialize)]
 struct CodexTokenUsage {
@@ -50,6 +74,8 @@ struct CodexSessionDay {
     first_ts: Option<i64>,
     last_ts: Option<i64>,
 }
+
+// ── Private helpers — bodies moved verbatim from src/codex_parser.rs ────────
 
 fn codex_sessions_dir() -> Option<PathBuf> {
     std::env::var("HOME")
@@ -242,7 +268,7 @@ fn parse_file(path: &Path, start: &str, end: &str, result: &mut HashMap<String, 
 /// Codex rollouts expose per-turn `last_token_usage` counters. We group those
 /// counters by the local `current_date` emitted in each turn context, matching
 /// the day boundaries used by Codex usage tools.
-pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity> {
+fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity> {
     let mut result: HashMap<String, DailyActivity> = HashMap::new();
 
     let sessions_dir = match codex_sessions_dir() {
@@ -259,6 +285,8 @@ pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity
 
     result
 }
+
+// ── Tests — moved verbatim from src/codex_parser.rs ─────────────────────────
 
 #[cfg(test)]
 mod tests {

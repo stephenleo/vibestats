@@ -1,25 +1,33 @@
-use serde::{Deserialize, Serialize};
+//! Claude Code harness: parses `~/.claude/projects/**/*.jsonl` session files.
+
+use crate::harnesses::{DailyActivity, Harness};
+use serde::Deserialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
 
-/// Per-day aggregated session activity.
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct DailyActivity {
-    pub sessions: u32,
-    pub active_minutes: u32,
-    pub input_tokens: u64,
-    pub output_tokens: u64,
-    pub cache_read_tokens: u64,
-    pub cache_creation_tokens: u64,
-    /// Maps model name → total output tokens attributed to that model on this day.
-    /// BTreeMap ensures deterministic serialization order (alphabetical keys).
-    pub models: BTreeMap<String, u64>,
-    pub longest_session_minutes: u32,
-    pub message_count: u32,
-    pub tool_uses: u32,
+pub struct Claude;
+
+impl Harness for Claude {
+    fn id(&self) -> &'static str {
+        "claude"
+    }
+
+    fn display_name(&self) -> &'static str {
+        "Claude Code"
+    }
+
+    fn is_installed(&self) -> bool {
+        claude_projects_dir().is_some_and(|p| p.is_dir())
+    }
+
+    fn parse_date_range(&self, start: &str, end: &str) -> HashMap<String, DailyActivity> {
+        parse_date_range(start, end)
+    }
 }
 
-/// Token usage from an assistant message's `usage` object.
+// ── Private serde types — moved verbatim from src/jsonl_parser.rs ───────────
+
 #[derive(Debug, Default, Deserialize)]
 struct MessageUsage {
     #[serde(default)]
@@ -32,14 +40,12 @@ struct MessageUsage {
     cache_creation_tokens: Option<u64>,
 }
 
-/// A single content block inside an assistant message.
 #[derive(Debug, Default, Deserialize)]
 struct ContentBlock {
     #[serde(rename = "type", default)]
     block_type: Option<String>,
 }
 
-/// The `message` field on an assistant JSONL entry.
 #[derive(Debug, Default, Deserialize)]
 struct AssistantMessage {
     #[serde(default)]
@@ -52,54 +58,33 @@ struct AssistantMessage {
     content: Option<Vec<ContentBlock>>,
 }
 
-/// Internal struct for deserializing individual JSONL lines.
-/// All fields are optional and default to `None` so that unknown
-/// or missing fields are silently tolerated (NFR14).
 #[derive(Debug, Default, Deserialize)]
 struct ClaudeEntry {
-    /// Entry type: "assistant", "user", "system", "attachment", etc.
     #[serde(rename = "type", default)]
     entry_type: Option<String>,
-
-    /// Entry subtype — "turn_duration" for the session summary entry.
     #[serde(default)]
     subtype: Option<String>,
-
-    /// ISO 8601 UTC timestamp with milliseconds: "2026-04-01T15:03:39.992Z"
     #[serde(default)]
     timestamp: Option<String>,
-
-    /// Session duration in milliseconds — only present on type=system, subtype=turn_duration.
-    /// JSON field name is "durationMs" (camelCase).
     #[serde(rename = "durationMs", default)]
     duration_ms: Option<u64>,
-
-    /// Assistant message object — only present on type=assistant entries.
     #[serde(default)]
     message: Option<AssistantMessage>,
-
-    /// Total message count for the session — present on type=system, subtype=turn_duration.
-    /// JSON field name is "messageCount" (camelCase).
     #[serde(rename = "messageCount", default)]
     message_count: Option<u32>,
-
-    /// Claude request identifier. Together with message.id, this is the
-    /// stable duplicate key used by ccusage.
     #[serde(rename = "requestId", default)]
     request_id: Option<String>,
 }
 
-/// Return the path to `~/.claude/projects` using `HOME` env var.
-/// Returns `None` if `HOME` is not set.
-fn claude_projects_dir() -> Option<std::path::PathBuf> {
+// ── Private helpers — bodies moved verbatim from src/jsonl_parser.rs ────────
+
+fn claude_projects_dir() -> Option<PathBuf> {
     std::env::var("HOME")
         .ok()
-        .map(|h| std::path::PathBuf::from(h).join(".claude").join("projects"))
+        .map(|h| PathBuf::from(h).join(".claude").join("projects"))
 }
 
-/// Recursively collect all `*.jsonl` files under `dir` into `acc`.
-/// Unreadable directories are skipped silently (NFR10).
-fn collect_jsonl_files(dir: &std::path::Path, acc: &mut Vec<std::path::PathBuf>) {
+fn collect_jsonl_files(dir: &Path, acc: &mut Vec<PathBuf>) {
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(_) => return, // unreadable directory — skip silently
@@ -114,7 +99,7 @@ fn collect_jsonl_files(dir: &std::path::Path, acc: &mut Vec<std::path::PathBuf>)
     }
 }
 
-fn earliest_timestamp(path: &std::path::Path) -> Option<String> {
+fn earliest_timestamp(path: &Path) -> Option<String> {
     let file = std::fs::File::open(path).ok()?;
     let mut earliest: Option<String> = None;
     for line in BufReader::new(file).lines().map_while(Result::ok) {
@@ -132,14 +117,8 @@ fn earliest_timestamp(path: &std::path::Path) -> Option<String> {
     earliest
 }
 
-/// Parse a single JSONL file (one session) and accumulate its activity
-/// into `result` if its date falls within `[start, end]` (inclusive).
-///
-/// - Unreadable files are skipped silently.
-/// - Malformed JSON lines are skipped silently (NFR14).
-/// - One file = one session (+1 to `sessions`).
 fn parse_file(
-    path: &std::path::Path,
+    path: &Path,
     start: &str,
     end: &str,
     result: &mut HashMap<String, DailyActivity>,
@@ -251,11 +230,7 @@ fn parse_file(
     }
 }
 
-/// Walk `~/.claude/projects/**/*.jsonl` and aggregate per-day session activity
-/// for dates in `[start, end]` inclusive (YYYY-MM-DD strings).
-///
-/// Returns an empty map if the directory is missing or unreadable.
-pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity> {
+fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity> {
     let mut result: HashMap<String, DailyActivity> = HashMap::new();
 
     let projects_dir = match claude_projects_dir() {
@@ -263,7 +238,7 @@ pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity
         None => return result,
     };
 
-    let mut jsonl_files: Vec<std::path::PathBuf> = Vec::new();
+    let mut jsonl_files: Vec<PathBuf> = Vec::new();
     collect_jsonl_files(&projects_dir, &mut jsonl_files);
     jsonl_files.sort_by(|a, b| {
         let a_ts = earliest_timestamp(a);
@@ -284,6 +259,8 @@ pub fn parse_date_range(start: &str, end: &str) -> HashMap<String, DailyActivity
 
     result
 }
+
+// ── Tests — moved verbatim from src/jsonl_parser.rs ─────────────────────────
 
 #[cfg(test)]
 mod tests {
