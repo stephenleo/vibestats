@@ -277,16 +277,18 @@ import 'cal-heatmap/cal-heatmap.css';
 
     <script>
       // ── Mock token bars ───────────────────────────────────────────
+      // Mirrors the dashboard's daily-token chart: a hard gradient stop
+      // at the output % so each bar shows the dark output band at the
+      // bottom and the lighter input band on top.
       const tokenBars = document.getElementById('preview-token-bars')!;
       for (let i = 0; i < 30; i++) {
         const bar = document.createElement('div');
         bar.className = 'pbar';
         const isWeekend = i % 7 === 5 || i % 7 === 6;
-        const h = isWeekend ? 10 + Math.random() * 25 : 30 + Math.random() * 70;
+        const h = isWeekend ? 15 + Math.random() * 30 : 35 + Math.random() * 65;
+        const outputPct = 40 + Math.round(Math.random() * 20); // 40–60% output
         bar.style.height = `${h}%`;
-        bar.style.background = isWeekend
-          ? 'var(--color-text-muted, #9ca3af)'
-          : 'linear-gradient(to top, #f97316, #fb923c)';
+        bar.style.background = `linear-gradient(to top, #f97316 ${outputPct}%, #fb923c ${outputPct}%)`;
         tokenBars.appendChild(bar);
       }
 
