@@ -70,7 +70,7 @@ import Base from '../layouts/Base.astro';
           <div id="token-chart-labels" class="chart-labels"></div>
         </div>
         <div class="card">
-          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of output tokens by model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by model, all time across all machines.</span></span></h3>
+          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of total tokens (input + output) by model, all time across all machines. Per-model input tokens are estimated from each model's daily output share within its harness, so harness totals match the Top Harness tile.">i<span class="info-tooltip">Share of total tokens (input + output) by model, all time across all machines. Per-model input tokens are estimated from each model's daily output share within its harness, so harness totals match the Top Harness tile.</span></span></h3>
           <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
@@ -220,21 +220,54 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  function colorScale(metric: string): { range: string[]; domain: number[] } {
+  // Per-metric colour ramps. Lowest shade is intentionally a saturated mid-tone
+  // (not a pale wash) so a single-event day stays visible against both the card
+  // background and the "empty" cell colour — same approach as GitHub's
+  // contributions heatmap.
+  const PALETTES: Record<string, string[]> = {
+    sessions:       ['#fdba74', '#fb923c', '#f97316', '#c2410c'],
+    tokens:         ['#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8'],
+    active_minutes: ['#6ee7b7', '#34d399', '#10b981', '#047857'],
+    tool_uses:      ['#c4b5fd', '#a78bfa', '#8b5cf6', '#6d28d9'],
+  };
+
+  function quantile(sortedAsc: number[], q: number): number {
+    const idx = Math.min(sortedAsc.length - 1, Math.floor(sortedAsc.length * q));
+    return sortedAsc[idx];
+  }
+
+  // Round up to a "nice" number so threshold tooltips don't show 47, 211, etc.
+  function niceCeil(n: number): number {
+    if (n <= 10) return Math.ceil(n);
+    const mag = Math.pow(10, Math.floor(Math.log10(n)));
+    return Math.ceil(n / mag) * mag;
+  }
+
+  function colorScale(metric: string, values: number[]): { range: string[]; domain: number[] } {
     const isDark = document.documentElement.classList.contains('dark');
     const empty = isDark ? '#2a3346' : '#ebedf0';
-    switch (metric) {
-      case 'sessions':
-        return { range: [empty, '#fef3e8', '#fed7aa', '#fb923c', '#f97316'], domain: [1, 10, 50, 100] };
-      case 'tokens':
-        return { range: [empty, '#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'], domain: [1, 50000, 200000, 500000] };
-      case 'active_minutes':
-        return { range: [empty, '#d1fae5', '#6ee7b7', '#10b981', '#047857'], domain: [1, 30, 120, 300] };
-      case 'tool_uses':
-        return { range: [empty, '#ede9fe', '#c4b5fd', '#8b5cf6', '#6d28d9'], domain: [1, 20, 100, 300] };
-      default:
-        return { range: [empty, '#fef3e8', '#fed7aa', '#fb923c', '#f97316'], domain: [1, 10, 50, 100] };
+    const palette = PALETTES[metric] ?? PALETTES.sessions;
+
+    const nz = values.filter(v => v > 0).sort((a, b) => a - b);
+
+    // No active days: any strictly-positive thresholds work — every cell is empty.
+    if (nz.length === 0) {
+      return { range: [empty, ...palette], domain: [1, 2, 3, 4] };
     }
+
+    // Threshold scale: value < domain[i] → range[i]. domain[0] = 1 means any
+    // non-zero value lands in the lowest active bucket; the upper three bands
+    // come from quantiles of the user's own non-zero distribution.
+    const raw = [1, niceCeil(quantile(nz, 0.4)), niceCeil(quantile(nz, 0.7)), niceCeil(quantile(nz, 0.9))];
+
+    // Enforce strictly-increasing order (collisions happen on uniform data).
+    const domain: number[] = [];
+    for (const v of raw) {
+      const prev = domain[domain.length - 1];
+      domain.push(prev !== undefined && v <= prev ? prev + 1 : v);
+    }
+
+    return { range: [empty, ...palette], domain };
   }
 
   // ── Data aggregation helpers ───────────────────────────────────────
@@ -393,7 +426,7 @@ import Base from '../layouts/Base.astro';
       .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
 
     const range12 = 12;
-    const scale = colorScale(metric);
+    const scale = colorScale(metric, calData.map(d => d.value));
 
     const cal = new CalHeatmap();
     await cal.paint(
@@ -520,10 +553,35 @@ import Base from '../layouts/Base.astro';
 
   // ── Model donut chart ──────────────────────────────────────────────
   function renderModelChart(data: VibestatsData): void {
+    // d.models stores OUTPUT tokens per model (see src/harnesses/{claude,codex}.rs).
+    // The Top Harness KPI uses INPUT + OUTPUT tokens, so we reconstruct each
+    // model's total tokens by prorating input tokens *within* the model's own
+    // harness (using d.harnesses[h].input_tokens as the truth and the model's
+    // output share inside that harness as the weight). Doing the proration per
+    // harness — instead of across the whole day — means each harness's slices
+    // sum exactly to that harness's totals, so the donut reconciles with the
+    // Top Harness tile.
+    const harnessOf = (model: string): string | null => {
+      if (/^claude-/.test(model)) return 'claude';
+      if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
+      return null;
+    };
+
     const modelTotals: Record<string, number> = {};
     for (const d of Object.values(data.days)) {
-      for (const [model, count] of Object.entries(d.models ?? {})) {
-        modelTotals[model] = (modelTotals[model] ?? 0) + count;
+      // Per-harness output sum from per-model output (used as proration weights).
+      const harnessOut: Record<string, number> = {};
+      for (const [model, out] of Object.entries(d.models ?? {})) {
+        const h = harnessOf(model);
+        if (!h) continue;
+        harnessOut[h] = (harnessOut[h] ?? 0) + out;
+      }
+      for (const [model, out] of Object.entries(d.models ?? {})) {
+        const h = harnessOf(model);
+        const harnessIn = h ? (d.harnesses?.[h]?.input_tokens ?? 0) : 0;
+        const totalOutForHarness = h ? harnessOut[h] : 0;
+        const inputShare = totalOutForHarness > 0 ? (out / totalOutForHarness) * harnessIn : 0;
+        modelTotals[model] = (modelTotals[model] ?? 0) + out + inputShare;
       }
     }
 
@@ -538,68 +596,85 @@ import Base from '../layouts/Base.astro';
       return;
     }
 
+    // Top 4 models by share + everything else collapsed into "Other".
+    const TOP_N = 4;
     const colors = [
       'var(--color-brand)',
       'var(--c-blue)',
       'var(--c-purple)',
       'var(--c-cyan)',
-      'var(--c-green)',
-      'var(--c-yellow)',
-      '#ef4444',
-      'var(--color-text-muted)',
+      'var(--color-text-muted)', // Other
     ];
-    const isCodexModel = (model: string): boolean => /^(gpt-|o\d|codex)/i.test(model);
     const formatModelLabel = (model: string): string =>
       model === 'Other'
         ? model
         : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
-    const selected = new Map<string, number>();
-    for (const [model, count] of sorted.slice(0, colors.length - 1)) {
-      selected.set(model, count);
-    }
-    for (const [model, count] of sorted.filter(([model]) => isCodexModel(model)).slice(0, 3)) {
-      selected.set(model, count);
-    }
-
-    const top: Array<[string, number]> = Array.from(selected.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, colors.length - 1);
-    const visibleModels = new Set(top.map(([model]) => model));
-    const otherTotal = sorted
-      .filter(([model]) => !visibleModels.has(model))
-      .reduce((s, [, v]) => s + v, 0);
+    const top: Array<[string, number]> = sorted.slice(0, TOP_N);
+    const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
     if (otherTotal > 0) top.push(['Other', otherTotal]);
 
-    const gradientParts: string[] = [];
-    const slices: Array<{ name: string; pct: number; color: string }> = [];
+    const slices: Array<{ name: string; pct: number; color: string; startPct: number; endPct: number }> = [];
     let cumPct = 0;
     for (let i = 0; i < top.length; i++) {
       const pct = (top[i][1] / total) * 100;
       const color = colors[i] ?? colors[colors.length - 1];
-      gradientParts.push(`${color} ${cumPct}% ${cumPct + pct}%`);
-      slices.push({ name: top[i][0], pct: Math.round(pct), color });
+      slices.push({ name: top[i][0], pct: Math.round(pct), color, startPct: cumPct / 100, endPct: (cumPct + pct) / 100 });
       cumPct += pct;
     }
 
-    const donut = document.createElement('div');
-    donut.className = 'donut';
-    donut.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+    // SVG annulus: outer arc forward, line in, inner arc back, close.
+    const SIZE = 180;
+    const CX = SIZE / 2;
+    const CY = SIZE / 2;
+    const R_OUTER = 84;
+    const R_INNER = 38;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    const arcPath = (startPct: number, endPct: number): string => {
+      // Epsilon avoids the degenerate single-100% case where start/end angles coincide.
+      const sweep = Math.min(endPct - startPct, 0.9999);
+      const a0 = startPct * 2 * Math.PI - Math.PI / 2;
+      const a1 = (startPct + sweep) * 2 * Math.PI - Math.PI / 2;
+      const xO0 = CX + R_OUTER * Math.cos(a0), yO0 = CY + R_OUTER * Math.sin(a0);
+      const xO1 = CX + R_OUTER * Math.cos(a1), yO1 = CY + R_OUTER * Math.sin(a1);
+      const xI0 = CX + R_INNER * Math.cos(a0), yI0 = CY + R_INNER * Math.sin(a0);
+      const xI1 = CX + R_INNER * Math.cos(a1), yI1 = CY + R_INNER * Math.sin(a1);
+      const large = sweep > 0.5 ? 1 : 0;
+      return `M${xO0} ${yO0} A${R_OUTER} ${R_OUTER} 0 ${large} 1 ${xO1} ${yO1} L${xI1} ${yI1} A${R_INNER} ${R_INNER} 0 ${large} 0 ${xI0} ${yI0} Z`;
+    };
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'donut');
+    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Model usage breakdown');
+    for (const s of slices) {
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', arcPath(s.startPct, s.endPct));
+      path.setAttribute('fill', s.color);
+      const title = document.createElementNS(SVG_NS, 'title');
+      title.textContent = `${formatModelLabel(s.name)}: ${s.pct}%`;
+      path.appendChild(title);
+      svg.appendChild(path);
+    }
+
     const legend = document.createElement('div');
     legend.className = 'donut-legend';
     for (const s of slices) {
       const item = document.createElement('div');
       item.className = 'legend-item';
+      item.title = `${formatModelLabel(s.name)}: ${s.pct}%`;
       const dot = document.createElement('span');
       dot.className = 'legend-dot';
       dot.style.background = s.color;
       const label = document.createElement('span');
-      label.textContent = `${formatModelLabel(s.name)} — ${s.pct}%`;
+      label.textContent = formatModelLabel(s.name);
       item.appendChild(dot);
       item.appendChild(label);
       legend.appendChild(item);
     }
-    modelChartEl.appendChild(donut);
+    modelChartEl.appendChild(svg);
     modelChartEl.appendChild(legend);
   }
 
@@ -948,6 +1023,8 @@ import Base from '../layouts/Base.astro';
     border: 1px solid var(--color-card-border);
     border-radius: 12px;
     padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
   }
   .card-title {
     font-size: 0.7rem;
@@ -1197,7 +1274,8 @@ import Base from '../layouts/Base.astro';
 
   /* ── Token chart ────────────────────────────────────────────────── */
   .chart-area {
-    height: 140px;
+    flex: 1;
+    min-height: 140px;
     display: flex;
     align-items: flex-end;
     gap: 2px;
@@ -1221,28 +1299,30 @@ import Base from '../layouts/Base.astro';
 
   /* ── Donut chart ────────────────────────────────────────────────── */
   .donut-wrapper {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    justify-content: center;
+    gap: 1.25rem;
   }
   .donut {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    position: relative;
+    width: 180px;
+    height: 180px;
     flex-shrink: 0;
+    display: block;
   }
-  .donut::after {
-    content: '';
-    position: absolute;
-    inset: 30%;
-    border-radius: 50%;
-    background: var(--color-card-bg);
+  .donut path {
+    transition: opacity 120ms ease;
+  }
+  .donut:hover path:not(:hover) {
+    opacity: 0.55;
   }
   .donut-legend {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.9rem;
   }
   .legend-item {
     display: flex;
