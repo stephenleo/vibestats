@@ -27,7 +27,6 @@ import Base from '../layouts/Base.astro';
           <p id="dash-subtitle" class="dash-meta"></p>
         </div>
       </div>
-      <div id="year-toggle" class="year-pills" aria-label="Select year"></div>
     </div>
 
     <!-- Loading / Error -->
@@ -52,11 +51,14 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-metric="active_minutes">Active Time</button>
           <button class="tab" data-metric="tool_uses">Tool Uses</button>
         </div>
-        <div class="heatmap-wrapper">
-          <div class="day-labels" aria-hidden="true">
-            <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+        <div class="heatmap-grid-row">
+          <div class="heatmap-wrapper">
+            <div class="day-labels" aria-hidden="true">
+              <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+            </div>
+            <div id="cal-heatmap"></div>
           </div>
-          <div id="cal-heatmap"></div>
+          <div id="year-toggle" class="range-pills-vertical" aria-label="Select range"></div>
         </div>
       </div>
 
@@ -977,6 +979,28 @@ import Base from '../layouts/Base.astro';
     color: var(--color-brand);
     border-bottom-color: var(--color-brand);
   }
+  .heatmap-grid-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .range-pills-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-top: 22px; /* align with cal-heatmap month labels */
+    flex-shrink: 0;
+    min-width: 56px;
+  }
+  @media (max-width: 640px) {
+    .heatmap-grid-row { flex-direction: column-reverse; }
+    .range-pills-vertical {
+      flex-direction: row;
+      flex-wrap: wrap;
+      padding-top: 0;
+      margin-bottom: 0.5rem;
+    }
+  }
   .heatmap-wrapper {
     display: flex;
     align-items: flex-start;
@@ -1030,9 +1054,9 @@ import Base from '../layouts/Base.astro';
     --color-text-muted: #64748b;
   }
 
-  /* ── Year pills ─────────────────────────────────────────────────── */
-  .year-pills { display: flex; gap: 0.5rem; }
-  .year-pill {
+  /* ── Range pills (L12M + per-year) ──────────────────────────────── */
+  .year-pills, .range-pills-vertical { display: flex; gap: 0.5rem; }
+  .year-pill, .range-pill {
     padding: 0.25rem 0.75rem;
     border-radius: 999px;
     font-size: 0.8rem;
@@ -1042,9 +1066,10 @@ import Base from '../layouts/Base.astro';
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s;
+    text-align: center;
   }
-  .year-pill:hover { border-color: var(--color-text-muted); }
-  .year-pill.active {
+  .year-pill:hover, .range-pill:hover { border-color: var(--color-text-muted); }
+  .year-pill.active, .range-pill.active {
     background: var(--color-brand);
     border-color: var(--color-brand);
     color: #fff;
