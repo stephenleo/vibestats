@@ -1169,7 +1169,7 @@ import Base from '../layouts/Base.astro';
   }
   .kpi-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 2px;
   }
   .kpi-label {
@@ -1177,6 +1177,10 @@ import Base from '../layouts/Base.astro';
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-muted);
+    /* Reserve two lines so values align across tiles when some labels wrap
+       at narrow viewports (e.g. "Total Tokens" wraps; "Sessions" doesn't). */
+    line-height: 1.25;
+    min-height: 2lh;
   }
   .kpi-value {
     font-size: 1.75rem;

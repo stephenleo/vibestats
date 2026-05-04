@@ -669,7 +669,7 @@ import 'cal-heatmap/cal-heatmap.css';
   }
   .preview-kpi-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 2px;
   }
   .preview-kpi-label {
@@ -677,6 +677,10 @@ import 'cal-heatmap/cal-heatmap.css';
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #9ca3af;
+    /* Reserve two lines so values align across tiles when some labels wrap
+       (e.g. "Total Tokens" wraps at narrow widths; "Sessions" doesn't). */
+    line-height: 1.25;
+    min-height: 2lh;
   }
   :global(.dark) .preview-kpi-label { color: #64748b; }
   .preview-kpi-value {
