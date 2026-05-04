@@ -109,7 +109,9 @@ async function main() {
       // Hide the Astro dev toolbar so it doesn't bleed into the screenshots.
       // Inject the style after the page is settled to avoid context-destroyed
       // errors when Vite optimizes deps mid-load.
-      await page.addStyleTag({ content: 'astro-dev-toolbar{display:none!important}' });
+      // Hide the site header (sticky top bar) so the hero screenshot can fit
+      // all KPI tiles + charts without the bottom of the viewport getting cut.
+      await page.addStyleTag({ content: 'astro-dev-toolbar,header{display:none!important}' });
       await page.waitForTimeout(800);
 
       await captureViewport(page, join(OUT_DIR, `dashboard-hero-${theme}.png`));

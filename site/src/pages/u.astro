@@ -550,7 +550,7 @@ import Base from '../layouts/Base.astro';
         : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
     const selected = new Map<string, number>();
-    for (const [model, count] of sorted.slice(0, 4)) {
+    for (const [model, count] of sorted.slice(0, colors.length - 1)) {
       selected.set(model, count);
     }
     for (const [model, count] of sorted.filter(([model]) => isCodexModel(model)).slice(0, 3)) {
