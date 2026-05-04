@@ -112,3 +112,24 @@ jobs:
           major="${REF_NAME%%.*}"   # v1.2.0 → v1
           git tag "$major" "$REF_NAME" --force
           git push origin "$major" --force
+
+  publish-crate:
+    name: Publish to crates.io
+    # Wait for the GitHub Release to succeed first — crates.io publishes are
+    # irreversible (only yankable), so we don't want a live crate version
+    # without a matching GitHub Release if `release` fails.
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish to crates.io
+        # Tag/version parity is already enforced by the build job's
+        # "Validate release tag matches Cargo package version" step,
+        # so by this point Cargo.toml's version == github.ref_name.
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --locked

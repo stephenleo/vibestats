@@ -30,3 +30,29 @@ jobs:
 
       - name: Build release
         run: cargo build --release
+
+  site:
+    name: Site checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Type check
+        working-directory: site
+        run: npm run check
+
+      - name: Build
+        working-directory: site
+        run: npm run build

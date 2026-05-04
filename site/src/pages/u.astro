@@ -27,7 +27,6 @@ import Base from '../layouts/Base.astro';
           <p id="dash-subtitle" class="dash-meta"></p>
         </div>
       </div>
-      <div id="year-toggle" class="year-pills" aria-label="Select year"></div>
     </div>
 
     <!-- Loading / Error -->
@@ -52,11 +51,14 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-metric="active_minutes">Active Time</button>
           <button class="tab" data-metric="tool_uses">Tool Uses</button>
         </div>
-        <div class="heatmap-wrapper">
-          <div class="day-labels" aria-hidden="true">
-            <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+        <div class="heatmap-grid-row">
+          <div class="heatmap-wrapper">
+            <div class="day-labels" aria-hidden="true">
+              <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+            </div>
+            <div id="cal-heatmap"></div>
           </div>
-          <div id="cal-heatmap"></div>
+          <div id="year-toggle" class="range-pills-vertical" aria-label="Select range"></div>
         </div>
       </div>
 
@@ -119,6 +121,7 @@ import Base from '../layouts/Base.astro';
     longest_session_minutes?: number;
     message_count?: number;
     tool_uses?: number;
+    harnesses?: Record<string, { input_tokens: number; output_tokens: number }>;
   }
 
   interface VibestatsData {
@@ -166,7 +169,7 @@ import Base from '../layouts/Base.astro';
   // ── State ──────────────────────────────────────────────────────────
   let calInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
-  let currentYear = '';
+  let currentRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -275,14 +278,29 @@ import Base from '../layouts/Base.astro';
     const check = new Date(dateStr(now));
     while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
 
-    const avgMin = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+    // Top harness: largest share of all-time tokens (input + output) per harness.
+    const harnessTotals: Record<string, number> = {};
+    for (const day of allDays) {
+      for (const [h, v] of Object.entries(day.harnesses ?? {})) {
+        harnessTotals[h] = (harnessTotals[h] ?? 0) + (v.input_tokens ?? 0) + (v.output_tokens ?? 0);
+      }
+    }
+    const harnessTotal = Object.values(harnessTotals).reduce((s, v) => s + v, 0);
+    const topHarness = Object.entries(harnessTotals).sort((a, b) => b[1] - a[1])[0];
+    const topHarnessShare = topHarness && harnessTotal > 0
+      ? Math.round((topHarness[1] / harnessTotal) * 100)
+      : 0;
+    const topHarnessName = topHarness
+      ? topHarness[0].charAt(0).toUpperCase() + topHarness[0].slice(1)
+      : '';
+    const topHarnessValue = topHarnessShare > 0 ? `${topHarnessShare}%` : '—';
 
-    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean }> = [
+    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean; sub?: string }> = [
       { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
       { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
       { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
-      { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—', info: 'Average session duration: total active time / total sessions.' },
+      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
       { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
     ];
 
@@ -317,6 +335,12 @@ import Base from '../layouts/Base.astro';
         delta.textContent = k.delta + ' vs last 30d';
         card.appendChild(delta);
       }
+      if (k.sub) {
+        const sub = document.createElement('span');
+        sub.className = 'kpi-sub';
+        sub.textContent = k.sub;
+        card.appendChild(sub);
+      }
       kpiRowEl.appendChild(card);
     }
   }
@@ -339,22 +363,36 @@ import Base from '../layouts/Base.astro';
     });
   }
 
-  async function renderHeatmap(selectedYear: string, metric: string): Promise<void> {
+  async function renderHeatmap(range: 'L12M' | string, metric: string): Promise<void> {
     if (!vibestatsData) return;
 
     if (calInstance) { calInstance.destroy(); calInstance = null; }
 
+    const now = new Date();
+    let startDate: Date;
+    let datePredicate: (d: string) => boolean;
+
+    if (range === 'L12M') {
+      // Last 12 calendar months including the current (possibly partial) month.
+      // Use Date.UTC because cal-heatmap interprets `date.start` in UTC; if
+      // we constructed a local-time date here, users east of UTC (e.g. SGT)
+      // would see the window shifted back by one month — the leading partial
+      // week of the previous month would render and the current month would
+      // get clipped off the right edge.
+      startDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
+      const startKey = dateStr(startDate);
+      datePredicate = (d) => d >= startKey;
+    } else {
+      const yearNum = parseInt(range, 10);
+      startDate = new Date(Date.UTC(yearNum, 0, 1));
+      datePredicate = (d) => d.startsWith(range);
+    }
+
     const calData = Object.entries(vibestatsData.days)
-      .filter(([date]) => date.startsWith(selectedYear))
+      .filter(([date]) => datePredicate(date))
       .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
 
-    const now = new Date();
-    const yearNum = parseInt(selectedYear, 10);
-    const isCurrentYear = yearNum === now.getFullYear();
-    const startDate = isCurrentYear
-      ? new Date(yearNum - 1, now.getMonth(), now.getDate())
-      : new Date(`${selectedYear}-01-01`);
-    const range = isCurrentYear ? 13 : 12;
+    const range12 = 12;
     const scale = colorScale(metric);
 
     const cal = new CalHeatmap();
@@ -363,12 +401,12 @@ import Base from '../layouts/Base.astro';
         itemSelector: '#cal-heatmap',
         data: {
           source: calData,
-          x: (datum) => +new Date(datum['date'] as string),
+          x: (datum: { date: string }) => +new Date(datum.date),
           y: 'value',
           defaultValue: 0,
         },
         date: { start: startDate },
-        range,
+        range: range12,
         domain: {
           type: 'month',
           label: { text: 'MMM', textAlign: 'start', position: 'top' },
@@ -425,7 +463,7 @@ import Base from '../layouts/Base.astro';
     for (const t of heatmapTabsEl.querySelectorAll('.tab')) {
       t.classList.toggle('active', t === btn);
     }
-    renderHeatmap(currentYear, metric);
+    renderHeatmap(currentRange, metric);
   });
 
   // ── Re-render heatmap on theme change ───────────────────────────────
@@ -433,7 +471,7 @@ import Base from '../layouts/Base.astro';
   themeBtn?.addEventListener('click', () => {
     // Small delay to let the .dark class toggle first
     requestAnimationFrame(() => {
-      if (vibestatsData) renderHeatmap(currentYear, currentMetric);
+      if (vibestatsData) renderHeatmap(currentRange, currentMetric);
     });
   });
 
@@ -517,7 +555,7 @@ import Base from '../layouts/Base.astro';
         : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
     const selected = new Map<string, number>();
-    for (const [model, count] of sorted.slice(0, 4)) {
+    for (const [model, count] of sorted.slice(0, colors.length - 1)) {
       selected.set(model, count);
     }
     for (const [model, count] of sorted.filter(([model]) => isCodexModel(model)).slice(0, 3)) {
@@ -772,21 +810,22 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Year toggle ────────────────────────────────────────────────────
-  function renderYearToggle(years: string[], selectedYear: string): void {
+  // ── Range toggle (L12M + per-year pills) ───────────────────────────
+  function renderRangeToggle(years: string[], selected: 'L12M' | string): void {
     clearEl(yearToggleEl);
-    for (const year of years) {
+    const ranges: Array<'L12M' | string> = ['L12M', ...years];
+    for (const r of ranges) {
       const btn = document.createElement('button');
-      btn.textContent = year;
-      btn.className = 'year-pill' + (year === selectedYear ? ' active' : '');
-      btn.setAttribute('aria-pressed', String(year === selectedYear));
+      btn.textContent = r;
+      btn.className = 'range-pill' + (r === selected ? ' active' : '');
+      btn.setAttribute('aria-pressed', String(r === selected));
       btn.addEventListener('click', async () => {
-        currentYear = year;
-        for (const b of yearToggleEl.querySelectorAll('.year-pill')) {
+        currentRange = r;
+        for (const b of yearToggleEl.querySelectorAll('.range-pill')) {
           b.classList.toggle('active', b === btn);
           b.setAttribute('aria-pressed', String(b === btn));
         }
-        await renderHeatmap(year, currentMetric);
+        await renderHeatmap(r, currentMetric);
       });
       yearToggleEl.appendChild(btn);
     }
@@ -801,7 +840,7 @@ import Base from '../layouts/Base.astro';
 
     let data: VibestatsData;
     try {
-      const earlyPromise = (window as Record<string, unknown>).__vibestatsData as
+      const earlyPromise = window.__vibestatsData as
         | Promise<VibestatsData | null> | undefined;
       if (earlyPromise) {
         const result = await earlyPromise;
@@ -825,8 +864,7 @@ import Base from '../layouts/Base.astro';
     const years = [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
     if (years.length === 0) { showError(`No vibestats data found for @${username}`); return; }
 
-    const nowYear = String(new Date().getFullYear());
-    currentYear = years.includes(nowYear) ? nowYear : years[0];
+    currentRange = 'L12M';
 
     const dayCount = Object.keys(data.days).length;
     const generated = new Date(data.generated_at);
@@ -837,8 +875,8 @@ import Base from '../layouts/Base.astro';
     contentEl.hidden = false;
 
     renderKPIs(data);
-    renderYearToggle(years, currentYear);
-    await renderHeatmap(currentYear, currentMetric);
+    renderRangeToggle(years, currentRange);
+    await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
     renderModelChart(data);
     renderSparklines(data);
@@ -952,6 +990,28 @@ import Base from '../layouts/Base.astro';
     color: var(--color-brand);
     border-bottom-color: var(--color-brand);
   }
+  .heatmap-grid-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .range-pills-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-top: 22px; /* align with cal-heatmap month labels */
+    flex-shrink: 0;
+    min-width: 56px;
+  }
+  @media (max-width: 640px) {
+    .heatmap-grid-row { flex-direction: column-reverse; }
+    .range-pills-vertical {
+      flex-direction: row;
+      flex-wrap: wrap;
+      padding-top: 0;
+      margin-bottom: 0.5rem;
+    }
+  }
   .heatmap-wrapper {
     display: flex;
     align-items: flex-start;
@@ -1005,9 +1065,9 @@ import Base from '../layouts/Base.astro';
     --color-text-muted: #64748b;
   }
 
-  /* ── Year pills ─────────────────────────────────────────────────── */
-  .year-pills { display: flex; gap: 0.5rem; }
-  .year-pill {
+  /* ── Range pills (L12M + per-year) ──────────────────────────────── */
+  .year-pills, .range-pills-vertical { display: flex; gap: 0.5rem; }
+  .year-pill, .range-pill {
     padding: 0.25rem 0.75rem;
     border-radius: 999px;
     font-size: 0.8rem;
@@ -1017,9 +1077,10 @@ import Base from '../layouts/Base.astro';
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s;
+    text-align: center;
   }
-  .year-pill:hover { border-color: var(--color-text-muted); }
-  .year-pill.active {
+  .year-pill:hover, .range-pill:hover { border-color: var(--color-text-muted); }
+  .year-pill.active, .range-pill.active {
     background: var(--color-brand);
     border-color: var(--color-brand);
     color: #fff;
@@ -1108,7 +1169,7 @@ import Base from '../layouts/Base.astro';
   }
   .kpi-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 2px;
   }
   .kpi-label {
@@ -1116,6 +1177,10 @@ import Base from '../layouts/Base.astro';
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-muted);
+    /* Reserve two lines so values align across tiles when some labels wrap
+       at narrow viewports (e.g. "Total Tokens" wraps; "Sessions" doesn't). */
+    line-height: 1.25;
+    min-height: 2lh;
   }
   .kpi-value {
     font-size: 1.75rem;
@@ -1128,6 +1193,7 @@ import Base from '../layouts/Base.astro';
   }
   .kpi-delta { font-size: 0.72rem; color: var(--c-green); }
   .kpi-delta.down { color: #ef4444; }
+  .kpi-sub { font-size: 0.78rem; color: var(--color-text-dim); font-weight: 500; }
 
   /* ── Token chart ────────────────────────────────────────────────── */
   .chart-area {

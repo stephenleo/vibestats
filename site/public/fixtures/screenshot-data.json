@@ -1,0 +1,5936 @@
+{
+  "generated_at": "2026-05-04T12:00:00Z",
+  "username": "vibestats-demo",
+  "days": {
+    "2025-05-04": {
+      "sessions": 12,
+      "active_minutes": 24,
+      "input_tokens": 55423,
+      "output_tokens": 9493,
+      "cache_read_tokens": 17498,
+      "cache_creation_tokens": 3417,
+      "models": {
+        "claude-sonnet-4-6": 4978,
+        "claude-opus-4-7": 2219,
+        "claude-opus-4-6": 1703,
+        "claude-haiku-4-5": 593,
+        "gpt-5.4": 6457,
+        "gpt-5.3-codex": 5329,
+        "gpt-5.5": 4139
+      },
+      "longest_session_minutes": 11,
+      "message_count": 70,
+      "tool_uses": 6,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 20699,
+          "output_tokens": 3546
+        },
+        "codex": {
+          "input_tokens": 34724,
+          "output_tokens": 5947
+        }
+      }
+    },
+    "2025-05-05": {
+      "sessions": 84,
+      "active_minutes": 158,
+      "input_tokens": 566749,
+      "output_tokens": 82886,
+      "cache_read_tokens": 171727,
+      "cache_creation_tokens": 36987,
+      "models": {
+        "claude-sonnet-4-6": 45869,
+        "claude-opus-4-7": 18663,
+        "claude-opus-4-6": 13132,
+        "claude-haiku-4-5": 5222
+      },
+      "longest_session_minutes": 70,
+      "message_count": 405,
+      "tool_uses": 64,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 566749,
+          "output_tokens": 82886
+        }
+      }
+    },
+    "2025-05-06": {
+      "sessions": 52,
+      "active_minutes": 96,
+      "input_tokens": 357828,
+      "output_tokens": 51305,
+      "cache_read_tokens": 123396,
+      "cache_creation_tokens": 28453,
+      "models": {
+        "claude-sonnet-4-6": 24881,
+        "claude-opus-4-7": 13140,
+        "claude-opus-4-6": 9901,
+        "claude-haiku-4-5": 3383,
+        "gpt-5.4": 15419,
+        "gpt-5.3-codex": 15000,
+        "gpt-5.5": 14652
+      },
+      "longest_session_minutes": 44,
+      "message_count": 296,
+      "tool_uses": 71,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 190486,
+          "output_tokens": 27312
+        },
+        "codex": {
+          "input_tokens": 167342,
+          "output_tokens": 23993
+        }
+      }
+    },
+    "2025-05-07": {
+      "sessions": 42,
+      "active_minutes": 70,
+      "input_tokens": 237399,
+      "output_tokens": 33718,
+      "cache_read_tokens": 101728,
+      "cache_creation_tokens": 21971,
+      "models": {
+        "claude-sonnet-4-6": 17124,
+        "claude-opus-4-7": 8083,
+        "claude-opus-4-6": 6665,
+        "claude-haiku-4-5": 1846,
+        "gpt-5.4": 12762,
+        "gpt-5.3-codex": 9481,
+        "gpt-5.5": 7809
+      },
+      "longest_session_minutes": 21,
+      "message_count": 282,
+      "tool_uses": 33,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 125524,
+          "output_tokens": 17829
+        },
+        "codex": {
+          "input_tokens": 111875,
+          "output_tokens": 15889
+        }
+      }
+    },
+    "2025-05-08": {
+      "sessions": 38,
+      "active_minutes": 82,
+      "input_tokens": 250919,
+      "output_tokens": 36880,
+      "cache_read_tokens": 102502,
+      "cache_creation_tokens": 23481,
+      "models": {
+        "claude-sonnet-4-6": 18073,
+        "claude-opus-4-7": 9034,
+        "claude-opus-4-6": 7107,
+        "claude-haiku-4-5": 2666,
+        "gpt-5.4": 15016,
+        "gpt-5.3-codex": 13304,
+        "gpt-5.5": 10727
+      },
+      "longest_session_minutes": 31,
+      "message_count": 176,
+      "tool_uses": 55,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 121879,
+          "output_tokens": 17914
+        },
+        "codex": {
+          "input_tokens": 129040,
+          "output_tokens": 18966
+        }
+      }
+    },
+    "2025-05-09": {
+      "sessions": 66,
+      "active_minutes": 118,
+      "input_tokens": 415407,
+      "output_tokens": 58370,
+      "cache_read_tokens": 136602,
+      "cache_creation_tokens": 27705,
+      "models": {
+        "claude-sonnet-4-6": 33194,
+        "claude-opus-4-7": 13565,
+        "claude-opus-4-6": 6968,
+        "claude-haiku-4-5": 4643,
+        "gpt-5.4": 33960,
+        "gpt-5.3-codex": 27537,
+        "gpt-5.5": 23158
+      },
+      "longest_session_minutes": 44,
+      "message_count": 447,
+      "tool_uses": 46,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 169531,
+          "output_tokens": 23822
+        },
+        "codex": {
+          "input_tokens": 245876,
+          "output_tokens": 34548
+        }
+      }
+    },
+    "2025-05-12": {
+      "sessions": 48,
+      "active_minutes": 75,
+      "input_tokens": 298879,
+      "output_tokens": 42961,
+      "cache_read_tokens": 102951,
+      "cache_creation_tokens": 23415,
+      "models": {
+        "claude-sonnet-4-6": 21561,
+        "claude-opus-4-7": 10400,
+        "claude-opus-4-6": 5510,
+        "claude-haiku-4-5": 5490
+      },
+      "longest_session_minutes": 23,
+      "message_count": 237,
+      "tool_uses": 31,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 298879,
+          "output_tokens": 42961
+        }
+      }
+    },
+    "2025-05-13": {
+      "sessions": 20,
+      "active_minutes": 27,
+      "input_tokens": 65584,
+      "output_tokens": 13234,
+      "cache_read_tokens": 28119,
+      "cache_creation_tokens": 6275,
+      "models": {
+        "claude-sonnet-4-6": 6851,
+        "claude-opus-4-7": 2957,
+        "claude-opus-4-6": 2074,
+        "claude-haiku-4-5": 1352
+      },
+      "longest_session_minutes": 11,
+      "message_count": 118,
+      "tool_uses": 9,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 65584,
+          "output_tokens": 13234
+        }
+      }
+    },
+    "2025-05-14": {
+      "sessions": 86,
+      "active_minutes": 124,
+      "input_tokens": 528784,
+      "output_tokens": 79389,
+      "cache_read_tokens": 195177,
+      "cache_creation_tokens": 27543,
+      "models": {
+        "claude-sonnet-4-6": 39247,
+        "claude-opus-4-7": 19929,
+        "claude-opus-4-6": 9404,
+        "claude-haiku-4-5": 10809
+      },
+      "longest_session_minutes": 59,
+      "message_count": 565,
+      "tool_uses": 88,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 528784,
+          "output_tokens": 79389
+        }
+      }
+    },
+    "2025-05-15": {
+      "sessions": 54,
+      "active_minutes": 85,
+      "input_tokens": 314041,
+      "output_tokens": 49439,
+      "cache_read_tokens": 111146,
+      "cache_creation_tokens": 17297,
+      "models": {
+        "claude-sonnet-4-6": 24172,
+        "claude-opus-4-7": 12657,
+        "claude-opus-4-6": 9197,
+        "claude-haiku-4-5": 3413,
+        "gpt-5.4": 35516,
+        "gpt-5.3-codex": 26613,
+        "gpt-5.5": 28762
+      },
+      "longest_session_minutes": 30,
+      "message_count": 213,
+      "tool_uses": 65,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 110639,
+          "output_tokens": 17418
+        },
+        "codex": {
+          "input_tokens": 203402,
+          "output_tokens": 32021
+        }
+      }
+    },
+    "2025-05-16": {
+      "sessions": 20,
+      "active_minutes": 60,
+      "input_tokens": 158347,
+      "output_tokens": 22087,
+      "cache_read_tokens": 65609,
+      "cache_creation_tokens": 12566,
+      "models": {
+        "claude-sonnet-4-6": 11045,
+        "claude-opus-4-7": 5398,
+        "claude-opus-4-6": 3935,
+        "claude-haiku-4-5": 1709,
+        "gpt-5.4": 20748,
+        "gpt-5.3-codex": 17627,
+        "gpt-5.5": 15477
+      },
+      "longest_session_minutes": 31,
+      "message_count": 88,
+      "tool_uses": 26,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 46056,
+          "output_tokens": 6424
+        },
+        "codex": {
+          "input_tokens": 112291,
+          "output_tokens": 15663
+        }
+      }
+    },
+    "2025-05-17": {
+      "sessions": 24,
+      "active_minutes": 26,
+      "input_tokens": 97923,
+      "output_tokens": 16891,
+      "cache_read_tokens": 30459,
+      "cache_creation_tokens": 9480,
+      "models": {
+        "claude-sonnet-4-6": 7812,
+        "claude-opus-4-7": 4476,
+        "claude-opus-4-6": 3065,
+        "claude-haiku-4-5": 1538
+      },
+      "longest_session_minutes": 10,
+      "message_count": 167,
+      "tool_uses": 11,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 97923,
+          "output_tokens": 16891
+        }
+      }
+    },
+    "2025-05-19": {
+      "sessions": 94,
+      "active_minutes": 155,
+      "input_tokens": 571678,
+      "output_tokens": 86663,
+      "cache_read_tokens": 194703,
+      "cache_creation_tokens": 48067,
+      "models": {
+        "claude-sonnet-4-6": 44427,
+        "claude-opus-4-7": 17728,
+        "claude-opus-4-6": 14638,
+        "claude-haiku-4-5": 9870,
+        "gpt-5.4": 70771,
+        "gpt-5.3-codex": 59707,
+        "gpt-5.5": 44257
+      },
+      "longest_session_minutes": 78,
+      "message_count": 629,
+      "tool_uses": 85,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 189532,
+          "output_tokens": 28732
+        },
+        "codex": {
+          "input_tokens": 382146,
+          "output_tokens": 57931
+        }
+      }
+    },
+    "2025-05-20": {
+      "sessions": 72,
+      "active_minutes": 132,
+      "input_tokens": 449013,
+      "output_tokens": 69557,
+      "cache_read_tokens": 181475,
+      "cache_creation_tokens": 43954,
+      "models": {
+        "claude-sonnet-4-6": 35627,
+        "claude-opus-4-7": 19460,
+        "claude-opus-4-6": 7456,
+        "claude-haiku-4-5": 7014,
+        "gpt-5.4": 42820,
+        "gpt-5.3-codex": 36018,
+        "gpt-5.5": 30362
+      },
+      "longest_session_minutes": 48,
+      "message_count": 385,
+      "tool_uses": 45,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 174718,
+          "output_tokens": 27066
+        },
+        "codex": {
+          "input_tokens": 274295,
+          "output_tokens": 42491
+        }
+      }
+    },
+    "2025-05-21": {
+      "sessions": 120,
+      "active_minutes": 176,
+      "input_tokens": 748019,
+      "output_tokens": 106392,
+      "cache_read_tokens": 336552,
+      "cache_creation_tokens": 71907,
+      "models": {
+        "claude-sonnet-4-6": 58776,
+        "claude-opus-4-7": 23756,
+        "claude-opus-4-6": 13919,
+        "claude-haiku-4-5": 9941
+      },
+      "longest_session_minutes": 73,
+      "message_count": 484,
+      "tool_uses": 118,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 748019,
+          "output_tokens": 106392
+        }
+      }
+    },
+    "2025-05-22": {
+      "sessions": 42,
+      "active_minutes": 80,
+      "input_tokens": 308800,
+      "output_tokens": 45200,
+      "cache_read_tokens": 134960,
+      "cache_creation_tokens": 18578,
+      "models": {
+        "claude-sonnet-4-6": 24399,
+        "claude-opus-4-7": 9450,
+        "claude-opus-4-6": 6582,
+        "claude-haiku-4-5": 4769,
+        "gpt-5.4": 24464,
+        "gpt-5.3-codex": 21165,
+        "gpt-5.5": 19089
+      },
+      "longest_session_minutes": 28,
+      "message_count": 270,
+      "tool_uses": 64,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 126983,
+          "output_tokens": 18587
+        },
+        "codex": {
+          "input_tokens": 181817,
+          "output_tokens": 26613
+        }
+      }
+    },
+    "2025-05-23": {
+      "sessions": 18,
+      "active_minutes": 15,
+      "input_tokens": 68471,
+      "output_tokens": 13109,
+      "cache_read_tokens": 28464,
+      "cache_creation_tokens": 6049,
+      "models": {
+        "claude-sonnet-4-6": 6303,
+        "claude-opus-4-7": 3186,
+        "claude-opus-4-6": 1792,
+        "claude-haiku-4-5": 1828,
+        "gpt-5.4": 13749,
+        "gpt-5.3-codex": 9529,
+        "gpt-5.5": 8321
+      },
+      "longest_session_minutes": 5,
+      "message_count": 110,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 20077,
+          "output_tokens": 3844
+        },
+        "codex": {
+          "input_tokens": 48394,
+          "output_tokens": 9265
+        }
+      }
+    },
+    "2025-05-28": {
+      "sessions": 34,
+      "active_minutes": 63,
+      "input_tokens": 248313,
+      "output_tokens": 39878,
+      "cache_read_tokens": 100554,
+      "cache_creation_tokens": 22145,
+      "models": {
+        "claude-sonnet-4-6": 19781,
+        "claude-opus-4-7": 9336,
+        "claude-opus-4-6": 6207,
+        "claude-haiku-4-5": 4554
+      },
+      "longest_session_minutes": 23,
+      "message_count": 132,
+      "tool_uses": 24,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 248313,
+          "output_tokens": 39878
+        }
+      }
+    },
+    "2025-05-29": {
+      "sessions": 16,
+      "active_minutes": 9,
+      "input_tokens": 51676,
+      "output_tokens": 10094,
+      "cache_read_tokens": 21666,
+      "cache_creation_tokens": 3505,
+      "models": {
+        "claude-sonnet-4-6": 5309,
+        "claude-opus-4-7": 2234,
+        "claude-opus-4-6": 1581,
+        "claude-haiku-4-5": 970
+      },
+      "longest_session_minutes": 5,
+      "message_count": 91,
+      "tool_uses": 6,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 51676,
+          "output_tokens": 10094
+        }
+      }
+    },
+    "2025-05-30": {
+      "sessions": 10,
+      "active_minutes": 21,
+      "input_tokens": 73124,
+      "output_tokens": 9903,
+      "cache_read_tokens": 25704,
+      "cache_creation_tokens": 7196,
+      "models": {
+        "claude-sonnet-4-6": 4677,
+        "claude-opus-4-7": 2726,
+        "claude-opus-4-6": 1560,
+        "claude-haiku-4-5": 940,
+        "gpt-5.4": 6218,
+        "gpt-5.3-codex": 5517,
+        "gpt-5.5": 3896
+      },
+      "longest_session_minutes": 10,
+      "message_count": 58,
+      "tool_uses": 12,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 28360,
+          "output_tokens": 3841
+        },
+        "codex": {
+          "input_tokens": 44764,
+          "output_tokens": 6062
+        }
+      }
+    },
+    "2025-06-02": {
+      "sessions": 14,
+      "active_minutes": 36,
+      "input_tokens": 80895,
+      "output_tokens": 10645,
+      "cache_read_tokens": 27208,
+      "cache_creation_tokens": 4930,
+      "models": {
+        "claude-sonnet-4-6": 5063,
+        "claude-opus-4-7": 2606,
+        "claude-opus-4-6": 1757,
+        "claude-haiku-4-5": 1219
+      },
+      "longest_session_minutes": 10,
+      "message_count": 68,
+      "tool_uses": 8,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 80895,
+          "output_tokens": 10645
+        }
+      }
+    },
+    "2025-06-03": {
+      "sessions": 8,
+      "active_minutes": 8,
+      "input_tokens": 80000,
+      "output_tokens": 11606,
+      "cache_read_tokens": 29620,
+      "cache_creation_tokens": 4759,
+      "models": {
+        "claude-sonnet-4-6": 5958,
+        "claude-opus-4-7": 2921,
+        "claude-opus-4-6": 1344,
+        "claude-haiku-4-5": 1383,
+        "gpt-5.4": 10531,
+        "gpt-5.3-codex": 8981,
+        "gpt-5.5": 8172
+      },
+      "longest_session_minutes": 5,
+      "message_count": 44,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 23632,
+          "output_tokens": 3429
+        },
+        "codex": {
+          "input_tokens": 56368,
+          "output_tokens": 8177
+        }
+      }
+    },
+    "2025-06-07": {
+      "sessions": 6,
+      "active_minutes": 11,
+      "input_tokens": 65783,
+      "output_tokens": 9279,
+      "cache_read_tokens": 27910,
+      "cache_creation_tokens": 4359,
+      "models": {
+        "claude-sonnet-4-6": 5056,
+        "claude-opus-4-7": 2538,
+        "claude-opus-4-6": 1141,
+        "claude-haiku-4-5": 544
+      },
+      "longest_session_minutes": 5,
+      "message_count": 24,
+      "tool_uses": 13,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 65783,
+          "output_tokens": 9279
+        }
+      }
+    },
+    "2025-06-08": {
+      "sessions": 22,
+      "active_minutes": 37,
+      "input_tokens": 109551,
+      "output_tokens": 14475,
+      "cache_read_tokens": 44175,
+      "cache_creation_tokens": 6289,
+      "models": {
+        "claude-sonnet-4-6": 7790,
+        "claude-opus-4-7": 3519,
+        "claude-opus-4-6": 2284,
+        "claude-haiku-4-5": 882
+      },
+      "longest_session_minutes": 16,
+      "message_count": 137,
+      "tool_uses": 14,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 109551,
+          "output_tokens": 14475
+        }
+      }
+    },
+    "2025-06-09": {
+      "sessions": 32,
+      "active_minutes": 44,
+      "input_tokens": 163846,
+      "output_tokens": 24754,
+      "cache_read_tokens": 64413,
+      "cache_creation_tokens": 14349,
+      "models": {
+        "claude-sonnet-4-6": 13452,
+        "claude-opus-4-7": 6543,
+        "claude-opus-4-6": 2874,
+        "claude-haiku-4-5": 1885
+      },
+      "longest_session_minutes": 18,
+      "message_count": 218,
+      "tool_uses": 24,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 163846,
+          "output_tokens": 24754
+        }
+      }
+    },
+    "2025-06-10": {
+      "sessions": 106,
+      "active_minutes": 176,
+      "input_tokens": 697671,
+      "output_tokens": 100558,
+      "cache_read_tokens": 263369,
+      "cache_creation_tokens": 51638,
+      "models": {
+        "claude-sonnet-4-6": 50338,
+        "claude-opus-4-7": 24551,
+        "claude-opus-4-6": 11660,
+        "claude-haiku-4-5": 14009
+      },
+      "longest_session_minutes": 70,
+      "message_count": 397,
+      "tool_uses": 74,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 697671,
+          "output_tokens": 100558
+        }
+      }
+    },
+    "2025-06-11": {
+      "sessions": 20,
+      "active_minutes": 36,
+      "input_tokens": 88114,
+      "output_tokens": 17086,
+      "cache_read_tokens": 39099,
+      "cache_creation_tokens": 7045,
+      "models": {
+        "claude-sonnet-4-6": 9358,
+        "claude-opus-4-7": 4201,
+        "claude-opus-4-6": 2527,
+        "claude-haiku-4-5": 1000
+      },
+      "longest_session_minutes": 11,
+      "message_count": 137,
+      "tool_uses": 17,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 88114,
+          "output_tokens": 17086
+        }
+      }
+    },
+    "2025-06-12": {
+      "sessions": 24,
+      "active_minutes": 23,
+      "input_tokens": 120224,
+      "output_tokens": 17788,
+      "cache_read_tokens": 43238,
+      "cache_creation_tokens": 6578,
+      "models": {
+        "claude-sonnet-4-6": 8582,
+        "claude-opus-4-7": 4368,
+        "claude-opus-4-6": 2358,
+        "claude-haiku-4-5": 2480
+      },
+      "longest_session_minutes": 9,
+      "message_count": 140,
+      "tool_uses": 14,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 120224,
+          "output_tokens": 17788
+        }
+      }
+    },
+    "2025-06-13": {
+      "sessions": 16,
+      "active_minutes": 16,
+      "input_tokens": 65307,
+      "output_tokens": 9789,
+      "cache_read_tokens": 22293,
+      "cache_creation_tokens": 5843,
+      "models": {
+        "claude-sonnet-4-6": 4721,
+        "claude-opus-4-7": 2049,
+        "claude-opus-4-6": 1976,
+        "claude-haiku-4-5": 1043
+      },
+      "longest_session_minutes": 7,
+      "message_count": 74,
+      "tool_uses": 11,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 65307,
+          "output_tokens": 9789
+        }
+      }
+    },
+    "2025-06-15": {
+      "sessions": 22,
+      "active_minutes": 16,
+      "input_tokens": 98357,
+      "output_tokens": 14531,
+      "cache_read_tokens": 34870,
+      "cache_creation_tokens": 6165,
+      "models": {
+        "claude-sonnet-4-6": 7303,
+        "claude-opus-4-7": 3997,
+        "claude-opus-4-6": 1614,
+        "claude-haiku-4-5": 1617,
+        "gpt-5.4": 5959,
+        "gpt-5.3-codex": 5102,
+        "gpt-5.5": 4314
+      },
+      "longest_session_minutes": 7,
+      "message_count": 130,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 47790,
+          "output_tokens": 7061
+        },
+        "codex": {
+          "input_tokens": 50567,
+          "output_tokens": 7470
+        }
+      }
+    },
+    "2025-06-17": {
+      "sessions": 100,
+      "active_minutes": 156,
+      "input_tokens": 609834,
+      "output_tokens": 89933,
+      "cache_read_tokens": 271835,
+      "cache_creation_tokens": 33024,
+      "models": {
+        "claude-sonnet-4-6": 44757,
+        "claude-opus-4-7": 22248,
+        "claude-opus-4-6": 10970,
+        "claude-haiku-4-5": 11958,
+        "gpt-5.4": 27880,
+        "gpt-5.3-codex": 26036,
+        "gpt-5.5": 19858
+      },
+      "longest_session_minutes": 57,
+      "message_count": 548,
+      "tool_uses": 66,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 335015,
+          "output_tokens": 49405
+        },
+        "codex": {
+          "input_tokens": 274819,
+          "output_tokens": 40528
+        }
+      }
+    },
+    "2025-06-18": {
+      "sessions": 34,
+      "active_minutes": 79,
+      "input_tokens": 264359,
+      "output_tokens": 36572,
+      "cache_read_tokens": 91879,
+      "cache_creation_tokens": 25514,
+      "models": {
+        "claude-sonnet-4-6": 15887,
+        "claude-opus-4-7": 9457,
+        "claude-opus-4-6": 6676,
+        "claude-haiku-4-5": 4552
+      },
+      "longest_session_minutes": 36,
+      "message_count": 162,
+      "tool_uses": 39,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 264359,
+          "output_tokens": 36572
+        }
+      }
+    },
+    "2025-06-19": {
+      "sessions": 84,
+      "active_minutes": 148,
+      "input_tokens": 525126,
+      "output_tokens": 81724,
+      "cache_read_tokens": 224417,
+      "cache_creation_tokens": 31550,
+      "models": {
+        "claude-sonnet-4-6": 40943,
+        "claude-opus-4-7": 21747,
+        "claude-opus-4-6": 13425,
+        "claude-haiku-4-5": 5609,
+        "gpt-5.4": 72340,
+        "gpt-5.3-codex": 59794,
+        "gpt-5.5": 46027
+      },
+      "longest_session_minutes": 50,
+      "message_count": 533,
+      "tool_uses": 68,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 165132,
+          "output_tokens": 25700
+        },
+        "codex": {
+          "input_tokens": 359994,
+          "output_tokens": 56024
+        }
+      }
+    },
+    "2025-06-20": {
+      "sessions": 28,
+      "active_minutes": 47,
+      "input_tokens": 163215,
+      "output_tokens": 23324,
+      "cache_read_tokens": 70040,
+      "cache_creation_tokens": 12786,
+      "models": {
+        "claude-sonnet-4-6": 11406,
+        "claude-opus-4-7": 5741,
+        "claude-opus-4-6": 3171,
+        "claude-haiku-4-5": 3006,
+        "gpt-5.4": 18521,
+        "gpt-5.3-codex": 14129,
+        "gpt-5.5": 14522
+      },
+      "longest_session_minutes": 18,
+      "message_count": 191,
+      "tool_uses": 23,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 54000,
+          "output_tokens": 7717
+        },
+        "codex": {
+          "input_tokens": 109215,
+          "output_tokens": 15607
+        }
+      }
+    },
+    "2025-06-21": {
+      "sessions": 50,
+      "active_minutes": 100,
+      "input_tokens": 335838,
+      "output_tokens": 49880,
+      "cache_read_tokens": 132205,
+      "cache_creation_tokens": 24013,
+      "models": {
+        "claude-sonnet-4-6": 23927,
+        "claude-opus-4-7": 12883,
+        "claude-opus-4-6": 5949,
+        "claude-haiku-4-5": 3143
+      },
+      "longest_session_minutes": 44,
+      "message_count": 218,
+      "tool_uses": 45,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 335838,
+          "output_tokens": 49880
+        }
+      }
+    },
+    "2025-06-22": {
+      "sessions": 28,
+      "active_minutes": 40,
+      "input_tokens": 197400,
+      "output_tokens": 30749,
+      "cache_read_tokens": 83215,
+      "cache_creation_tokens": 12895,
+      "models": {
+        "claude-sonnet-4-6": 15709,
+        "claude-opus-4-7": 7300,
+        "claude-opus-4-6": 4002,
+        "claude-haiku-4-5": 3738
+      },
+      "longest_session_minutes": 19,
+      "message_count": 104,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 197400,
+          "output_tokens": 30749
+        }
+      }
+    },
+    "2025-06-23": {
+      "sessions": 10,
+      "active_minutes": 23,
+      "input_tokens": 89886,
+      "output_tokens": 15921,
+      "cache_read_tokens": 38730,
+      "cache_creation_tokens": 6060,
+      "models": {
+        "claude-sonnet-4-6": 7907,
+        "claude-opus-4-7": 4159,
+        "claude-opus-4-6": 2166,
+        "claude-haiku-4-5": 1689,
+        "gpt-5.4": 5705,
+        "gpt-5.3-codex": 4014,
+        "gpt-5.5": 4260
+      },
+      "longest_session_minutes": 9,
+      "message_count": 51,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 47861,
+          "output_tokens": 8478
+        },
+        "codex": {
+          "input_tokens": 42025,
+          "output_tokens": 7443
+        }
+      }
+    },
+    "2025-06-24": {
+      "sessions": 56,
+      "active_minutes": 94,
+      "input_tokens": 379107,
+      "output_tokens": 53973,
+      "cache_read_tokens": 164057,
+      "cache_creation_tokens": 21718,
+      "models": {
+        "claude-sonnet-4-6": 26737,
+        "claude-opus-4-7": 13751,
+        "claude-opus-4-6": 8650,
+        "claude-haiku-4-5": 4835,
+        "gpt-5.4": 27916,
+        "gpt-5.3-codex": 28803,
+        "gpt-5.5": 21930
+      },
+      "longest_session_minutes": 32,
+      "message_count": 357,
+      "tool_uses": 37,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 154283,
+          "output_tokens": 21966
+        },
+        "codex": {
+          "input_tokens": 224824,
+          "output_tokens": 32007
+        }
+      }
+    },
+    "2025-06-25": {
+      "sessions": 86,
+      "active_minutes": 150,
+      "input_tokens": 537923,
+      "output_tokens": 81252,
+      "cache_read_tokens": 205282,
+      "cache_creation_tokens": 34163,
+      "models": {
+        "claude-sonnet-4-6": 40748,
+        "claude-opus-4-7": 22843,
+        "claude-opus-4-6": 10730,
+        "claude-haiku-4-5": 6931,
+        "gpt-5.4": 34141,
+        "gpt-5.3-codex": 28337,
+        "gpt-5.5": 20662
+      },
+      "longest_session_minutes": 54,
+      "message_count": 401,
+      "tool_uses": 80,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 265870,
+          "output_tokens": 40160
+        },
+        "codex": {
+          "input_tokens": 272053,
+          "output_tokens": 41092
+        }
+      }
+    },
+    "2025-06-27": {
+      "sessions": 24,
+      "active_minutes": 50,
+      "input_tokens": 150534,
+      "output_tokens": 26099,
+      "cache_read_tokens": 57119,
+      "cache_creation_tokens": 10560,
+      "models": {
+        "claude-sonnet-4-6": 12088,
+        "claude-opus-4-7": 5620,
+        "claude-opus-4-6": 4976,
+        "claude-haiku-4-5": 3415
+      },
+      "longest_session_minutes": 27,
+      "message_count": 116,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 150534,
+          "output_tokens": 26099
+        }
+      }
+    },
+    "2025-07-01": {
+      "sessions": 18,
+      "active_minutes": 31,
+      "input_tokens": 107733,
+      "output_tokens": 17792,
+      "cache_read_tokens": 36807,
+      "cache_creation_tokens": 9800,
+      "models": {
+        "claude-sonnet-4-6": 7791,
+        "claude-opus-4-7": 4739,
+        "claude-opus-4-6": 3320,
+        "claude-haiku-4-5": 1942
+      },
+      "longest_session_minutes": 12,
+      "message_count": 74,
+      "tool_uses": 21,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 107733,
+          "output_tokens": 17792
+        }
+      }
+    },
+    "2025-07-03": {
+      "sessions": 42,
+      "active_minutes": 68,
+      "input_tokens": 250394,
+      "output_tokens": 34943,
+      "cache_read_tokens": 75981,
+      "cache_creation_tokens": 17268,
+      "models": {
+        "claude-sonnet-4-6": 18739,
+        "claude-opus-4-7": 9846,
+        "claude-opus-4-6": 4369,
+        "claude-haiku-4-5": 1989
+      },
+      "longest_session_minutes": 32,
+      "message_count": 191,
+      "tool_uses": 43,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 250394,
+          "output_tokens": 34943
+        }
+      }
+    },
+    "2025-07-04": {
+      "sessions": 64,
+      "active_minutes": 110,
+      "input_tokens": 426218,
+      "output_tokens": 61569,
+      "cache_read_tokens": 152874,
+      "cache_creation_tokens": 30593,
+      "models": {
+        "claude-sonnet-4-6": 30398,
+        "claude-opus-4-7": 14722,
+        "claude-opus-4-6": 8482,
+        "claude-haiku-4-5": 7967,
+        "gpt-5.4": 59203,
+        "gpt-5.3-codex": 58219,
+        "gpt-5.5": 51154
+      },
+      "longest_session_minutes": 49,
+      "message_count": 435,
+      "tool_uses": 84,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 114023,
+          "output_tokens": 16472
+        },
+        "codex": {
+          "input_tokens": 312195,
+          "output_tokens": 45097
+        }
+      }
+    },
+    "2025-07-05": {
+      "sessions": 14,
+      "active_minutes": 14,
+      "input_tokens": 101121,
+      "output_tokens": 12582,
+      "cache_read_tokens": 32343,
+      "cache_creation_tokens": 8511,
+      "models": {
+        "claude-sonnet-4-6": 6024,
+        "claude-opus-4-7": 2879,
+        "claude-opus-4-6": 1653,
+        "claude-haiku-4-5": 949
+      },
+      "longest_session_minutes": 6,
+      "message_count": 78,
+      "tool_uses": 14,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 101121,
+          "output_tokens": 12582
+        }
+      }
+    },
+    "2025-07-07": {
+      "sessions": 108,
+      "active_minutes": 180,
+      "input_tokens": 703301,
+      "output_tokens": 103676,
+      "cache_read_tokens": 256140,
+      "cache_creation_tokens": 60285,
+      "models": {
+        "claude-sonnet-4-6": 56124,
+        "claude-opus-4-7": 24930,
+        "claude-opus-4-6": 15657,
+        "claude-haiku-4-5": 6965,
+        "gpt-5.4": 57951,
+        "gpt-5.3-codex": 43412,
+        "gpt-5.5": 39344
+      },
+      "longest_session_minutes": 75,
+      "message_count": 566,
+      "tool_uses": 63,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 298364,
+          "output_tokens": 43983
+        },
+        "codex": {
+          "input_tokens": 404937,
+          "output_tokens": 59693
+        }
+      }
+    },
+    "2025-07-08": {
+      "sessions": 56,
+      "active_minutes": 98,
+      "input_tokens": 372198,
+      "output_tokens": 54268,
+      "cache_read_tokens": 112413,
+      "cache_creation_tokens": 22267,
+      "models": {
+        "claude-sonnet-4-6": 25481,
+        "claude-opus-4-7": 14558,
+        "claude-opus-4-6": 7121,
+        "claude-haiku-4-5": 7108,
+        "gpt-5.4": 22366,
+        "gpt-5.3-codex": 19602,
+        "gpt-5.5": 17201
+      },
+      "longest_session_minutes": 41,
+      "message_count": 219,
+      "tool_uses": 76,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 178058,
+          "output_tokens": 25962
+        },
+        "codex": {
+          "input_tokens": 194140,
+          "output_tokens": 28306
+        }
+      }
+    },
+    "2025-07-10": {
+      "sessions": 134,
+      "active_minutes": 225,
+      "input_tokens": 831646,
+      "output_tokens": 125867,
+      "cache_read_tokens": 252601,
+      "cache_creation_tokens": 61830,
+      "models": {
+        "claude-sonnet-4-6": 65783,
+        "claude-opus-4-7": 35523,
+        "claude-opus-4-6": 17223,
+        "claude-haiku-4-5": 7338,
+        "gpt-5.4": 60902,
+        "gpt-5.3-codex": 44161,
+        "gpt-5.5": 42693
+      },
+      "longest_session_minutes": 108,
+      "message_count": 561,
+      "tool_uses": 95,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 382558,
+          "output_tokens": 57899
+        },
+        "codex": {
+          "input_tokens": 449088,
+          "output_tokens": 67968
+        }
+      }
+    },
+    "2025-07-11": {
+      "sessions": 86,
+      "active_minutes": 134,
+      "input_tokens": 544993,
+      "output_tokens": 81451,
+      "cache_read_tokens": 228772,
+      "cache_creation_tokens": 38660,
+      "models": {
+        "claude-sonnet-4-6": 42030,
+        "claude-opus-4-7": 20563,
+        "claude-opus-4-6": 10665,
+        "claude-haiku-4-5": 8193,
+        "gpt-5.4": 55250,
+        "gpt-5.3-codex": 51364,
+        "gpt-5.5": 35914
+      },
+      "longest_session_minutes": 58,
+      "message_count": 383,
+      "tool_uses": 85,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 198188,
+          "output_tokens": 29620
+        },
+        "codex": {
+          "input_tokens": 346805,
+          "output_tokens": 51831
+        }
+      }
+    },
+    "2025-07-13": {
+      "sessions": 38,
+      "active_minutes": 44,
+      "input_tokens": 214502,
+      "output_tokens": 30375,
+      "cache_read_tokens": 87410,
+      "cache_creation_tokens": 21183,
+      "models": {
+        "claude-sonnet-4-6": 15592,
+        "claude-opus-4-7": 6928,
+        "claude-opus-4-6": 3934,
+        "claude-haiku-4-5": 3921,
+        "gpt-5.4": 10746,
+        "gpt-5.3-codex": 9487,
+        "gpt-5.5": 8920
+      },
+      "longest_session_minutes": 19,
+      "message_count": 264,
+      "tool_uses": 19,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 109453,
+          "output_tokens": 15500
+        },
+        "codex": {
+          "input_tokens": 105049,
+          "output_tokens": 14875
+        }
+      }
+    },
+    "2025-07-14": {
+      "sessions": 52,
+      "active_minutes": 69,
+      "input_tokens": 276020,
+      "output_tokens": 42776,
+      "cache_read_tokens": 100125,
+      "cache_creation_tokens": 13986,
+      "models": {
+        "claude-sonnet-4-6": 22105,
+        "claude-opus-4-7": 9978,
+        "claude-opus-4-6": 6585,
+        "claude-haiku-4-5": 4108
+      },
+      "longest_session_minutes": 21,
+      "message_count": 320,
+      "tool_uses": 41,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 276020,
+          "output_tokens": 42776
+        }
+      }
+    },
+    "2025-07-17": {
+      "sessions": 44,
+      "active_minutes": 75,
+      "input_tokens": 230072,
+      "output_tokens": 35579,
+      "cache_read_tokens": 82769,
+      "cache_creation_tokens": 13467,
+      "models": {
+        "claude-sonnet-4-6": 17499,
+        "claude-opus-4-7": 9401,
+        "claude-opus-4-6": 5070,
+        "claude-haiku-4-5": 3609
+      },
+      "longest_session_minutes": 31,
+      "message_count": 292,
+      "tool_uses": 34,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 230072,
+          "output_tokens": 35579
+        }
+      }
+    },
+    "2025-07-18": {
+      "sessions": 84,
+      "active_minutes": 135,
+      "input_tokens": 557898,
+      "output_tokens": 80834,
+      "cache_read_tokens": 196368,
+      "cache_creation_tokens": 39280,
+      "models": {
+        "claude-sonnet-4-6": 36596,
+        "claude-opus-4-7": 21625,
+        "claude-opus-4-6": 12492,
+        "claude-haiku-4-5": 10121
+      },
+      "longest_session_minutes": 62,
+      "message_count": 404,
+      "tool_uses": 93,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 557898,
+          "output_tokens": 80834
+        }
+      }
+    },
+    "2025-07-19": {
+      "sessions": 14,
+      "active_minutes": 30,
+      "input_tokens": 86686,
+      "output_tokens": 11978,
+      "cache_read_tokens": 38153,
+      "cache_creation_tokens": 7666,
+      "models": {
+        "claude-sonnet-4-6": 6089,
+        "claude-opus-4-7": 2528,
+        "claude-opus-4-6": 1745,
+        "claude-haiku-4-5": 1616,
+        "gpt-5.4": 6597,
+        "gpt-5.3-codex": 4680,
+        "gpt-5.5": 4019
+      },
+      "longest_session_minutes": 15,
+      "message_count": 89,
+      "tool_uses": 16,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 38068,
+          "output_tokens": 5261
+        },
+        "codex": {
+          "input_tokens": 48618,
+          "output_tokens": 6717
+        }
+      }
+    },
+    "2025-07-21": {
+      "sessions": 60,
+      "active_minutes": 104,
+      "input_tokens": 401810,
+      "output_tokens": 56376,
+      "cache_read_tokens": 171235,
+      "cache_creation_tokens": 39826,
+      "models": {
+        "claude-sonnet-4-6": 28368,
+        "claude-opus-4-7": 11896,
+        "claude-opus-4-6": 7121,
+        "claude-haiku-4-5": 3291
+      },
+      "longest_session_minutes": 39,
+      "message_count": 343,
+      "tool_uses": 72,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 401810,
+          "output_tokens": 56376
+        }
+      }
+    },
+    "2025-07-22": {
+      "sessions": 64,
+      "active_minutes": 104,
+      "input_tokens": 438421,
+      "output_tokens": 62658,
+      "cache_read_tokens": 183397,
+      "cache_creation_tokens": 41340,
+      "models": {
+        "claude-sonnet-4-6": 30834,
+        "claude-opus-4-7": 16605,
+        "claude-opus-4-6": 11315,
+        "claude-haiku-4-5": 3904,
+        "gpt-5.4": 48984,
+        "gpt-5.3-codex": 42204,
+        "gpt-5.5": 31018
+      },
+      "longest_session_minutes": 34,
+      "message_count": 365,
+      "tool_uses": 60,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 148598,
+          "output_tokens": 21238
+        },
+        "codex": {
+          "input_tokens": 289823,
+          "output_tokens": 41420
+        }
+      }
+    },
+    "2025-07-23": {
+      "sessions": 106,
+      "active_minutes": 182,
+      "input_tokens": 696028,
+      "output_tokens": 104169,
+      "cache_read_tokens": 296163,
+      "cache_creation_tokens": 53447,
+      "models": {
+        "claude-sonnet-4-6": 50871,
+        "claude-opus-4-7": 28045,
+        "claude-opus-4-6": 11525,
+        "claude-haiku-4-5": 13728
+      },
+      "longest_session_minutes": 93,
+      "message_count": 603,
+      "tool_uses": 79,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 696028,
+          "output_tokens": 104169
+        }
+      }
+    },
+    "2025-07-24": {
+      "sessions": 30,
+      "active_minutes": 56,
+      "input_tokens": 202013,
+      "output_tokens": 32994,
+      "cache_read_tokens": 90187,
+      "cache_creation_tokens": 10863,
+      "models": {
+        "claude-sonnet-4-6": 13386,
+        "claude-opus-4-7": 6797,
+        "claude-opus-4-6": 5438,
+        "claude-haiku-4-5": 3642
+      },
+      "longest_session_minutes": 20,
+      "message_count": 142,
+      "tool_uses": 39,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 202013,
+          "output_tokens": 32994
+        }
+      }
+    },
+    "2025-07-28": {
+      "sessions": 28,
+      "active_minutes": 61,
+      "input_tokens": 186316,
+      "output_tokens": 25114,
+      "cache_read_tokens": 83574,
+      "cache_creation_tokens": 14252,
+      "models": {
+        "claude-sonnet-4-6": 12391,
+        "claude-opus-4-7": 6463,
+        "claude-opus-4-6": 4028,
+        "claude-haiku-4-5": 2232
+      },
+      "longest_session_minutes": 31,
+      "message_count": 176,
+      "tool_uses": 18,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 186316,
+          "output_tokens": 25114
+        }
+      }
+    },
+    "2025-07-29": {
+      "sessions": 62,
+      "active_minutes": 122,
+      "input_tokens": 435219,
+      "output_tokens": 65634,
+      "cache_read_tokens": 156054,
+      "cache_creation_tokens": 33292,
+      "models": {
+        "claude-sonnet-4-6": 33297,
+        "claude-opus-4-7": 16440,
+        "claude-opus-4-6": 12211,
+        "claude-haiku-4-5": 3686
+      },
+      "longest_session_minutes": 44,
+      "message_count": 243,
+      "tool_uses": 41,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 435219,
+          "output_tokens": 65634
+        }
+      }
+    },
+    "2025-07-31": {
+      "sessions": 22,
+      "active_minutes": 44,
+      "input_tokens": 142334,
+      "output_tokens": 21518,
+      "cache_read_tokens": 46971,
+      "cache_creation_tokens": 12356,
+      "models": {
+        "claude-sonnet-4-6": 11638,
+        "claude-opus-4-7": 5620,
+        "claude-opus-4-6": 2344,
+        "claude-haiku-4-5": 1916
+      },
+      "longest_session_minutes": 22,
+      "message_count": 119,
+      "tool_uses": 24,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 142334,
+          "output_tokens": 21518
+        }
+      }
+    },
+    "2025-08-02": {
+      "sessions": 20,
+      "active_minutes": 42,
+      "input_tokens": 134795,
+      "output_tokens": 22438,
+      "cache_read_tokens": 60311,
+      "cache_creation_tokens": 13148,
+      "models": {
+        "claude-sonnet-4-6": 11287,
+        "claude-opus-4-7": 5534,
+        "claude-opus-4-6": 2344,
+        "claude-haiku-4-5": 3273,
+        "gpt-5.4": 16365,
+        "gpt-5.3-codex": 15097,
+        "gpt-5.5": 10028
+      },
+      "longest_session_minutes": 20,
+      "message_count": 130,
+      "tool_uses": 16,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 47311,
+          "output_tokens": 7876
+        },
+        "codex": {
+          "input_tokens": 87484,
+          "output_tokens": 14562
+        }
+      }
+    },
+    "2025-08-04": {
+      "sessions": 62,
+      "active_minutes": 83,
+      "input_tokens": 366256,
+      "output_tokens": 55254,
+      "cache_read_tokens": 123675,
+      "cache_creation_tokens": 19968,
+      "models": {
+        "claude-sonnet-4-6": 28148,
+        "claude-opus-4-7": 12047,
+        "claude-opus-4-6": 10507,
+        "claude-haiku-4-5": 4552,
+        "gpt-5.4": 17705,
+        "gpt-5.3-codex": 16634,
+        "gpt-5.5": 17096
+      },
+      "longest_session_minutes": 40,
+      "message_count": 305,
+      "tool_uses": 74,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 189681,
+          "output_tokens": 28616
+        },
+        "codex": {
+          "input_tokens": 176575,
+          "output_tokens": 26638
+        }
+      }
+    },
+    "2025-08-05": {
+      "sessions": 56,
+      "active_minutes": 84,
+      "input_tokens": 353996,
+      "output_tokens": 50024,
+      "cache_read_tokens": 148784,
+      "cache_creation_tokens": 21314,
+      "models": {
+        "claude-sonnet-4-6": 24839,
+        "claude-opus-4-7": 10547,
+        "claude-opus-4-6": 5367,
+        "claude-haiku-4-5": 6630
+      },
+      "longest_session_minutes": 29,
+      "message_count": 274,
+      "tool_uses": 57,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 353996,
+          "output_tokens": 50024
+        }
+      }
+    },
+    "2025-08-06": {
+      "sessions": 50,
+      "active_minutes": 76,
+      "input_tokens": 333724,
+      "output_tokens": 47945,
+      "cache_read_tokens": 126907,
+      "cache_creation_tokens": 31486,
+      "models": {
+        "claude-sonnet-4-6": 25813,
+        "claude-opus-4-7": 13747,
+        "claude-opus-4-6": 5546,
+        "claude-haiku-4-5": 2839,
+        "gpt-5.4": 24408,
+        "gpt-5.3-codex": 19739,
+        "gpt-5.5": 15133
+      },
+      "longest_session_minutes": 24,
+      "message_count": 293,
+      "tool_uses": 68,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 149220,
+          "output_tokens": 21438
+        },
+        "codex": {
+          "input_tokens": 184504,
+          "output_tokens": 26507
+        }
+      }
+    },
+    "2025-08-08": {
+      "sessions": 106,
+      "active_minutes": 174,
+      "input_tokens": 656926,
+      "output_tokens": 94467,
+      "cache_read_tokens": 252665,
+      "cache_creation_tokens": 39196,
+      "models": {
+        "claude-sonnet-4-6": 49123,
+        "claude-opus-4-7": 23796,
+        "claude-opus-4-6": 16273,
+        "claude-haiku-4-5": 5275,
+        "gpt-5.4": 90714,
+        "gpt-5.3-codex": 62567,
+        "gpt-5.5": 71215
+      },
+      "longest_session_minutes": 93,
+      "message_count": 533,
+      "tool_uses": 108,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 194562,
+          "output_tokens": 27979
+        },
+        "codex": {
+          "input_tokens": 462364,
+          "output_tokens": 66488
+        }
+      }
+    },
+    "2025-08-10": {
+      "sessions": 30,
+      "active_minutes": 41,
+      "input_tokens": 154130,
+      "output_tokens": 22851,
+      "cache_read_tokens": 57845,
+      "cache_creation_tokens": 13119,
+      "models": {
+        "claude-sonnet-4-6": 11019,
+        "claude-opus-4-7": 5203,
+        "claude-opus-4-6": 3454,
+        "claude-haiku-4-5": 3175,
+        "gpt-5.4": 7465,
+        "gpt-5.3-codex": 6129,
+        "gpt-5.5": 6125
+      },
+      "longest_session_minutes": 16,
+      "message_count": 151,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 82733,
+          "output_tokens": 12266
+        },
+        "codex": {
+          "input_tokens": 71397,
+          "output_tokens": 10585
+        }
+      }
+    },
+    "2025-08-11": {
+      "sessions": 38,
+      "active_minutes": 64,
+      "input_tokens": 210597,
+      "output_tokens": 28760,
+      "cache_read_tokens": 83359,
+      "cache_creation_tokens": 12608,
+      "models": {
+        "claude-sonnet-4-6": 15920,
+        "claude-opus-4-7": 7087,
+        "claude-opus-4-6": 3902,
+        "claude-haiku-4-5": 1851,
+        "gpt-5.4": 12117,
+        "gpt-5.3-codex": 10768,
+        "gpt-5.5": 9362
+      },
+      "longest_session_minutes": 23,
+      "message_count": 226,
+      "tool_uses": 26,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 99279,
+          "output_tokens": 13558
+        },
+        "codex": {
+          "input_tokens": 111318,
+          "output_tokens": 15202
+        }
+      }
+    },
+    "2025-08-12": {
+      "sessions": 58,
+      "active_minutes": 82,
+      "input_tokens": 365219,
+      "output_tokens": 53904,
+      "cache_read_tokens": 119683,
+      "cache_creation_tokens": 35164,
+      "models": {
+        "claude-sonnet-4-6": 29145,
+        "claude-opus-4-7": 12689,
+        "claude-opus-4-6": 8312,
+        "claude-haiku-4-5": 3758
+      },
+      "longest_session_minutes": 26,
+      "message_count": 272,
+      "tool_uses": 33,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 365219,
+          "output_tokens": 53904
+        }
+      }
+    },
+    "2025-08-13": {
+      "sessions": 52,
+      "active_minutes": 105,
+      "input_tokens": 343441,
+      "output_tokens": 52020,
+      "cache_read_tokens": 127227,
+      "cache_creation_tokens": 30500,
+      "models": {
+        "claude-sonnet-4-6": 29213,
+        "claude-opus-4-7": 12163,
+        "claude-opus-4-6": 7536,
+        "claude-haiku-4-5": 3108
+      },
+      "longest_session_minutes": 37,
+      "message_count": 264,
+      "tool_uses": 38,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 343441,
+          "output_tokens": 52020
+        }
+      }
+    },
+    "2025-08-14": {
+      "sessions": 100,
+      "active_minutes": 146,
+      "input_tokens": 620672,
+      "output_tokens": 92164,
+      "cache_read_tokens": 198699,
+      "cache_creation_tokens": 34536,
+      "models": {
+        "claude-sonnet-4-6": 48480,
+        "claude-opus-4-7": 23633,
+        "claude-opus-4-6": 11019,
+        "claude-haiku-4-5": 9032
+      },
+      "longest_session_minutes": 78,
+      "message_count": 448,
+      "tool_uses": 72,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 620672,
+          "output_tokens": 92164
+        }
+      }
+    },
+    "2025-08-15": {
+      "sessions": 4,
+      "active_minutes": 11,
+      "input_tokens": 37495,
+      "output_tokens": 4088,
+      "cache_read_tokens": 14279,
+      "cache_creation_tokens": 2902,
+      "models": {
+        "claude-sonnet-4-6": 2158,
+        "claude-opus-4-7": 836,
+        "claude-opus-4-6": 722,
+        "claude-haiku-4-5": 372
+      },
+      "longest_session_minutes": 5,
+      "message_count": 20,
+      "tool_uses": 6,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 37495,
+          "output_tokens": 4088
+        }
+      }
+    },
+    "2025-08-18": {
+      "sessions": 74,
+      "active_minutes": 124,
+      "input_tokens": 475056,
+      "output_tokens": 67285,
+      "cache_read_tokens": 191733,
+      "cache_creation_tokens": 41962,
+      "models": {
+        "claude-sonnet-4-6": 30150,
+        "claude-opus-4-7": 17110,
+        "claude-opus-4-6": 8408,
+        "claude-haiku-4-5": 6078
+      },
+      "longest_session_minutes": 52,
+      "message_count": 362,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 475056,
+          "output_tokens": 67285
+        }
+      }
+    },
+    "2025-08-19": {
+      "sessions": 22,
+      "active_minutes": 34,
+      "input_tokens": 117183,
+      "output_tokens": 19443,
+      "cache_read_tokens": 51701,
+      "cache_creation_tokens": 9322,
+      "models": {
+        "claude-sonnet-4-6": 9300,
+        "claude-opus-4-7": 5346,
+        "claude-opus-4-6": 2407,
+        "claude-haiku-4-5": 2390,
+        "gpt-5.4": 7117,
+        "gpt-5.3-codex": 6103,
+        "gpt-5.5": 4984
+      },
+      "longest_session_minutes": 18,
+      "message_count": 110,
+      "tool_uses": 11,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 60518,
+          "output_tokens": 10042
+        },
+        "codex": {
+          "input_tokens": 56665,
+          "output_tokens": 9401
+        }
+      }
+    },
+    "2025-08-20": {
+      "sessions": 64,
+      "active_minutes": 118,
+      "input_tokens": 449791,
+      "output_tokens": 66586,
+      "cache_read_tokens": 176967,
+      "cache_creation_tokens": 25240,
+      "models": {
+        "claude-sonnet-4-6": 37521,
+        "claude-opus-4-7": 15901,
+        "claude-opus-4-6": 8745,
+        "claude-haiku-4-5": 4419,
+        "gpt-5.4": 44637,
+        "gpt-5.3-codex": 33753,
+        "gpt-5.5": 28315
+      },
+      "longest_session_minutes": 59,
+      "message_count": 345,
+      "tool_uses": 63,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 172829,
+          "output_tokens": 25586
+        },
+        "codex": {
+          "input_tokens": 276962,
+          "output_tokens": 41000
+        }
+      }
+    },
+    "2025-08-21": {
+      "sessions": 10,
+      "active_minutes": 38,
+      "input_tokens": 93867,
+      "output_tokens": 11491,
+      "cache_read_tokens": 39257,
+      "cache_creation_tokens": 8335,
+      "models": {
+        "claude-sonnet-4-6": 5033,
+        "claude-opus-4-7": 3119,
+        "claude-opus-4-6": 2053,
+        "claude-haiku-4-5": 1286
+      },
+      "longest_session_minutes": 11,
+      "message_count": 45,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 93867,
+          "output_tokens": 11491
+        }
+      }
+    },
+    "2025-08-22": {
+      "sessions": 56,
+      "active_minutes": 75,
+      "input_tokens": 300411,
+      "output_tokens": 48268,
+      "cache_read_tokens": 107886,
+      "cache_creation_tokens": 26828,
+      "models": {
+        "claude-sonnet-4-6": 24881,
+        "claude-opus-4-7": 11666,
+        "claude-opus-4-6": 6727,
+        "claude-haiku-4-5": 4994
+      },
+      "longest_session_minutes": 40,
+      "message_count": 306,
+      "tool_uses": 31,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 300411,
+          "output_tokens": 48268
+        }
+      }
+    },
+    "2025-08-23": {
+      "sessions": 22,
+      "active_minutes": 44,
+      "input_tokens": 98675,
+      "output_tokens": 17053,
+      "cache_read_tokens": 41038,
+      "cache_creation_tokens": 6420,
+      "models": {
+        "claude-sonnet-4-6": 8081,
+        "claude-opus-4-7": 4243,
+        "claude-opus-4-6": 2191,
+        "claude-haiku-4-5": 2538,
+        "gpt-5.4": 9012,
+        "gpt-5.3-codex": 7059,
+        "gpt-5.5": 5579
+      },
+      "longest_session_minutes": 22,
+      "message_count": 118,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 43477,
+          "output_tokens": 7514
+        },
+        "codex": {
+          "input_tokens": 55198,
+          "output_tokens": 9539
+        }
+      }
+    },
+    "2025-08-26": {
+      "sessions": 22,
+      "active_minutes": 47,
+      "input_tokens": 111090,
+      "output_tokens": 18341,
+      "cache_read_tokens": 34851,
+      "cache_creation_tokens": 8259,
+      "models": {
+        "claude-sonnet-4-6": 10406,
+        "claude-opus-4-7": 4397,
+        "claude-opus-4-6": 2582,
+        "claude-haiku-4-5": 956,
+        "gpt-5.4": 7565,
+        "gpt-5.3-codex": 6729,
+        "gpt-5.5": 5966
+      },
+      "longest_session_minutes": 19,
+      "message_count": 107,
+      "tool_uses": 12,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 52784,
+          "output_tokens": 8715
+        },
+        "codex": {
+          "input_tokens": 58306,
+          "output_tokens": 9626
+        }
+      }
+    },
+    "2025-08-27": {
+      "sessions": 14,
+      "active_minutes": 27,
+      "input_tokens": 39314,
+      "output_tokens": 8876,
+      "cache_read_tokens": 12315,
+      "cache_creation_tokens": 3124,
+      "models": {
+        "claude-sonnet-4-6": 4649,
+        "claude-opus-4-7": 2477,
+        "claude-opus-4-6": 993,
+        "claude-haiku-4-5": 757,
+        "gpt-5.4": 8368,
+        "gpt-5.3-codex": 7898,
+        "gpt-5.5": 6028
+      },
+      "longest_session_minutes": 11,
+      "message_count": 58,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 11196,
+          "output_tokens": 2528
+        },
+        "codex": {
+          "input_tokens": 28118,
+          "output_tokens": 6348
+        }
+      }
+    },
+    "2025-08-28": {
+      "sessions": 62,
+      "active_minutes": 97,
+      "input_tokens": 424272,
+      "output_tokens": 63615,
+      "cache_read_tokens": 171002,
+      "cache_creation_tokens": 35834,
+      "models": {
+        "claude-sonnet-4-6": 31459,
+        "claude-opus-4-7": 16028,
+        "claude-opus-4-6": 8575,
+        "claude-haiku-4-5": 7553,
+        "gpt-5.4": 25387,
+        "gpt-5.3-codex": 23539,
+        "gpt-5.5": 20272
+      },
+      "longest_session_minutes": 34,
+      "message_count": 427,
+      "tool_uses": 68,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 203218,
+          "output_tokens": 30471
+        },
+        "codex": {
+          "input_tokens": 221054,
+          "output_tokens": 33144
+        }
+      }
+    },
+    "2025-08-29": {
+      "sessions": 40,
+      "active_minutes": 62,
+      "input_tokens": 236268,
+      "output_tokens": 31285,
+      "cache_read_tokens": 73686,
+      "cache_creation_tokens": 19843,
+      "models": {
+        "claude-sonnet-4-6": 14885,
+        "claude-opus-4-7": 8216,
+        "claude-opus-4-6": 3965,
+        "claude-haiku-4-5": 2359,
+        "gpt-5.4": 10261,
+        "gpt-5.3-codex": 7063,
+        "gpt-5.5": 7483
+      },
+      "longest_session_minutes": 26,
+      "message_count": 214,
+      "tool_uses": 23,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 128191,
+          "output_tokens": 16975
+        },
+        "codex": {
+          "input_tokens": 108077,
+          "output_tokens": 14310
+        }
+      }
+    },
+    "2025-09-02": {
+      "sessions": 68,
+      "active_minutes": 105,
+      "input_tokens": 445734,
+      "output_tokens": 64634,
+      "cache_read_tokens": 142891,
+      "cache_creation_tokens": 42654,
+      "models": {
+        "claude-sonnet-4-6": 31920,
+        "claude-opus-4-7": 12684,
+        "claude-opus-4-6": 11390,
+        "claude-haiku-4-5": 8640,
+        "gpt-5.4": 53741,
+        "gpt-5.3-codex": 48356,
+        "gpt-5.5": 43957
+      },
+      "longest_session_minutes": 57,
+      "message_count": 289,
+      "tool_uses": 69,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 136741,
+          "output_tokens": 19829
+        },
+        "codex": {
+          "input_tokens": 308993,
+          "output_tokens": 44805
+        }
+      }
+    },
+    "2025-09-03": {
+      "sessions": 38,
+      "active_minutes": 67,
+      "input_tokens": 237999,
+      "output_tokens": 35343,
+      "cache_read_tokens": 100796,
+      "cache_creation_tokens": 19759,
+      "models": {
+        "claude-sonnet-4-6": 16392,
+        "claude-opus-4-7": 8917,
+        "claude-opus-4-6": 5315,
+        "claude-haiku-4-5": 4719,
+        "gpt-5.4": 12619,
+        "gpt-5.3-codex": 11149,
+        "gpt-5.5": 9175
+      },
+      "longest_session_minutes": 25,
+      "message_count": 161,
+      "tool_uses": 34,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 123182,
+          "output_tokens": 18293
+        },
+        "codex": {
+          "input_tokens": 114817,
+          "output_tokens": 17050
+        }
+      }
+    },
+    "2025-09-05": {
+      "sessions": 14,
+      "active_minutes": 2,
+      "input_tokens": 43570,
+      "output_tokens": 8074,
+      "cache_read_tokens": 19481,
+      "cache_creation_tokens": 3709,
+      "models": {
+        "claude-sonnet-4-6": 4147,
+        "claude-opus-4-7": 2063,
+        "claude-opus-4-6": 1302,
+        "claude-haiku-4-5": 562
+      },
+      "longest_session_minutes": 5,
+      "message_count": 97,
+      "tool_uses": 5,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 43570,
+          "output_tokens": 8074
+        }
+      }
+    },
+    "2025-09-07": {
+      "sessions": 22,
+      "active_minutes": 32,
+      "input_tokens": 163047,
+      "output_tokens": 25939,
+      "cache_read_tokens": 56283,
+      "cache_creation_tokens": 14804,
+      "models": {
+        "claude-sonnet-4-6": 13619,
+        "claude-opus-4-7": 6411,
+        "claude-opus-4-6": 4089,
+        "claude-haiku-4-5": 1820,
+        "gpt-5.4": 23229,
+        "gpt-5.3-codex": 18863,
+        "gpt-5.5": 17008
+      },
+      "longest_session_minutes": 14,
+      "message_count": 125,
+      "tool_uses": 19,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 49734,
+          "output_tokens": 7913
+        },
+        "codex": {
+          "input_tokens": 113313,
+          "output_tokens": 18026
+        }
+      }
+    },
+    "2025-09-09": {
+      "sessions": 50,
+      "active_minutes": 86,
+      "input_tokens": 331776,
+      "output_tokens": 48850,
+      "cache_read_tokens": 130017,
+      "cache_creation_tokens": 17255,
+      "models": {
+        "claude-sonnet-4-6": 21019,
+        "claude-opus-4-7": 10991,
+        "claude-opus-4-6": 6106,
+        "claude-haiku-4-5": 2065,
+        "gpt-5.4": 34514,
+        "gpt-5.3-codex": 29886,
+        "gpt-5.5": 24453
+      },
+      "longest_session_minutes": 41,
+      "message_count": 213,
+      "tool_uses": 51,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 103314,
+          "output_tokens": 15212
+        },
+        "codex": {
+          "input_tokens": 228462,
+          "output_tokens": 33638
+        }
+      }
+    },
+    "2025-09-10": {
+      "sessions": 78,
+      "active_minutes": 127,
+      "input_tokens": 461722,
+      "output_tokens": 68816,
+      "cache_read_tokens": 168052,
+      "cache_creation_tokens": 29496,
+      "models": {
+        "claude-sonnet-4-6": 34659,
+        "claude-opus-4-7": 18305,
+        "claude-opus-4-6": 7338,
+        "claude-haiku-4-5": 8514
+      },
+      "longest_session_minutes": 44,
+      "message_count": 508,
+      "tool_uses": 71,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 461722,
+          "output_tokens": 68816
+        }
+      }
+    },
+    "2025-09-11": {
+      "sessions": 58,
+      "active_minutes": 89,
+      "input_tokens": 375799,
+      "output_tokens": 57177,
+      "cache_read_tokens": 116429,
+      "cache_creation_tokens": 36524,
+      "models": {
+        "claude-sonnet-4-6": 29149,
+        "claude-opus-4-7": 12724,
+        "claude-opus-4-6": 7762,
+        "claude-haiku-4-5": 7542
+      },
+      "longest_session_minutes": 36,
+      "message_count": 299,
+      "tool_uses": 76,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 375799,
+          "output_tokens": 57177
+        }
+      }
+    },
+    "2025-09-12": {
+      "sessions": 46,
+      "active_minutes": 58,
+      "input_tokens": 232195,
+      "output_tokens": 36784,
+      "cache_read_tokens": 97002,
+      "cache_creation_tokens": 14278,
+      "models": {
+        "claude-sonnet-4-6": 16618,
+        "claude-opus-4-7": 9676,
+        "claude-opus-4-6": 6978,
+        "claude-haiku-4-5": 3512
+      },
+      "longest_session_minutes": 26,
+      "message_count": 309,
+      "tool_uses": 52,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 232195,
+          "output_tokens": 36784
+        }
+      }
+    },
+    "2025-09-17": {
+      "sessions": 88,
+      "active_minutes": 163,
+      "input_tokens": 593490,
+      "output_tokens": 86268,
+      "cache_read_tokens": 184046,
+      "cache_creation_tokens": 51764,
+      "models": {
+        "claude-sonnet-4-6": 37085,
+        "claude-opus-4-7": 18829,
+        "claude-opus-4-6": 12788,
+        "claude-haiku-4-5": 9624,
+        "gpt-5.4": 32193,
+        "gpt-5.3-codex": 28296,
+        "gpt-5.5": 20364
+      },
+      "longest_session_minutes": 69,
+      "message_count": 564,
+      "tool_uses": 124,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 292034,
+          "output_tokens": 42450
+        },
+        "codex": {
+          "input_tokens": 301456,
+          "output_tokens": 43818
+        }
+      }
+    },
+    "2025-09-19": {
+      "sessions": 40,
+      "active_minutes": 65,
+      "input_tokens": 230490,
+      "output_tokens": 32800,
+      "cache_read_tokens": 82474,
+      "cache_creation_tokens": 12178,
+      "models": {
+        "claude-sonnet-4-6": 16132,
+        "claude-opus-4-7": 7824,
+        "claude-opus-4-6": 6051,
+        "claude-haiku-4-5": 2793
+      },
+      "longest_session_minutes": 25,
+      "message_count": 239,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 230490,
+          "output_tokens": 32800
+        }
+      }
+    },
+    "2025-09-22": {
+      "sessions": 6,
+      "active_minutes": 20,
+      "input_tokens": 72049,
+      "output_tokens": 9485,
+      "cache_read_tokens": 30548,
+      "cache_creation_tokens": 4076,
+      "models": {
+        "claude-sonnet-4-6": 4735,
+        "claude-opus-4-7": 1880,
+        "claude-opus-4-6": 991,
+        "claude-haiku-4-5": 720
+      },
+      "longest_session_minutes": 7,
+      "message_count": 39,
+      "tool_uses": 12,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 72049,
+          "output_tokens": 9485
+        }
+      }
+    },
+    "2025-09-24": {
+      "sessions": 42,
+      "active_minutes": 67,
+      "input_tokens": 296770,
+      "output_tokens": 46312,
+      "cache_read_tokens": 110046,
+      "cache_creation_tokens": 20917,
+      "models": {
+        "claude-sonnet-4-6": 23185,
+        "claude-opus-4-7": 12068,
+        "claude-opus-4-6": 7512,
+        "claude-haiku-4-5": 3547
+      },
+      "longest_session_minutes": 20,
+      "message_count": 293,
+      "tool_uses": 49,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 296770,
+          "output_tokens": 46312
+        }
+      }
+    },
+    "2025-09-25": {
+      "sessions": 26,
+      "active_minutes": 50,
+      "input_tokens": 149182,
+      "output_tokens": 22862,
+      "cache_read_tokens": 54969,
+      "cache_creation_tokens": 11018,
+      "models": {
+        "claude-sonnet-4-6": 11989,
+        "claude-opus-4-7": 5890,
+        "claude-opus-4-6": 3504,
+        "claude-haiku-4-5": 1479
+      },
+      "longest_session_minutes": 18,
+      "message_count": 145,
+      "tool_uses": 34,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 149182,
+          "output_tokens": 22862
+        }
+      }
+    },
+    "2025-09-26": {
+      "sessions": 130,
+      "active_minutes": 201,
+      "input_tokens": 823152,
+      "output_tokens": 118892,
+      "cache_read_tokens": 365992,
+      "cache_creation_tokens": 73471,
+      "models": {
+        "claude-sonnet-4-6": 48246,
+        "claude-opus-4-7": 19672,
+        "claude-opus-4-6": 17694,
+        "claude-haiku-4-5": 12849
+      },
+      "longest_session_minutes": 88,
+      "message_count": 592,
+      "tool_uses": 79,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 823152,
+          "output_tokens": 118892
+        }
+      }
+    },
+    "2025-10-02": {
+      "sessions": 90,
+      "active_minutes": 159,
+      "input_tokens": 612452,
+      "output_tokens": 91426,
+      "cache_read_tokens": 189987,
+      "cache_creation_tokens": 34142,
+      "models": {
+        "claude-sonnet-4-6": 40237,
+        "claude-opus-4-7": 21902,
+        "claude-opus-4-6": 16209,
+        "claude-haiku-4-5": 13078,
+        "gpt-5.4": 103520,
+        "gpt-5.3-codex": 84724,
+        "gpt-5.5": 72058
+      },
+      "longest_session_minutes": 50,
+      "message_count": 532,
+      "tool_uses": 110,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 159197,
+          "output_tokens": 23765
+        },
+        "codex": {
+          "input_tokens": 453255,
+          "output_tokens": 67661
+        }
+      }
+    },
+    "2025-10-10": {
+      "sessions": 20,
+      "active_minutes": 40,
+      "input_tokens": 88306,
+      "output_tokens": 15867,
+      "cache_read_tokens": 35652,
+      "cache_creation_tokens": 6336,
+      "models": {
+        "claude-sonnet-4-6": 8745,
+        "claude-opus-4-7": 3550,
+        "claude-opus-4-6": 2539,
+        "claude-haiku-4-5": 1033
+      },
+      "longest_session_minutes": 12,
+      "message_count": 127,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 88306,
+          "output_tokens": 15867
+        }
+      }
+    },
+    "2025-10-14": {
+      "sessions": 16,
+      "active_minutes": 21,
+      "input_tokens": 70983,
+      "output_tokens": 11033,
+      "cache_read_tokens": 31514,
+      "cache_creation_tokens": 5802,
+      "models": {
+        "claude-sonnet-4-6": 5314,
+        "claude-opus-4-7": 3123,
+        "claude-opus-4-6": 1198,
+        "claude-haiku-4-5": 1398
+      },
+      "longest_session_minutes": 11,
+      "message_count": 84,
+      "tool_uses": 5,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 70983,
+          "output_tokens": 11033
+        }
+      }
+    },
+    "2025-10-17": {
+      "sessions": 20,
+      "active_minutes": 29,
+      "input_tokens": 152655,
+      "output_tokens": 23419,
+      "cache_read_tokens": 64286,
+      "cache_creation_tokens": 13982,
+      "models": {
+        "claude-sonnet-4-6": 11354,
+        "claude-opus-4-7": 6544,
+        "claude-opus-4-6": 3861,
+        "claude-haiku-4-5": 1660,
+        "gpt-5.4": 13145,
+        "gpt-5.3-codex": 10290,
+        "gpt-5.5": 7595
+      },
+      "longest_session_minutes": 13,
+      "message_count": 81,
+      "tool_uses": 25,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 65657,
+          "output_tokens": 10073
+        },
+        "codex": {
+          "input_tokens": 86998,
+          "output_tokens": 13346
+        }
+      }
+    },
+    "2025-10-20": {
+      "sessions": 132,
+      "active_minutes": 196,
+      "input_tokens": 847797,
+      "output_tokens": 124011,
+      "cache_read_tokens": 333623,
+      "cache_creation_tokens": 68918,
+      "models": {
+        "claude-sonnet-4-6": 60390,
+        "claude-opus-4-7": 33412,
+        "claude-opus-4-6": 19453,
+        "claude-haiku-4-5": 10756,
+        "gpt-5.4": 46536,
+        "gpt-5.3-codex": 42522,
+        "gpt-5.5": 36736
+      },
+      "longest_session_minutes": 103,
+      "message_count": 571,
+      "tool_uses": 135,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 420872,
+          "output_tokens": 61563
+        },
+        "codex": {
+          "input_tokens": 426925,
+          "output_tokens": 62448
+        }
+      }
+    },
+    "2025-10-21": {
+      "sessions": 2,
+      "active_minutes": 8,
+      "input_tokens": 27926,
+      "output_tokens": 5965,
+      "cache_read_tokens": 11926,
+      "cache_creation_tokens": 2434,
+      "models": {
+        "claude-sonnet-4-6": 3053,
+        "claude-opus-4-7": 1144,
+        "claude-opus-4-6": 1001,
+        "claude-haiku-4-5": 767,
+        "gpt-5.4": 2749,
+        "gpt-5.3-codex": 2995,
+        "gpt-5.5": 2504
+      },
+      "longest_session_minutes": 5,
+      "message_count": 9,
+      "tool_uses": 7,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 11719,
+          "output_tokens": 2504
+        },
+        "codex": {
+          "input_tokens": 16207,
+          "output_tokens": 3461
+        }
+      }
+    },
+    "2025-10-22": {
+      "sessions": 34,
+      "active_minutes": 33,
+      "input_tokens": 180943,
+      "output_tokens": 28178,
+      "cache_read_tokens": 76377,
+      "cache_creation_tokens": 13505,
+      "models": {
+        "claude-sonnet-4-6": 15287,
+        "claude-opus-4-7": 6480,
+        "claude-opus-4-6": 3883,
+        "claude-haiku-4-5": 2528,
+        "gpt-5.4": 15091,
+        "gpt-5.3-codex": 11898,
+        "gpt-5.5": 9692
+      },
+      "longest_session_minutes": 12,
+      "message_count": 228,
+      "tool_uses": 37,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 78610,
+          "output_tokens": 12242
+        },
+        "codex": {
+          "input_tokens": 102333,
+          "output_tokens": 15936
+        }
+      }
+    },
+    "2025-10-23": {
+      "sessions": 74,
+      "active_minutes": 113,
+      "input_tokens": 437711,
+      "output_tokens": 64249,
+      "cache_read_tokens": 182456,
+      "cache_creation_tokens": 24743,
+      "models": {
+        "claude-sonnet-4-6": 35763,
+        "claude-opus-4-7": 16511,
+        "claude-opus-4-6": 7607,
+        "claude-haiku-4-5": 4368,
+        "gpt-5.4": 38702,
+        "gpt-5.3-codex": 28882,
+        "gpt-5.5": 31224
+      },
+      "longest_session_minutes": 48,
+      "message_count": 394,
+      "tool_uses": 54,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 172469,
+          "output_tokens": 25316
+        },
+        "codex": {
+          "input_tokens": 265242,
+          "output_tokens": 38933
+        }
+      }
+    },
+    "2025-10-24": {
+      "sessions": 52,
+      "active_minutes": 68,
+      "input_tokens": 307782,
+      "output_tokens": 45842,
+      "cache_read_tokens": 107070,
+      "cache_creation_tokens": 28437,
+      "models": {
+        "claude-sonnet-4-6": 23624,
+        "claude-opus-4-7": 11270,
+        "claude-opus-4-6": 7515,
+        "claude-haiku-4-5": 3433
+      },
+      "longest_session_minutes": 25,
+      "message_count": 295,
+      "tool_uses": 59,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 307782,
+          "output_tokens": 45842
+        }
+      }
+    },
+    "2025-10-28": {
+      "sessions": 90,
+      "active_minutes": 126,
+      "input_tokens": 553250,
+      "output_tokens": 82532,
+      "cache_read_tokens": 206327,
+      "cache_creation_tokens": 37451,
+      "models": {
+        "claude-sonnet-4-6": 36478,
+        "claude-opus-4-7": 22128,
+        "claude-opus-4-6": 14104,
+        "claude-haiku-4-5": 9822,
+        "gpt-5.4": 78343,
+        "gpt-5.3-codex": 74009,
+        "gpt-5.5": 66581
+      },
+      "longest_session_minutes": 49,
+      "message_count": 402,
+      "tool_uses": 99,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 151463,
+          "output_tokens": 22595
+        },
+        "codex": {
+          "input_tokens": 401787,
+          "output_tokens": 59937
+        }
+      }
+    },
+    "2025-10-29": {
+      "sessions": 52,
+      "active_minutes": 105,
+      "input_tokens": 345047,
+      "output_tokens": 51950,
+      "cache_read_tokens": 110552,
+      "cache_creation_tokens": 27369,
+      "models": {
+        "claude-sonnet-4-6": 26098,
+        "claude-opus-4-7": 14057,
+        "claude-opus-4-6": 5424,
+        "claude-haiku-4-5": 6371,
+        "gpt-5.4": 22113,
+        "gpt-5.3-codex": 20945,
+        "gpt-5.5": 17950
+      },
+      "longest_session_minutes": 52,
+      "message_count": 184,
+      "tool_uses": 40,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 158689,
+          "output_tokens": 23892
+        },
+        "codex": {
+          "input_tokens": 186358,
+          "output_tokens": 28058
+        }
+      }
+    },
+    "2025-10-30": {
+      "sessions": 60,
+      "active_minutes": 103,
+      "input_tokens": 374337,
+      "output_tokens": 58505,
+      "cache_read_tokens": 151411,
+      "cache_creation_tokens": 21953,
+      "models": {
+        "claude-sonnet-4-6": 29823,
+        "claude-opus-4-7": 12767,
+        "claude-opus-4-6": 12005,
+        "claude-haiku-4-5": 3910,
+        "gpt-5.4": 44395,
+        "gpt-5.3-codex": 36998,
+        "gpt-5.5": 31751
+      },
+      "longest_session_minutes": 56,
+      "message_count": 331,
+      "tool_uses": 35,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 127589,
+          "output_tokens": 19941
+        },
+        "codex": {
+          "input_tokens": 246748,
+          "output_tokens": 38564
+        }
+      }
+    },
+    "2025-10-31": {
+      "sessions": 90,
+      "active_minutes": 142,
+      "input_tokens": 628542,
+      "output_tokens": 92996,
+      "cache_read_tokens": 191033,
+      "cache_creation_tokens": 57322,
+      "models": {
+        "claude-sonnet-4-6": 45826,
+        "claude-opus-4-7": 26034,
+        "claude-opus-4-6": 11022,
+        "claude-haiku-4-5": 10114
+      },
+      "longest_session_minutes": 53,
+      "message_count": 451,
+      "tool_uses": 98,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 628542,
+          "output_tokens": 92996
+        }
+      }
+    },
+    "2025-11-03": {
+      "sessions": 56,
+      "active_minutes": 99,
+      "input_tokens": 319124,
+      "output_tokens": 49011,
+      "cache_read_tokens": 134777,
+      "cache_creation_tokens": 23222,
+      "models": {
+        "claude-sonnet-4-6": 24978,
+        "claude-opus-4-7": 13305,
+        "claude-opus-4-6": 7254,
+        "claude-haiku-4-5": 3474
+      },
+      "longest_session_minutes": 34,
+      "message_count": 385,
+      "tool_uses": 69,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 319124,
+          "output_tokens": 49011
+        }
+      }
+    },
+    "2025-11-05": {
+      "sessions": 14,
+      "active_minutes": 46,
+      "input_tokens": 121891,
+      "output_tokens": 17759,
+      "cache_read_tokens": 45126,
+      "cache_creation_tokens": 9849,
+      "models": {
+        "claude-sonnet-4-6": 8471,
+        "claude-opus-4-7": 4012,
+        "claude-opus-4-6": 3463,
+        "claude-haiku-4-5": 1813,
+        "gpt-5.4": 11083,
+        "gpt-5.3-codex": 11669,
+        "gpt-5.5": 10696
+      },
+      "longest_session_minutes": 16,
+      "message_count": 60,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 42273,
+          "output_tokens": 6159
+        },
+        "codex": {
+          "input_tokens": 79618,
+          "output_tokens": 11600
+        }
+      }
+    },
+    "2025-11-06": {
+      "sessions": 54,
+      "active_minutes": 91,
+      "input_tokens": 364845,
+      "output_tokens": 53640,
+      "cache_read_tokens": 133349,
+      "cache_creation_tokens": 25756,
+      "models": {
+        "claude-sonnet-4-6": 27506,
+        "claude-opus-4-7": 11889,
+        "claude-opus-4-6": 6626,
+        "claude-haiku-4-5": 3284,
+        "gpt-5.4": 45705,
+        "gpt-5.3-codex": 36282,
+        "gpt-5.5": 33121
+      },
+      "longest_session_minutes": 41,
+      "message_count": 242,
+      "tool_uses": 41,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 109411,
+          "output_tokens": 16086
+        },
+        "codex": {
+          "input_tokens": 255434,
+          "output_tokens": 37554
+        }
+      }
+    },
+    "2025-11-07": {
+      "sessions": 46,
+      "active_minutes": 75,
+      "input_tokens": 319022,
+      "output_tokens": 46811,
+      "cache_read_tokens": 111870,
+      "cache_creation_tokens": 27066,
+      "models": {
+        "claude-sonnet-4-6": 18974,
+        "claude-opus-4-7": 10246,
+        "claude-opus-4-6": 7525,
+        "claude-haiku-4-5": 4985,
+        "gpt-5.4": 34317,
+        "gpt-5.3-codex": 29705,
+        "gpt-5.5": 27029
+      },
+      "longest_session_minutes": 27,
+      "message_count": 170,
+      "tool_uses": 49,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 100260,
+          "output_tokens": 14712
+        },
+        "codex": {
+          "input_tokens": 218762,
+          "output_tokens": 32099
+        }
+      }
+    },
+    "2025-11-09": {
+      "sessions": 10,
+      "active_minutes": 31,
+      "input_tokens": 73265,
+      "output_tokens": 11107,
+      "cache_read_tokens": 23170,
+      "cache_creation_tokens": 7002,
+      "models": {
+        "claude-sonnet-4-6": 5982,
+        "claude-opus-4-7": 2868,
+        "claude-opus-4-6": 1302,
+        "claude-haiku-4-5": 955,
+        "gpt-5.4": 7140,
+        "gpt-5.3-codex": 4895,
+        "gpt-5.5": 4859
+      },
+      "longest_session_minutes": 16,
+      "message_count": 35,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 29061,
+          "output_tokens": 4406
+        },
+        "codex": {
+          "input_tokens": 44204,
+          "output_tokens": 6701
+        }
+      }
+    },
+    "2025-11-10": {
+      "sessions": 70,
+      "active_minutes": 112,
+      "input_tokens": 415295,
+      "output_tokens": 60170,
+      "cache_read_tokens": 159437,
+      "cache_creation_tokens": 31819,
+      "models": {
+        "claude-sonnet-4-6": 30928,
+        "claude-opus-4-7": 17261,
+        "claude-opus-4-6": 7331,
+        "claude-haiku-4-5": 4650,
+        "gpt-5.4": 39543,
+        "gpt-5.3-codex": 35657,
+        "gpt-5.5": 31714
+      },
+      "longest_session_minutes": 57,
+      "message_count": 329,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 149556,
+          "output_tokens": 21669
+        },
+        "codex": {
+          "input_tokens": 265739,
+          "output_tokens": 38501
+        }
+      }
+    },
+    "2025-11-11": {
+      "sessions": 56,
+      "active_minutes": 72,
+      "input_tokens": 305442,
+      "output_tokens": 45323,
+      "cache_read_tokens": 122784,
+      "cache_creation_tokens": 17891,
+      "models": {
+        "claude-sonnet-4-6": 23107,
+        "claude-opus-4-7": 12069,
+        "claude-opus-4-6": 7935,
+        "claude-haiku-4-5": 2212
+      },
+      "longest_session_minutes": 23,
+      "message_count": 217,
+      "tool_uses": 31,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 305442,
+          "output_tokens": 45323
+        }
+      }
+    },
+    "2025-11-14": {
+      "sessions": 60,
+      "active_minutes": 102,
+      "input_tokens": 376253,
+      "output_tokens": 57349,
+      "cache_read_tokens": 119885,
+      "cache_creation_tokens": 32923,
+      "models": {
+        "claude-sonnet-4-6": 25707,
+        "claude-opus-4-7": 15368,
+        "claude-opus-4-6": 10752,
+        "claude-haiku-4-5": 5522,
+        "gpt-5.4": 48921,
+        "gpt-5.3-codex": 35240,
+        "gpt-5.5": 35133
+      },
+      "longest_session_minutes": 50,
+      "message_count": 259,
+      "tool_uses": 54,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 122154,
+          "output_tokens": 18619
+        },
+        "codex": {
+          "input_tokens": 254099,
+          "output_tokens": 38730
+        }
+      }
+    },
+    "2025-11-17": {
+      "sessions": 46,
+      "active_minutes": 78,
+      "input_tokens": 241432,
+      "output_tokens": 35831,
+      "cache_read_tokens": 73452,
+      "cache_creation_tokens": 18483,
+      "models": {
+        "claude-sonnet-4-6": 16791,
+        "claude-opus-4-7": 8742,
+        "claude-opus-4-6": 5741,
+        "claude-haiku-4-5": 4557
+      },
+      "longest_session_minutes": 41,
+      "message_count": 279,
+      "tool_uses": 43,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 241432,
+          "output_tokens": 35831
+        }
+      }
+    },
+    "2025-11-19": {
+      "sessions": 34,
+      "active_minutes": 58,
+      "input_tokens": 214651,
+      "output_tokens": 30287,
+      "cache_read_tokens": 84891,
+      "cache_creation_tokens": 10932,
+      "models": {
+        "claude-sonnet-4-6": 15919,
+        "claude-opus-4-7": 7070,
+        "claude-opus-4-6": 3870,
+        "claude-haiku-4-5": 3428
+      },
+      "longest_session_minutes": 19,
+      "message_count": 212,
+      "tool_uses": 23,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 214651,
+          "output_tokens": 30287
+        }
+      }
+    },
+    "2025-11-21": {
+      "sessions": 92,
+      "active_minutes": 141,
+      "input_tokens": 591799,
+      "output_tokens": 86051,
+      "cache_read_tokens": 236407,
+      "cache_creation_tokens": 48234,
+      "models": {
+        "claude-sonnet-4-6": 40565,
+        "claude-opus-4-7": 23026,
+        "claude-opus-4-6": 13477,
+        "claude-haiku-4-5": 8983
+      },
+      "longest_session_minutes": 65,
+      "message_count": 636,
+      "tool_uses": 78,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 591799,
+          "output_tokens": 86051
+        }
+      }
+    },
+    "2025-11-24": {
+      "sessions": 38,
+      "active_minutes": 51,
+      "input_tokens": 198776,
+      "output_tokens": 30676,
+      "cache_read_tokens": 84241,
+      "cache_creation_tokens": 16370,
+      "models": {
+        "claude-sonnet-4-6": 16457,
+        "claude-opus-4-7": 7681,
+        "claude-opus-4-6": 4849,
+        "claude-haiku-4-5": 1689,
+        "gpt-5.4": 10382,
+        "gpt-5.3-codex": 7713,
+        "gpt-5.5": 8445
+      },
+      "longest_session_minutes": 19,
+      "message_count": 206,
+      "tool_uses": 40,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 106571,
+          "output_tokens": 16447
+        },
+        "codex": {
+          "input_tokens": 92205,
+          "output_tokens": 14229
+        }
+      }
+    },
+    "2025-11-26": {
+      "sessions": 24,
+      "active_minutes": 37,
+      "input_tokens": 103686,
+      "output_tokens": 16587,
+      "cache_read_tokens": 37624,
+      "cache_creation_tokens": 7881,
+      "models": {
+        "claude-sonnet-4-6": 9148,
+        "claude-opus-4-7": 4096,
+        "claude-opus-4-6": 2005,
+        "claude-haiku-4-5": 1338,
+        "gpt-5.4": 16535,
+        "gpt-5.3-codex": 14696,
+        "gpt-5.5": 10553
+      },
+      "longest_session_minutes": 12,
+      "message_count": 119,
+      "tool_uses": 12,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 29464,
+          "output_tokens": 4714
+        },
+        "codex": {
+          "input_tokens": 74222,
+          "output_tokens": 11873
+        }
+      }
+    },
+    "2025-11-27": {
+      "sessions": 52,
+      "active_minutes": 89,
+      "input_tokens": 353395,
+      "output_tokens": 52650,
+      "cache_read_tokens": 137484,
+      "cache_creation_tokens": 19523,
+      "models": {
+        "claude-sonnet-4-6": 23817,
+        "claude-opus-4-7": 13155,
+        "claude-opus-4-6": 8248,
+        "claude-haiku-4-5": 4630,
+        "gpt-5.4": 20646,
+        "gpt-5.3-codex": 19928,
+        "gpt-5.5": 14125
+      },
+      "longest_session_minutes": 38,
+      "message_count": 234,
+      "tool_uses": 58,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 168501,
+          "output_tokens": 25104
+        },
+        "codex": {
+          "input_tokens": 184894,
+          "output_tokens": 27546
+        }
+      }
+    },
+    "2025-11-28": {
+      "sessions": 96,
+      "active_minutes": 142,
+      "input_tokens": 572315,
+      "output_tokens": 83949,
+      "cache_read_tokens": 191285,
+      "cache_creation_tokens": 53515,
+      "models": {
+        "claude-sonnet-4-6": 34552,
+        "claude-opus-4-7": 17707,
+        "claude-opus-4-6": 14096,
+        "claude-haiku-4-5": 8238,
+        "gpt-5.4": 69214,
+        "gpt-5.3-codex": 54185,
+        "gpt-5.5": 43590
+      },
+      "longest_session_minutes": 77,
+      "message_count": 626,
+      "tool_uses": 108,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 176713,
+          "output_tokens": 25921
+        },
+        "codex": {
+          "input_tokens": 395602,
+          "output_tokens": 58028
+        }
+      }
+    },
+    "2025-11-29": {
+      "sessions": 54,
+      "active_minutes": 85,
+      "input_tokens": 339470,
+      "output_tokens": 51332,
+      "cache_read_tokens": 138674,
+      "cache_creation_tokens": 28514,
+      "models": {
+        "claude-sonnet-4-6": 22020,
+        "claude-opus-4-7": 13733,
+        "claude-opus-4-6": 7907,
+        "claude-haiku-4-5": 3746,
+        "gpt-5.4": 15383,
+        "gpt-5.3-codex": 15274,
+        "gpt-5.5": 14239
+      },
+      "longest_session_minutes": 44,
+      "message_count": 328,
+      "tool_uses": 51,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 174350,
+          "output_tokens": 26364
+        },
+        "codex": {
+          "input_tokens": 165120,
+          "output_tokens": 24968
+        }
+      }
+    },
+    "2025-12-01": {
+      "sessions": 18,
+      "active_minutes": 41,
+      "input_tokens": 138304,
+      "output_tokens": 18484,
+      "cache_read_tokens": 47670,
+      "cache_creation_tokens": 12468,
+      "models": {
+        "claude-sonnet-4-6": 8364,
+        "claude-opus-4-7": 3837,
+        "claude-opus-4-6": 2834,
+        "claude-haiku-4-5": 2425,
+        "gpt-5.4": 19914,
+        "gpt-5.3-codex": 16002,
+        "gpt-5.5": 15462
+      },
+      "longest_session_minutes": 21,
+      "message_count": 113,
+      "tool_uses": 25,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 35079,
+          "output_tokens": 4689
+        },
+        "codex": {
+          "input_tokens": 103225,
+          "output_tokens": 13795
+        }
+      }
+    },
+    "2025-12-02": {
+      "sessions": 32,
+      "active_minutes": 69,
+      "input_tokens": 204928,
+      "output_tokens": 28106,
+      "cache_read_tokens": 91753,
+      "cache_creation_tokens": 11323,
+      "models": {
+        "claude-sonnet-4-6": 13695,
+        "claude-opus-4-7": 7466,
+        "claude-opus-4-6": 3334,
+        "claude-haiku-4-5": 3611,
+        "gpt-5.4": 17217,
+        "gpt-5.3-codex": 14087,
+        "gpt-5.5": 11106
+      },
+      "longest_session_minutes": 37,
+      "message_count": 137,
+      "tool_uses": 20,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 81678,
+          "output_tokens": 11203
+        },
+        "codex": {
+          "input_tokens": 123250,
+          "output_tokens": 16903
+        }
+      }
+    },
+    "2025-12-03": {
+      "sessions": 40,
+      "active_minutes": 71,
+      "input_tokens": 240490,
+      "output_tokens": 37995,
+      "cache_read_tokens": 74310,
+      "cache_creation_tokens": 19228,
+      "models": {
+        "claude-sonnet-4-6": 20114,
+        "claude-opus-4-7": 8500,
+        "claude-opus-4-6": 6692,
+        "claude-haiku-4-5": 2689,
+        "gpt-5.4": 15293,
+        "gpt-5.3-codex": 15463,
+        "gpt-5.5": 11705
+      },
+      "longest_session_minutes": 30,
+      "message_count": 155,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 113570,
+          "output_tokens": 17943
+        },
+        "codex": {
+          "input_tokens": 126920,
+          "output_tokens": 20052
+        }
+      }
+    },
+    "2025-12-04": {
+      "sessions": 42,
+      "active_minutes": 85,
+      "input_tokens": 254027,
+      "output_tokens": 39324,
+      "cache_read_tokens": 80326,
+      "cache_creation_tokens": 23270,
+      "models": {
+        "claude-sonnet-4-6": 21747,
+        "claude-opus-4-7": 9955,
+        "claude-opus-4-6": 4736,
+        "claude-haiku-4-5": 2886
+      },
+      "longest_session_minutes": 30,
+      "message_count": 266,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 254027,
+          "output_tokens": 39324
+        }
+      }
+    },
+    "2025-12-07": {
+      "sessions": 34,
+      "active_minutes": 53,
+      "input_tokens": 218728,
+      "output_tokens": 35319,
+      "cache_read_tokens": 96652,
+      "cache_creation_tokens": 19587,
+      "models": {
+        "claude-sonnet-4-6": 17063,
+        "claude-opus-4-7": 9249,
+        "claude-opus-4-6": 6762,
+        "claude-haiku-4-5": 2245,
+        "gpt-5.4": 19935,
+        "gpt-5.3-codex": 16262,
+        "gpt-5.5": 18213
+      },
+      "longest_session_minutes": 23,
+      "message_count": 186,
+      "tool_uses": 43,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 86094,
+          "output_tokens": 13902
+        },
+        "codex": {
+          "input_tokens": 132634,
+          "output_tokens": 21417
+        }
+      }
+    },
+    "2025-12-08": {
+      "sessions": 46,
+      "active_minutes": 69,
+      "input_tokens": 316611,
+      "output_tokens": 43420,
+      "cache_read_tokens": 109886,
+      "cache_creation_tokens": 19375,
+      "models": {
+        "claude-sonnet-4-6": 23308,
+        "claude-opus-4-7": 10302,
+        "claude-opus-4-6": 5323,
+        "claude-haiku-4-5": 4487
+      },
+      "longest_session_minutes": 33,
+      "message_count": 303,
+      "tool_uses": 34,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 316611,
+          "output_tokens": 43420
+        }
+      }
+    },
+    "2025-12-09": {
+      "sessions": 52,
+      "active_minutes": 101,
+      "input_tokens": 343947,
+      "output_tokens": 52124,
+      "cache_read_tokens": 125451,
+      "cache_creation_tokens": 19125,
+      "models": {
+        "claude-sonnet-4-6": 24441,
+        "claude-opus-4-7": 13056,
+        "claude-opus-4-6": 7845,
+        "claude-haiku-4-5": 6782,
+        "gpt-5.4": 24057,
+        "gpt-5.3-codex": 17790,
+        "gpt-5.5": 14699
+      },
+      "longest_session_minutes": 44,
+      "message_count": 347,
+      "tool_uses": 51,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 164975,
+          "output_tokens": 25002
+        },
+        "codex": {
+          "input_tokens": 178972,
+          "output_tokens": 27122
+        }
+      }
+    },
+    "2025-12-10": {
+      "sessions": 10,
+      "active_minutes": 18,
+      "input_tokens": 86468,
+      "output_tokens": 16190,
+      "cache_read_tokens": 32959,
+      "cache_creation_tokens": 4941,
+      "models": {
+        "claude-sonnet-4-6": 8479,
+        "claude-opus-4-7": 4284,
+        "claude-opus-4-6": 1609,
+        "claude-haiku-4-5": 1818,
+        "gpt-5.4": 5603,
+        "gpt-5.3-codex": 4834,
+        "gpt-5.5": 4162
+      },
+      "longest_session_minutes": 8,
+      "message_count": 61,
+      "tool_uses": 19,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 45468,
+          "output_tokens": 8514
+        },
+        "codex": {
+          "input_tokens": 41000,
+          "output_tokens": 7676
+        }
+      }
+    },
+    "2025-12-11": {
+      "sessions": 126,
+      "active_minutes": 218,
+      "input_tokens": 820548,
+      "output_tokens": 118655,
+      "cache_read_tokens": 335932,
+      "cache_creation_tokens": 63779,
+      "models": {
+        "claude-sonnet-4-6": 53064,
+        "claude-opus-4-7": 22761,
+        "claude-opus-4-6": 14544,
+        "claude-haiku-4-5": 9678,
+        "gpt-5.4": 39714,
+        "gpt-5.3-codex": 27285,
+        "gpt-5.5": 31397
+      },
+      "longest_session_minutes": 88,
+      "message_count": 732,
+      "tool_uses": 103,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 413687,
+          "output_tokens": 59821
+        },
+        "codex": {
+          "input_tokens": 406861,
+          "output_tokens": 58834
+        }
+      }
+    },
+    "2025-12-12": {
+      "sessions": 18,
+      "active_minutes": 33,
+      "input_tokens": 113590,
+      "output_tokens": 19064,
+      "cache_read_tokens": 46507,
+      "cache_creation_tokens": 6646,
+      "models": {
+        "claude-sonnet-4-6": 7340,
+        "claude-opus-4-7": 3674,
+        "claude-opus-4-6": 2840,
+        "claude-haiku-4-5": 2064,
+        "gpt-5.4": 7657,
+        "gpt-5.3-codex": 5845,
+        "gpt-5.5": 5895
+      },
+      "longest_session_minutes": 15,
+      "message_count": 90,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 51200,
+          "output_tokens": 8593
+        },
+        "codex": {
+          "input_tokens": 62390,
+          "output_tokens": 10471
+        }
+      }
+    },
+    "2025-12-13": {
+      "sessions": 12,
+      "active_minutes": 29,
+      "input_tokens": 70086,
+      "output_tokens": 10162,
+      "cache_read_tokens": 26841,
+      "cache_creation_tokens": 6126,
+      "models": {
+        "claude-sonnet-4-6": 5027,
+        "claude-opus-4-7": 3012,
+        "claude-opus-4-6": 1230,
+        "claude-haiku-4-5": 893,
+        "gpt-5.4": 10108,
+        "gpt-5.3-codex": 6817,
+        "gpt-5.5": 6771
+      },
+      "longest_session_minutes": 15,
+      "message_count": 62,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 21036,
+          "output_tokens": 3050
+        },
+        "codex": {
+          "input_tokens": 49050,
+          "output_tokens": 7112
+        }
+      }
+    },
+    "2025-12-15": {
+      "sessions": 94,
+      "active_minutes": 154,
+      "input_tokens": 620357,
+      "output_tokens": 90330,
+      "cache_read_tokens": 210674,
+      "cache_creation_tokens": 45946,
+      "models": {
+        "claude-sonnet-4-6": 42267,
+        "claude-opus-4-7": 22015,
+        "claude-opus-4-6": 8280,
+        "claude-haiku-4-5": 4258,
+        "gpt-5.4": 56275,
+        "gpt-5.3-codex": 62258,
+        "gpt-5.5": 44468
+      },
+      "longest_session_minutes": 83,
+      "message_count": 339,
+      "tool_uses": 106,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 198714,
+          "output_tokens": 28935
+        },
+        "codex": {
+          "input_tokens": 421643,
+          "output_tokens": 61395
+        }
+      }
+    },
+    "2025-12-16": {
+      "sessions": 10,
+      "active_minutes": 32,
+      "input_tokens": 87013,
+      "output_tokens": 15465,
+      "cache_read_tokens": 31025,
+      "cache_creation_tokens": 5224,
+      "models": {
+        "claude-sonnet-4-6": 7911,
+        "claude-opus-4-7": 4370,
+        "claude-opus-4-6": 2018,
+        "claude-haiku-4-5": 1166
+      },
+      "longest_session_minutes": 14,
+      "message_count": 64,
+      "tool_uses": 9,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 87013,
+          "output_tokens": 15465
+        }
+      }
+    },
+    "2025-12-18": {
+      "sessions": 78,
+      "active_minutes": 121,
+      "input_tokens": 487534,
+      "output_tokens": 70424,
+      "cache_read_tokens": 147624,
+      "cache_creation_tokens": 46144,
+      "models": {
+        "claude-sonnet-4-6": 36419,
+        "claude-opus-4-7": 17463,
+        "claude-opus-4-6": 8422,
+        "claude-haiku-4-5": 8120
+      },
+      "longest_session_minutes": 48,
+      "message_count": 392,
+      "tool_uses": 90,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 487534,
+          "output_tokens": 70424
+        }
+      }
+    },
+    "2025-12-19": {
+      "sessions": 50,
+      "active_minutes": 84,
+      "input_tokens": 344936,
+      "output_tokens": 54884,
+      "cache_read_tokens": 106499,
+      "cache_creation_tokens": 31110,
+      "models": {
+        "claude-sonnet-4-6": 28267,
+        "claude-opus-4-7": 13355,
+        "claude-opus-4-6": 5891,
+        "claude-haiku-4-5": 7371,
+        "gpt-5.4": 26309,
+        "gpt-5.3-codex": 21426,
+        "gpt-5.5": 20862
+      },
+      "longest_session_minutes": 33,
+      "message_count": 281,
+      "tool_uses": 71,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 153315,
+          "output_tokens": 24395
+        },
+        "codex": {
+          "input_tokens": 191621,
+          "output_tokens": 30489
+        }
+      }
+    },
+    "2025-12-22": {
+      "sessions": 88,
+      "active_minutes": 136,
+      "input_tokens": 553389,
+      "output_tokens": 80074,
+      "cache_read_tokens": 184999,
+      "cache_creation_tokens": 52184,
+      "models": {
+        "claude-sonnet-4-6": 37386,
+        "claude-opus-4-7": 18459,
+        "claude-opus-4-6": 12190,
+        "claude-haiku-4-5": 12039
+      },
+      "longest_session_minutes": 50,
+      "message_count": 394,
+      "tool_uses": 54,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 553389,
+          "output_tokens": 80074
+        }
+      }
+    },
+    "2025-12-23": {
+      "sessions": 28,
+      "active_minutes": 33,
+      "input_tokens": 153838,
+      "output_tokens": 25186,
+      "cache_read_tokens": 47767,
+      "cache_creation_tokens": 13292,
+      "models": {
+        "claude-sonnet-4-6": 13706,
+        "claude-opus-4-7": 5997,
+        "claude-opus-4-6": 3144,
+        "claude-haiku-4-5": 2339,
+        "gpt-5.4": 19230,
+        "gpt-5.3-codex": 18899,
+        "gpt-5.5": 13095
+      },
+      "longest_session_minutes": 13,
+      "message_count": 181,
+      "tool_uses": 31,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 50707,
+          "output_tokens": 8302
+        },
+        "codex": {
+          "input_tokens": 103131,
+          "output_tokens": 16884
+        }
+      }
+    },
+    "2025-12-24": {
+      "sessions": 24,
+      "active_minutes": 46,
+      "input_tokens": 143900,
+      "output_tokens": 18057,
+      "cache_read_tokens": 48398,
+      "cache_creation_tokens": 9877,
+      "models": {
+        "claude-sonnet-4-6": 8597,
+        "claude-opus-4-7": 4440,
+        "claude-opus-4-6": 2955,
+        "claude-haiku-4-5": 2065
+      },
+      "longest_session_minutes": 14,
+      "message_count": 147,
+      "tool_uses": 19,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 143900,
+          "output_tokens": 18057
+        }
+      }
+    },
+    "2025-12-25": {
+      "sessions": 110,
+      "active_minutes": 175,
+      "input_tokens": 717540,
+      "output_tokens": 104622,
+      "cache_read_tokens": 307803,
+      "cache_creation_tokens": 46934,
+      "models": {
+        "claude-sonnet-4-6": 55564,
+        "claude-opus-4-7": 25325,
+        "claude-opus-4-6": 14355,
+        "claude-haiku-4-5": 9378,
+        "gpt-5.4": 37864,
+        "gpt-5.3-codex": 26703,
+        "gpt-5.5": 24092
+      },
+      "longest_session_minutes": 91,
+      "message_count": 597,
+      "tool_uses": 112,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 388400,
+          "output_tokens": 56632
+        },
+        "codex": {
+          "input_tokens": 329140,
+          "output_tokens": 47990
+        }
+      }
+    },
+    "2025-12-27": {
+      "sessions": 8,
+      "active_minutes": 13,
+      "input_tokens": 44468,
+      "output_tokens": 5804,
+      "cache_read_tokens": 18841,
+      "cache_creation_tokens": 4319,
+      "models": {
+        "claude-sonnet-4-6": 3350,
+        "claude-opus-4-7": 1433,
+        "claude-opus-4-6": 679,
+        "claude-haiku-4-5": 342
+      },
+      "longest_session_minutes": 5,
+      "message_count": 40,
+      "tool_uses": 7,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 44468,
+          "output_tokens": 5804
+        }
+      }
+    },
+    "2025-12-30": {
+      "sessions": 112,
+      "active_minutes": 175,
+      "input_tokens": 740414,
+      "output_tokens": 111923,
+      "cache_read_tokens": 290924,
+      "cache_creation_tokens": 37530,
+      "models": {
+        "claude-sonnet-4-6": 52643,
+        "claude-opus-4-7": 24232,
+        "claude-opus-4-6": 20632,
+        "claude-haiku-4-5": 14416
+      },
+      "longest_session_minutes": 87,
+      "message_count": 425,
+      "tool_uses": 70,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 740414,
+          "output_tokens": 111923
+        }
+      }
+    },
+    "2026-01-01": {
+      "sessions": 48,
+      "active_minutes": 62,
+      "input_tokens": 283993,
+      "output_tokens": 41738,
+      "cache_read_tokens": 86770,
+      "cache_creation_tokens": 14809,
+      "models": {
+        "claude-sonnet-4-6": 24281,
+        "claude-opus-4-7": 10021,
+        "claude-opus-4-6": 4796,
+        "claude-haiku-4-5": 2640,
+        "gpt-5.4": 36803,
+        "gpt-5.3-codex": 34005,
+        "gpt-5.5": 27585
+      },
+      "longest_session_minutes": 27,
+      "message_count": 205,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 84587,
+          "output_tokens": 12432
+        },
+        "codex": {
+          "input_tokens": 199406,
+          "output_tokens": 29306
+        }
+      }
+    },
+    "2026-01-02": {
+      "sessions": 90,
+      "active_minutes": 135,
+      "input_tokens": 585476,
+      "output_tokens": 86317,
+      "cache_read_tokens": 193075,
+      "cache_creation_tokens": 44730,
+      "models": {
+        "claude-sonnet-4-6": 41088,
+        "claude-opus-4-7": 20975,
+        "claude-opus-4-6": 14062,
+        "claude-haiku-4-5": 10192,
+        "gpt-5.4": 54721,
+        "gpt-5.3-codex": 49300,
+        "gpt-5.5": 41426
+      },
+      "longest_session_minutes": 73,
+      "message_count": 399,
+      "tool_uses": 96,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 218051,
+          "output_tokens": 32148
+        },
+        "codex": {
+          "input_tokens": 367425,
+          "output_tokens": 54169
+        }
+      }
+    },
+    "2026-01-03": {
+      "sessions": 6,
+      "active_minutes": 5,
+      "input_tokens": 59891,
+      "output_tokens": 6771,
+      "cache_read_tokens": 24914,
+      "cache_creation_tokens": 3252,
+      "models": {
+        "claude-sonnet-4-6": 3185,
+        "claude-opus-4-7": 1958,
+        "claude-opus-4-6": 891,
+        "claude-haiku-4-5": 737
+      },
+      "longest_session_minutes": 5,
+      "message_count": 32,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 59891,
+          "output_tokens": 6771
+        }
+      }
+    },
+    "2026-01-04": {
+      "sessions": 42,
+      "active_minutes": 69,
+      "input_tokens": 271810,
+      "output_tokens": 39696,
+      "cache_read_tokens": 111444,
+      "cache_creation_tokens": 23016,
+      "models": {
+        "claude-sonnet-4-6": 17295,
+        "claude-opus-4-7": 9717,
+        "claude-opus-4-6": 4256,
+        "claude-haiku-4-5": 2654
+      },
+      "longest_session_minutes": 26,
+      "message_count": 251,
+      "tool_uses": 49,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 271810,
+          "output_tokens": 39696
+        }
+      }
+    },
+    "2026-01-05": {
+      "sessions": 16,
+      "active_minutes": 30,
+      "input_tokens": 125675,
+      "output_tokens": 16084,
+      "cache_read_tokens": 49795,
+      "cache_creation_tokens": 11316,
+      "models": {
+        "claude-sonnet-4-6": 7739,
+        "claude-opus-4-7": 3512,
+        "claude-opus-4-6": 3073,
+        "claude-haiku-4-5": 1760,
+        "gpt-5.4": 8166,
+        "gpt-5.3-codex": 7197,
+        "gpt-5.5": 7640
+      },
+      "longest_session_minutes": 13,
+      "message_count": 100,
+      "tool_uses": 18,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 51715,
+          "output_tokens": 6619
+        },
+        "codex": {
+          "input_tokens": 73960,
+          "output_tokens": 9465
+        }
+      }
+    },
+    "2026-01-06": {
+      "sessions": 20,
+      "active_minutes": 31,
+      "input_tokens": 152012,
+      "output_tokens": 22853,
+      "cache_read_tokens": 46221,
+      "cache_creation_tokens": 10594,
+      "models": {
+        "claude-sonnet-4-6": 11218,
+        "claude-opus-4-7": 4999,
+        "claude-opus-4-6": 4051,
+        "claude-haiku-4-5": 2585
+      },
+      "longest_session_minutes": 16,
+      "message_count": 107,
+      "tool_uses": 17,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 152012,
+          "output_tokens": 22853
+        }
+      }
+    },
+    "2026-01-07": {
+      "sessions": 76,
+      "active_minutes": 125,
+      "input_tokens": 427881,
+      "output_tokens": 66945,
+      "cache_read_tokens": 143807,
+      "cache_creation_tokens": 25562,
+      "models": {
+        "claude-sonnet-4-6": 35389,
+        "claude-opus-4-7": 13549,
+        "claude-opus-4-6": 9504,
+        "claude-haiku-4-5": 8503
+      },
+      "longest_session_minutes": 55,
+      "message_count": 466,
+      "tool_uses": 65,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 427881,
+          "output_tokens": 66945
+        }
+      }
+    },
+    "2026-01-08": {
+      "sessions": 34,
+      "active_minutes": 72,
+      "input_tokens": 236315,
+      "output_tokens": 36327,
+      "cache_read_tokens": 104587,
+      "cache_creation_tokens": 17005,
+      "models": {
+        "claude-sonnet-4-6": 19229,
+        "claude-opus-4-7": 10493,
+        "claude-opus-4-6": 3745,
+        "claude-haiku-4-5": 2860,
+        "gpt-5.4": 13402,
+        "gpt-5.3-codex": 11718,
+        "gpt-5.5": 13222
+      },
+      "longest_session_minutes": 25,
+      "message_count": 195,
+      "tool_uses": 35,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 114968,
+          "output_tokens": 17674
+        },
+        "codex": {
+          "input_tokens": 121347,
+          "output_tokens": 18653
+        }
+      }
+    },
+    "2026-01-09": {
+      "sessions": 38,
+      "active_minutes": 58,
+      "input_tokens": 256288,
+      "output_tokens": 38838,
+      "cache_read_tokens": 113883,
+      "cache_creation_tokens": 15446,
+      "models": {
+        "claude-sonnet-4-6": 18361,
+        "claude-opus-4-7": 10584,
+        "claude-opus-4-6": 4956,
+        "claude-haiku-4-5": 4937
+      },
+      "longest_session_minutes": 18,
+      "message_count": 239,
+      "tool_uses": 44,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 256288,
+          "output_tokens": 38838
+        }
+      }
+    },
+    "2026-01-10": {
+      "sessions": 46,
+      "active_minutes": 52,
+      "input_tokens": 264089,
+      "output_tokens": 36033,
+      "cache_read_tokens": 92872,
+      "cache_creation_tokens": 14675,
+      "models": {
+        "claude-sonnet-4-6": 17093,
+        "claude-opus-4-7": 7805,
+        "claude-opus-4-6": 6140,
+        "claude-haiku-4-5": 4995
+      },
+      "longest_session_minutes": 19,
+      "message_count": 210,
+      "tool_uses": 49,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 264089,
+          "output_tokens": 36033
+        }
+      }
+    },
+    "2026-01-14": {
+      "sessions": 88,
+      "active_minutes": 145,
+      "input_tokens": 533093,
+      "output_tokens": 80446,
+      "cache_read_tokens": 177531,
+      "cache_creation_tokens": 47143,
+      "models": {
+        "claude-sonnet-4-6": 38840,
+        "claude-opus-4-7": 21893,
+        "claude-opus-4-6": 13660,
+        "claude-haiku-4-5": 6053,
+        "gpt-5.4": 41389,
+        "gpt-5.3-codex": 33184,
+        "gpt-5.5": 29379
+      },
+      "longest_session_minutes": 50,
+      "message_count": 494,
+      "tool_uses": 86,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 232569,
+          "output_tokens": 35096
+        },
+        "codex": {
+          "input_tokens": 300524,
+          "output_tokens": 45350
+        }
+      }
+    },
+    "2026-01-15": {
+      "sessions": 96,
+      "active_minutes": 150,
+      "input_tokens": 664904,
+      "output_tokens": 97488,
+      "cache_read_tokens": 230880,
+      "cache_creation_tokens": 50271,
+      "models": {
+        "claude-sonnet-4-6": 47741,
+        "claude-opus-4-7": 26099,
+        "claude-opus-4-6": 16583,
+        "claude-haiku-4-5": 7065,
+        "gpt-5.4": 49032,
+        "gpt-5.3-codex": 46306,
+        "gpt-5.5": 45583
+      },
+      "longest_session_minutes": 55,
+      "message_count": 579,
+      "tool_uses": 100,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 271885,
+          "output_tokens": 39864
+        },
+        "codex": {
+          "input_tokens": 393019,
+          "output_tokens": 57624
+        }
+      }
+    },
+    "2026-01-16": {
+      "sessions": 50,
+      "active_minutes": 61,
+      "input_tokens": 266499,
+      "output_tokens": 39517,
+      "cache_read_tokens": 99702,
+      "cache_creation_tokens": 23689,
+      "models": {
+        "claude-sonnet-4-6": 19496,
+        "claude-opus-4-7": 9622,
+        "claude-opus-4-6": 5007,
+        "claude-haiku-4-5": 5392,
+        "gpt-5.4": 46297,
+        "gpt-5.3-codex": 34449,
+        "gpt-5.5": 30097
+      },
+      "longest_session_minutes": 21,
+      "message_count": 272,
+      "tool_uses": 26,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 70040,
+          "output_tokens": 10386
+        },
+        "codex": {
+          "input_tokens": 196459,
+          "output_tokens": 29131
+        }
+      }
+    },
+    "2026-01-19": {
+      "sessions": 50,
+      "active_minutes": 84,
+      "input_tokens": 300995,
+      "output_tokens": 41437,
+      "cache_read_tokens": 95286,
+      "cache_creation_tokens": 24584,
+      "models": {
+        "claude-sonnet-4-6": 20964,
+        "claude-opus-4-7": 10921,
+        "claude-opus-4-6": 7019,
+        "claude-haiku-4-5": 2533
+      },
+      "longest_session_minutes": 42,
+      "message_count": 185,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 300995,
+          "output_tokens": 41437
+        }
+      }
+    },
+    "2026-01-20": {
+      "sessions": 96,
+      "active_minutes": 165,
+      "input_tokens": 619475,
+      "output_tokens": 89181,
+      "cache_read_tokens": 275427,
+      "cache_creation_tokens": 36663,
+      "models": {
+        "claude-sonnet-4-6": 43541,
+        "claude-opus-4-7": 25164,
+        "claude-opus-4-6": 13162,
+        "claude-haiku-4-5": 7314,
+        "gpt-5.4": 33217,
+        "gpt-5.3-codex": 34557,
+        "gpt-5.5": 24975
+      },
+      "longest_session_minutes": 52,
+      "message_count": 363,
+      "tool_uses": 95,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 303662,
+          "output_tokens": 43716
+        },
+        "codex": {
+          "input_tokens": 315813,
+          "output_tokens": 45465
+        }
+      }
+    },
+    "2026-01-21": {
+      "sessions": 10,
+      "active_minutes": 20,
+      "input_tokens": 62526,
+      "output_tokens": 9192,
+      "cache_read_tokens": 27076,
+      "cache_creation_tokens": 5481,
+      "models": {
+        "claude-sonnet-4-6": 4563,
+        "claude-opus-4-7": 2123,
+        "claude-opus-4-6": 1275,
+        "claude-haiku-4-5": 1231
+      },
+      "longest_session_minutes": 7,
+      "message_count": 35,
+      "tool_uses": 8,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 62526,
+          "output_tokens": 9192
+        }
+      }
+    },
+    "2026-01-22": {
+      "sessions": 36,
+      "active_minutes": 77,
+      "input_tokens": 226299,
+      "output_tokens": 32555,
+      "cache_read_tokens": 101643,
+      "cache_creation_tokens": 21882,
+      "models": {
+        "claude-sonnet-4-6": 16433,
+        "claude-opus-4-7": 7067,
+        "claude-opus-4-6": 3579,
+        "claude-haiku-4-5": 3672,
+        "gpt-5.4": 16269,
+        "gpt-5.3-codex": 13029,
+        "gpt-5.5": 15333
+      },
+      "longest_session_minutes": 27,
+      "message_count": 214,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 92315,
+          "output_tokens": 13281
+        },
+        "codex": {
+          "input_tokens": 133984,
+          "output_tokens": 19274
+        }
+      }
+    },
+    "2026-01-23": {
+      "sessions": 34,
+      "active_minutes": 40,
+      "input_tokens": 188359,
+      "output_tokens": 29051,
+      "cache_read_tokens": 79623,
+      "cache_creation_tokens": 10281,
+      "models": {
+        "claude-sonnet-4-6": 13579,
+        "claude-opus-4-7": 7778,
+        "claude-opus-4-6": 3878,
+        "claude-haiku-4-5": 3816,
+        "gpt-5.4": 13314,
+        "gpt-5.3-codex": 10487,
+        "gpt-5.5": 8550
+      },
+      "longest_session_minutes": 21,
+      "message_count": 232,
+      "tool_uses": 22,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 89118,
+          "output_tokens": 13745
+        },
+        "codex": {
+          "input_tokens": 99241,
+          "output_tokens": 15306
+        }
+      }
+    },
+    "2026-01-26": {
+      "sessions": 20,
+      "active_minutes": 34,
+      "input_tokens": 82201,
+      "output_tokens": 9998,
+      "cache_read_tokens": 36935,
+      "cache_creation_tokens": 4792,
+      "models": {
+        "claude-sonnet-4-6": 4955,
+        "claude-opus-4-7": 2590,
+        "claude-opus-4-6": 1873,
+        "claude-haiku-4-5": 580
+      },
+      "longest_session_minutes": 17,
+      "message_count": 89,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 82201,
+          "output_tokens": 9998
+        }
+      }
+    },
+    "2026-01-28": {
+      "sessions": 82,
+      "active_minutes": 153,
+      "input_tokens": 571443,
+      "output_tokens": 83456,
+      "cache_read_tokens": 243721,
+      "cache_creation_tokens": 36831,
+      "models": {
+        "claude-sonnet-4-6": 44328,
+        "claude-opus-4-7": 20517,
+        "claude-opus-4-6": 13019,
+        "claude-haiku-4-5": 5592,
+        "gpt-5.4": 82820,
+        "gpt-5.3-codex": 76761,
+        "gpt-5.5": 76864
+      },
+      "longest_session_minutes": 69,
+      "message_count": 492,
+      "tool_uses": 105,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 149078,
+          "output_tokens": 21772
+        },
+        "codex": {
+          "input_tokens": 422365,
+          "output_tokens": 61684
+        }
+      }
+    },
+    "2026-01-29": {
+      "sessions": 32,
+      "active_minutes": 47,
+      "input_tokens": 188435,
+      "output_tokens": 28366,
+      "cache_read_tokens": 69231,
+      "cache_creation_tokens": 18271,
+      "models": {
+        "claude-sonnet-4-6": 12605,
+        "claude-opus-4-7": 6811,
+        "claude-opus-4-6": 4936,
+        "claude-haiku-4-5": 4014,
+        "gpt-5.4": 8572,
+        "gpt-5.3-codex": 7173,
+        "gpt-5.5": 8196
+      },
+      "longest_session_minutes": 22,
+      "message_count": 187,
+      "tool_uses": 32,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 102188,
+          "output_tokens": 15383
+        },
+        "codex": {
+          "input_tokens": 86247,
+          "output_tokens": 12983
+        }
+      }
+    },
+    "2026-01-30": {
+      "sessions": 48,
+      "active_minutes": 78,
+      "input_tokens": 323298,
+      "output_tokens": 49406,
+      "cache_read_tokens": 114701,
+      "cache_creation_tokens": 22161,
+      "models": {
+        "claude-sonnet-4-6": 25917,
+        "claude-opus-4-7": 11751,
+        "claude-opus-4-6": 4986,
+        "claude-haiku-4-5": 6752
+      },
+      "longest_session_minutes": 39,
+      "message_count": 235,
+      "tool_uses": 44,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 323298,
+          "output_tokens": 49406
+        }
+      }
+    },
+    "2026-02-01": {
+      "sessions": 32,
+      "active_minutes": 55,
+      "input_tokens": 195478,
+      "output_tokens": 30840,
+      "cache_read_tokens": 60664,
+      "cache_creation_tokens": 18924,
+      "models": {
+        "claude-sonnet-4-6": 14039,
+        "claude-opus-4-7": 8341,
+        "claude-opus-4-6": 4654,
+        "claude-haiku-4-5": 3806,
+        "gpt-5.4": 21861,
+        "gpt-5.3-codex": 22655,
+        "gpt-5.5": 16567
+      },
+      "longest_session_minutes": 27,
+      "message_count": 132,
+      "tool_uses": 36,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 65583,
+          "output_tokens": 10347
+        },
+        "codex": {
+          "input_tokens": 129895,
+          "output_tokens": 20493
+        }
+      }
+    },
+    "2026-02-03": {
+      "sessions": 44,
+      "active_minutes": 90,
+      "input_tokens": 296457,
+      "output_tokens": 44313,
+      "cache_read_tokens": 128583,
+      "cache_creation_tokens": 29172,
+      "models": {
+        "claude-sonnet-4-6": 21176,
+        "claude-opus-4-7": 12289,
+        "claude-opus-4-6": 7897,
+        "claude-haiku-4-5": 2951
+      },
+      "longest_session_minutes": 31,
+      "message_count": 165,
+      "tool_uses": 36,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 296457,
+          "output_tokens": 44313
+        }
+      }
+    },
+    "2026-02-04": {
+      "sessions": 42,
+      "active_minutes": 61,
+      "input_tokens": 259840,
+      "output_tokens": 38869,
+      "cache_read_tokens": 100673,
+      "cache_creation_tokens": 23905,
+      "models": {
+        "claude-sonnet-4-6": 19264,
+        "claude-opus-4-7": 9798,
+        "claude-opus-4-6": 6197,
+        "claude-haiku-4-5": 3610,
+        "gpt-5.4": 29703,
+        "gpt-5.3-codex": 26440,
+        "gpt-5.5": 27118
+      },
+      "longest_session_minutes": 33,
+      "message_count": 163,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 82696,
+          "output_tokens": 12371
+        },
+        "codex": {
+          "input_tokens": 177144,
+          "output_tokens": 26498
+        }
+      }
+    },
+    "2026-02-05": {
+      "sessions": 62,
+      "active_minutes": 106,
+      "input_tokens": 428923,
+      "output_tokens": 62934,
+      "cache_read_tokens": 160608,
+      "cache_creation_tokens": 28292,
+      "models": {
+        "claude-sonnet-4-6": 33112,
+        "claude-opus-4-7": 12522,
+        "claude-opus-4-6": 9584,
+        "claude-haiku-4-5": 7716,
+        "gpt-5.4": 30371,
+        "gpt-5.3-codex": 33101,
+        "gpt-5.5": 22908
+      },
+      "longest_session_minutes": 51,
+      "message_count": 224,
+      "tool_uses": 52,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 180786,
+          "output_tokens": 26526
+        },
+        "codex": {
+          "input_tokens": 248137,
+          "output_tokens": 36408
+        }
+      }
+    },
+    "2026-02-06": {
+      "sessions": 66,
+      "active_minutes": 98,
+      "input_tokens": 440178,
+      "output_tokens": 65592,
+      "cache_read_tokens": 153710,
+      "cache_creation_tokens": 37292,
+      "models": {
+        "claude-sonnet-4-6": 33173,
+        "claude-opus-4-7": 16588,
+        "claude-opus-4-6": 10584,
+        "claude-haiku-4-5": 5247,
+        "gpt-5.4": 30326,
+        "gpt-5.3-codex": 27575,
+        "gpt-5.5": 23038
+      },
+      "longest_session_minutes": 49,
+      "message_count": 429,
+      "tool_uses": 45,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 197038,
+          "output_tokens": 29361
+        },
+        "codex": {
+          "input_tokens": 243140,
+          "output_tokens": 36231
+        }
+      }
+    },
+    "2026-02-07": {
+      "sessions": 24,
+      "active_minutes": 39,
+      "input_tokens": 138486,
+      "output_tokens": 21710,
+      "cache_read_tokens": 43503,
+      "cache_creation_tokens": 9377,
+      "models": {
+        "claude-sonnet-4-6": 11706,
+        "claude-opus-4-7": 5552,
+        "claude-opus-4-6": 3263,
+        "claude-haiku-4-5": 1189,
+        "gpt-5.4": 24374,
+        "gpt-5.3-codex": 20460,
+        "gpt-5.5": 16392
+      },
+      "longest_session_minutes": 12,
+      "message_count": 126,
+      "tool_uses": 15,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 36251,
+          "output_tokens": 5683
+        },
+        "codex": {
+          "input_tokens": 102235,
+          "output_tokens": 16027
+        }
+      }
+    },
+    "2026-02-10": {
+      "sessions": 44,
+      "active_minutes": 68,
+      "input_tokens": 301918,
+      "output_tokens": 42493,
+      "cache_read_tokens": 126844,
+      "cache_creation_tokens": 26738,
+      "models": {
+        "claude-sonnet-4-6": 18351,
+        "claude-opus-4-7": 9692,
+        "claude-opus-4-6": 5084,
+        "claude-haiku-4-5": 2371
+      },
+      "longest_session_minutes": 30,
+      "message_count": 277,
+      "tool_uses": 37,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 301918,
+          "output_tokens": 42493
+        }
+      }
+    },
+    "2026-02-11": {
+      "sessions": 94,
+      "active_minutes": 148,
+      "input_tokens": 603691,
+      "output_tokens": 88814,
+      "cache_read_tokens": 249435,
+      "cache_creation_tokens": 37430,
+      "models": {
+        "claude-sonnet-4-6": 48328,
+        "claude-opus-4-7": 20476,
+        "claude-opus-4-6": 10966,
+        "claude-haiku-4-5": 9044
+      },
+      "longest_session_minutes": 72,
+      "message_count": 412,
+      "tool_uses": 85,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 603691,
+          "output_tokens": 88814
+        }
+      }
+    },
+    "2026-02-16": {
+      "sessions": 8,
+      "active_minutes": 9,
+      "input_tokens": 44453,
+      "output_tokens": 5175,
+      "cache_read_tokens": 17901,
+      "cache_creation_tokens": 3766,
+      "models": {
+        "claude-sonnet-4-6": 2615,
+        "claude-opus-4-7": 1391,
+        "claude-opus-4-6": 860,
+        "claude-haiku-4-5": 309,
+        "gpt-5.4": 3154,
+        "gpt-5.3-codex": 2309,
+        "gpt-5.5": 2513
+      },
+      "longest_session_minutes": 5,
+      "message_count": 45,
+      "tool_uses": 5,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 17492,
+          "output_tokens": 2037
+        },
+        "codex": {
+          "input_tokens": 26961,
+          "output_tokens": 3138
+        }
+      }
+    },
+    "2026-02-17": {
+      "sessions": 32,
+      "active_minutes": 51,
+      "input_tokens": 221411,
+      "output_tokens": 33496,
+      "cache_read_tokens": 91116,
+      "cache_creation_tokens": 13769,
+      "models": {
+        "claude-sonnet-4-6": 17952,
+        "claude-opus-4-7": 8542,
+        "claude-opus-4-6": 3586,
+        "claude-haiku-4-5": 3416,
+        "gpt-5.4": 18166,
+        "gpt-5.3-codex": 18526,
+        "gpt-5.5": 12528
+      },
+      "longest_session_minutes": 18,
+      "message_count": 184,
+      "tool_uses": 33,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 89661,
+          "output_tokens": 13565
+        },
+        "codex": {
+          "input_tokens": 131750,
+          "output_tokens": 19931
+        }
+      }
+    },
+    "2026-02-18": {
+      "sessions": 54,
+      "active_minutes": 69,
+      "input_tokens": 314379,
+      "output_tokens": 42976,
+      "cache_read_tokens": 108438,
+      "cache_creation_tokens": 19125,
+      "models": {
+        "claude-sonnet-4-6": 20194,
+        "claude-opus-4-7": 11294,
+        "claude-opus-4-6": 6529,
+        "claude-haiku-4-5": 4959,
+        "gpt-5.4": 16233,
+        "gpt-5.3-codex": 17572,
+        "gpt-5.5": 13438
+      },
+      "longest_session_minutes": 23,
+      "message_count": 213,
+      "tool_uses": 40,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 149755,
+          "output_tokens": 20472
+        },
+        "codex": {
+          "input_tokens": 164624,
+          "output_tokens": 22504
+        }
+      }
+    },
+    "2026-02-20": {
+      "sessions": 70,
+      "active_minutes": 102,
+      "input_tokens": 427882,
+      "output_tokens": 62484,
+      "cache_read_tokens": 163328,
+      "cache_creation_tokens": 33251,
+      "models": {
+        "claude-sonnet-4-6": 31493,
+        "claude-opus-4-7": 16830,
+        "claude-opus-4-6": 6724,
+        "claude-haiku-4-5": 7437
+      },
+      "longest_session_minutes": 53,
+      "message_count": 451,
+      "tool_uses": 76,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 427882,
+          "output_tokens": 62484
+        }
+      }
+    },
+    "2026-02-21": {
+      "sessions": 32,
+      "active_minutes": 63,
+      "input_tokens": 191195,
+      "output_tokens": 28445,
+      "cache_read_tokens": 71047,
+      "cache_creation_tokens": 13013,
+      "models": {
+        "claude-sonnet-4-6": 15289,
+        "claude-opus-4-7": 5815,
+        "claude-opus-4-6": 3803,
+        "claude-haiku-4-5": 3538
+      },
+      "longest_session_minutes": 33,
+      "message_count": 155,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 191195,
+          "output_tokens": 28445
+        }
+      }
+    },
+    "2026-02-23": {
+      "sessions": 36,
+      "active_minutes": 76,
+      "input_tokens": 221125,
+      "output_tokens": 34284,
+      "cache_read_tokens": 95308,
+      "cache_creation_tokens": 17828,
+      "models": {
+        "claude-sonnet-4-6": 13039,
+        "claude-opus-4-7": 8106,
+        "claude-opus-4-6": 3568,
+        "claude-haiku-4-5": 3684
+      },
+      "longest_session_minutes": 32,
+      "message_count": 153,
+      "tool_uses": 22,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 221125,
+          "output_tokens": 34284
+        }
+      }
+    },
+    "2026-02-24": {
+      "sessions": 56,
+      "active_minutes": 81,
+      "input_tokens": 337876,
+      "output_tokens": 50919,
+      "cache_read_tokens": 138742,
+      "cache_creation_tokens": 28339,
+      "models": {
+        "claude-sonnet-4-6": 24191,
+        "claude-opus-4-7": 13035,
+        "claude-opus-4-6": 10002,
+        "claude-haiku-4-5": 3691,
+        "gpt-5.4": 20759,
+        "gpt-5.3-codex": 19262,
+        "gpt-5.5": 15844
+      },
+      "longest_session_minutes": 38,
+      "message_count": 213,
+      "tool_uses": 69,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 161114,
+          "output_tokens": 24281
+        },
+        "codex": {
+          "input_tokens": 176762,
+          "output_tokens": 26638
+        }
+      }
+    },
+    "2026-02-25": {
+      "sessions": 54,
+      "active_minutes": 98,
+      "input_tokens": 358711,
+      "output_tokens": 53173,
+      "cache_read_tokens": 107986,
+      "cache_creation_tokens": 29207,
+      "models": {
+        "claude-sonnet-4-6": 25893,
+        "claude-opus-4-7": 12454,
+        "claude-opus-4-6": 6627,
+        "claude-haiku-4-5": 8199,
+        "gpt-5.4": 30766,
+        "gpt-5.3-codex": 28568,
+        "gpt-5.5": 19860
+      },
+      "longest_session_minutes": 30,
+      "message_count": 265,
+      "tool_uses": 56,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 144098,
+          "output_tokens": 21361
+        },
+        "codex": {
+          "input_tokens": 214613,
+          "output_tokens": 31812
+        }
+      }
+    },
+    "2026-02-26": {
+      "sessions": 56,
+      "active_minutes": 93,
+      "input_tokens": 356930,
+      "output_tokens": 49671,
+      "cache_read_tokens": 125275,
+      "cache_creation_tokens": 27475,
+      "models": {
+        "claude-sonnet-4-6": 26075,
+        "claude-opus-4-7": 10435,
+        "claude-opus-4-6": 7552,
+        "claude-haiku-4-5": 5609
+      },
+      "longest_session_minutes": 37,
+      "message_count": 298,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 356930,
+          "output_tokens": 49671
+        }
+      }
+    },
+    "2026-02-27": {
+      "sessions": 102,
+      "active_minutes": 161,
+      "input_tokens": 688891,
+      "output_tokens": 98745,
+      "cache_read_tokens": 215444,
+      "cache_creation_tokens": 59733,
+      "models": {
+        "claude-sonnet-4-6": 46284,
+        "claude-opus-4-7": 27362,
+        "claude-opus-4-6": 14811,
+        "claude-haiku-4-5": 10288
+      },
+      "longest_session_minutes": 70,
+      "message_count": 369,
+      "tool_uses": 111,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 688891,
+          "output_tokens": 98745
+        }
+      }
+    },
+    "2026-02-28": {
+      "sessions": 12,
+      "active_minutes": 7,
+      "input_tokens": 35544,
+      "output_tokens": 8999,
+      "cache_read_tokens": 14549,
+      "cache_creation_tokens": 2916,
+      "models": {
+        "claude-sonnet-4-6": 4565,
+        "claude-opus-4-7": 1785,
+        "claude-opus-4-6": 1690,
+        "claude-haiku-4-5": 959,
+        "gpt-5.4": 4188,
+        "gpt-5.3-codex": 4079,
+        "gpt-5.5": 3022
+      },
+      "longest_session_minutes": 5,
+      "message_count": 73,
+      "tool_uses": 7,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 15766,
+          "output_tokens": 3992
+        },
+        "codex": {
+          "input_tokens": 19778,
+          "output_tokens": 5007
+        }
+      }
+    },
+    "2026-03-02": {
+      "sessions": 12,
+      "active_minutes": 27,
+      "input_tokens": 52437,
+      "output_tokens": 5716,
+      "cache_read_tokens": 23583,
+      "cache_creation_tokens": 4334,
+      "models": {
+        "claude-sonnet-4-6": 2935,
+        "claude-opus-4-7": 1377,
+        "claude-opus-4-6": 727,
+        "claude-haiku-4-5": 677
+      },
+      "longest_session_minutes": 13,
+      "message_count": 72,
+      "tool_uses": 7,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 52437,
+          "output_tokens": 5716
+        }
+      }
+    },
+    "2026-03-04": {
+      "sessions": 48,
+      "active_minutes": 94,
+      "input_tokens": 315760,
+      "output_tokens": 47224,
+      "cache_read_tokens": 134593,
+      "cache_creation_tokens": 29243,
+      "models": {
+        "claude-sonnet-4-6": 24800,
+        "claude-opus-4-7": 10922,
+        "claude-opus-4-6": 8749,
+        "claude-haiku-4-5": 2753,
+        "gpt-5.4": 32276,
+        "gpt-5.3-codex": 23923,
+        "gpt-5.5": 23812
+      },
+      "longest_session_minutes": 36,
+      "message_count": 191,
+      "tool_uses": 38,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 117196,
+          "output_tokens": 17528
+        },
+        "codex": {
+          "input_tokens": 198564,
+          "output_tokens": 29696
+        }
+      }
+    },
+    "2026-03-05": {
+      "sessions": 86,
+      "active_minutes": 153,
+      "input_tokens": 569115,
+      "output_tokens": 84052,
+      "cache_read_tokens": 244840,
+      "cache_creation_tokens": 48252,
+      "models": {
+        "claude-sonnet-4-6": 43706,
+        "claude-opus-4-7": 20608,
+        "claude-opus-4-6": 13259,
+        "claude-haiku-4-5": 6479
+      },
+      "longest_session_minutes": 65,
+      "message_count": 337,
+      "tool_uses": 109,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 569115,
+          "output_tokens": 84052
+        }
+      }
+    },
+    "2026-03-08": {
+      "sessions": 14,
+      "active_minutes": 17,
+      "input_tokens": 66648,
+      "output_tokens": 12991,
+      "cache_read_tokens": 26668,
+      "cache_creation_tokens": 3764,
+      "models": {
+        "claude-sonnet-4-6": 6645,
+        "claude-opus-4-7": 3002,
+        "claude-opus-4-6": 1696,
+        "claude-haiku-4-5": 1648
+      },
+      "longest_session_minutes": 8,
+      "message_count": 75,
+      "tool_uses": 14,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 66648,
+          "output_tokens": 12991
+        }
+      }
+    },
+    "2026-03-09": {
+      "sessions": 82,
+      "active_minutes": 151,
+      "input_tokens": 551939,
+      "output_tokens": 81543,
+      "cache_read_tokens": 195340,
+      "cache_creation_tokens": 53841,
+      "models": {
+        "claude-sonnet-4-6": 40329,
+        "claude-opus-4-7": 20545,
+        "claude-opus-4-6": 15499,
+        "claude-haiku-4-5": 5170,
+        "gpt-5.4": 31498,
+        "gpt-5.3-codex": 30835,
+        "gpt-5.5": 21632
+      },
+      "longest_session_minutes": 72,
+      "message_count": 470,
+      "tool_uses": 116,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 271932,
+          "output_tokens": 40175
+        },
+        "codex": {
+          "input_tokens": 280007,
+          "output_tokens": 41368
+        }
+      }
+    },
+    "2026-03-10": {
+      "sessions": 30,
+      "active_minutes": 50,
+      "input_tokens": 187022,
+      "output_tokens": 29892,
+      "cache_read_tokens": 69621,
+      "cache_creation_tokens": 12501,
+      "models": {
+        "claude-sonnet-4-6": 15257,
+        "claude-opus-4-7": 7980,
+        "claude-opus-4-6": 3749,
+        "claude-haiku-4-5": 2906,
+        "gpt-5.4": 22355,
+        "gpt-5.3-codex": 21463,
+        "gpt-5.5": 18962
+      },
+      "longest_session_minutes": 15,
+      "message_count": 111,
+      "tool_uses": 28,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 60325,
+          "output_tokens": 9642
+        },
+        "codex": {
+          "input_tokens": 126697,
+          "output_tokens": 20250
+        }
+      }
+    },
+    "2026-03-11": {
+      "sessions": 46,
+      "active_minutes": 84,
+      "input_tokens": 271301,
+      "output_tokens": 40381,
+      "cache_read_tokens": 100757,
+      "cache_creation_tokens": 19429,
+      "models": {
+        "claude-sonnet-4-6": 20127,
+        "claude-opus-4-7": 11226,
+        "claude-opus-4-6": 6310,
+        "claude-haiku-4-5": 2718,
+        "gpt-5.4": 14540,
+        "gpt-5.3-codex": 10445,
+        "gpt-5.5": 8751
+      },
+      "longest_session_minutes": 45,
+      "message_count": 168,
+      "tool_uses": 43,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 147813,
+          "output_tokens": 22001
+        },
+        "codex": {
+          "input_tokens": 123488,
+          "output_tokens": 18380
+        }
+      }
+    },
+    "2026-03-13": {
+      "sessions": 32,
+      "active_minutes": 61,
+      "input_tokens": 226462,
+      "output_tokens": 32446,
+      "cache_read_tokens": 81546,
+      "cache_creation_tokens": 17171,
+      "models": {
+        "claude-sonnet-4-6": 14355,
+        "claude-opus-4-7": 8240,
+        "claude-opus-4-6": 5845,
+        "claude-haiku-4-5": 4006,
+        "gpt-5.4": 14348,
+        "gpt-5.3-codex": 11876,
+        "gpt-5.5": 9348
+      },
+      "longest_session_minutes": 27,
+      "message_count": 114,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 108025,
+          "output_tokens": 15478
+        },
+        "codex": {
+          "input_tokens": 118437,
+          "output_tokens": 16968
+        }
+      }
+    },
+    "2026-03-16": {
+      "sessions": 114,
+      "active_minutes": 163,
+      "input_tokens": 694714,
+      "output_tokens": 100365,
+      "cache_read_tokens": 211224,
+      "cache_creation_tokens": 52246,
+      "models": {
+        "claude-sonnet-4-6": 50608,
+        "claude-opus-4-7": 25204,
+        "claude-opus-4-6": 13282,
+        "claude-haiku-4-5": 11271,
+        "gpt-5.4": 105626,
+        "gpt-5.3-codex": 105440,
+        "gpt-5.5": 88411
+      },
+      "longest_session_minutes": 76,
+      "message_count": 504,
+      "tool_uses": 109,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 174381,
+          "output_tokens": 25193
+        },
+        "codex": {
+          "input_tokens": 520333,
+          "output_tokens": 75172
+        }
+      }
+    },
+    "2026-03-17": {
+      "sessions": 26,
+      "active_minutes": 56,
+      "input_tokens": 135058,
+      "output_tokens": 21195,
+      "cache_read_tokens": 42147,
+      "cache_creation_tokens": 8459,
+      "models": {
+        "claude-sonnet-4-6": 10346,
+        "claude-opus-4-7": 6326,
+        "claude-opus-4-6": 2274,
+        "claude-haiku-4-5": 2249,
+        "gpt-5.4": 9450,
+        "gpt-5.3-codex": 7745,
+        "gpt-5.5": 6270
+      },
+      "longest_session_minutes": 25,
+      "message_count": 102,
+      "tool_uses": 23,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 64096,
+          "output_tokens": 10059
+        },
+        "codex": {
+          "input_tokens": 70962,
+          "output_tokens": 11136
+        }
+      }
+    },
+    "2026-03-18": {
+      "sessions": 62,
+      "active_minutes": 110,
+      "input_tokens": 369576,
+      "output_tokens": 57932,
+      "cache_read_tokens": 113111,
+      "cache_creation_tokens": 35631,
+      "models": {
+        "claude-sonnet-4-6": 29739,
+        "claude-opus-4-7": 11337,
+        "claude-opus-4-6": 8737,
+        "claude-haiku-4-5": 8119,
+        "gpt-5.4": 43404,
+        "gpt-5.3-codex": 37821,
+        "gpt-5.5": 37930
+      },
+      "longest_session_minutes": 56,
+      "message_count": 292,
+      "tool_uses": 60,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 120902,
+          "output_tokens": 18952
+        },
+        "codex": {
+          "input_tokens": 248674,
+          "output_tokens": 38980
+        }
+      }
+    },
+    "2026-03-19": {
+      "sessions": 110,
+      "active_minutes": 162,
+      "input_tokens": 667698,
+      "output_tokens": 98663,
+      "cache_read_tokens": 294942,
+      "cache_creation_tokens": 44215,
+      "models": {
+        "claude-sonnet-4-6": 48734,
+        "claude-opus-4-7": 25711,
+        "claude-opus-4-6": 17650,
+        "claude-haiku-4-5": 6568,
+        "gpt-5.4": 78017,
+        "gpt-5.3-codex": 67012,
+        "gpt-5.5": 52926
+      },
+      "longest_session_minutes": 83,
+      "message_count": 678,
+      "tool_uses": 140,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 222093,
+          "output_tokens": 32818
+        },
+        "codex": {
+          "input_tokens": 445605,
+          "output_tokens": 65845
+        }
+      }
+    },
+    "2026-03-20": {
+      "sessions": 14,
+      "active_minutes": 24,
+      "input_tokens": 118361,
+      "output_tokens": 16590,
+      "cache_read_tokens": 46341,
+      "cache_creation_tokens": 6281,
+      "models": {
+        "claude-sonnet-4-6": 8601,
+        "claude-opus-4-7": 4441,
+        "claude-opus-4-6": 2737,
+        "claude-haiku-4-5": 811
+      },
+      "longest_session_minutes": 7,
+      "message_count": 49,
+      "tool_uses": 12,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 118361,
+          "output_tokens": 16590
+        }
+      }
+    },
+    "2026-03-24": {
+      "sessions": 42,
+      "active_minutes": 74,
+      "input_tokens": 288999,
+      "output_tokens": 43676,
+      "cache_read_tokens": 123776,
+      "cache_creation_tokens": 24206,
+      "models": {
+        "claude-sonnet-4-6": 21620,
+        "claude-opus-4-7": 11105,
+        "claude-opus-4-6": 5927,
+        "claude-haiku-4-5": 5024,
+        "gpt-5.4": 22310,
+        "gpt-5.3-codex": 17990,
+        "gpt-5.5": 14897
+      },
+      "longest_session_minutes": 38,
+      "message_count": 173,
+      "tool_uses": 50,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 127662,
+          "output_tokens": 19294
+        },
+        "codex": {
+          "input_tokens": 161337,
+          "output_tokens": 24382
+        }
+      }
+    },
+    "2026-03-25": {
+      "sessions": 22,
+      "active_minutes": 27,
+      "input_tokens": 107948,
+      "output_tokens": 15813,
+      "cache_read_tokens": 40174,
+      "cache_creation_tokens": 5554,
+      "models": {
+        "claude-sonnet-4-6": 7998,
+        "claude-opus-4-7": 3445,
+        "claude-opus-4-6": 2257,
+        "claude-haiku-4-5": 2113
+      },
+      "longest_session_minutes": 13,
+      "message_count": 86,
+      "tool_uses": 14,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 107948,
+          "output_tokens": 15813
+        }
+      }
+    },
+    "2026-03-26": {
+      "sessions": 124,
+      "active_minutes": 188,
+      "input_tokens": 751300,
+      "output_tokens": 111369,
+      "cache_read_tokens": 254379,
+      "cache_creation_tokens": 41731,
+      "models": {
+        "claude-sonnet-4-6": 55007,
+        "claude-opus-4-7": 30127,
+        "claude-opus-4-6": 18123,
+        "claude-haiku-4-5": 8112
+      },
+      "longest_session_minutes": 91,
+      "message_count": 538,
+      "tool_uses": 114,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 751300,
+          "output_tokens": 111369
+        }
+      }
+    },
+    "2026-04-01": {
+      "sessions": 56,
+      "active_minutes": 95,
+      "input_tokens": 348236,
+      "output_tokens": 50300,
+      "cache_read_tokens": 141897,
+      "cache_creation_tokens": 17762,
+      "models": {
+        "claude-sonnet-4-6": 24676,
+        "claude-opus-4-7": 11894,
+        "claude-opus-4-6": 8732,
+        "claude-haiku-4-5": 4998
+      },
+      "longest_session_minutes": 34,
+      "message_count": 211,
+      "tool_uses": 71,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 348236,
+          "output_tokens": 50300
+        }
+      }
+    },
+    "2026-04-03": {
+      "sessions": 40,
+      "active_minutes": 53,
+      "input_tokens": 219216,
+      "output_tokens": 32376,
+      "cache_read_tokens": 70446,
+      "cache_creation_tokens": 18658,
+      "models": {
+        "claude-sonnet-4-6": 15291,
+        "claude-opus-4-7": 8477,
+        "claude-opus-4-6": 6305,
+        "claude-haiku-4-5": 2303,
+        "gpt-5.4": 13357,
+        "gpt-5.3-codex": 8996,
+        "gpt-5.5": 8502
+      },
+      "longest_session_minutes": 16,
+      "message_count": 209,
+      "tool_uses": 22,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 112245,
+          "output_tokens": 16578
+        },
+        "codex": {
+          "input_tokens": 106971,
+          "output_tokens": 15798
+        }
+      }
+    },
+    "2026-04-04": {
+      "sessions": 24,
+      "active_minutes": 23,
+      "input_tokens": 126206,
+      "output_tokens": 19165,
+      "cache_read_tokens": 47037,
+      "cache_creation_tokens": 10756,
+      "models": {
+        "claude-sonnet-4-6": 8506,
+        "claude-opus-4-7": 4928,
+        "claude-opus-4-6": 3492,
+        "claude-haiku-4-5": 2239
+      },
+      "longest_session_minutes": 12,
+      "message_count": 114,
+      "tool_uses": 27,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 126206,
+          "output_tokens": 19165
+        }
+      }
+    },
+    "2026-04-06": {
+      "sessions": 116,
+      "active_minutes": 192,
+      "input_tokens": 755139,
+      "output_tokens": 108544,
+      "cache_read_tokens": 253680,
+      "cache_creation_tokens": 61212,
+      "models": {
+        "claude-sonnet-4-6": 53600,
+        "claude-opus-4-7": 31982,
+        "claude-opus-4-6": 14752,
+        "claude-haiku-4-5": 8210
+      },
+      "longest_session_minutes": 84,
+      "message_count": 695,
+      "tool_uses": 156,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 755139,
+          "output_tokens": 108544
+        }
+      }
+    },
+    "2026-04-07": {
+      "sessions": 58,
+      "active_minutes": 88,
+      "input_tokens": 399876,
+      "output_tokens": 55230,
+      "cache_read_tokens": 120593,
+      "cache_creation_tokens": 39316,
+      "models": {
+        "claude-sonnet-4-6": 23091,
+        "claude-opus-4-7": 11233,
+        "claude-opus-4-6": 7228,
+        "claude-haiku-4-5": 4977,
+        "gpt-5.4": 35700,
+        "gpt-5.3-codex": 27278,
+        "gpt-5.5": 27031
+      },
+      "longest_session_minutes": 32,
+      "message_count": 216,
+      "tool_uses": 52,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 136268,
+          "output_tokens": 18821
+        },
+        "codex": {
+          "input_tokens": 263608,
+          "output_tokens": 36409
+        }
+      }
+    },
+    "2026-04-09": {
+      "sessions": 6,
+      "active_minutes": 25,
+      "input_tokens": 81846,
+      "output_tokens": 11214,
+      "cache_read_tokens": 27567,
+      "cache_creation_tokens": 7063,
+      "models": {
+        "claude-sonnet-4-6": 4744,
+        "claude-opus-4-7": 2608,
+        "claude-opus-4-6": 1311,
+        "claude-haiku-4-5": 1119,
+        "gpt-5.4": 3278,
+        "gpt-5.3-codex": 2632,
+        "gpt-5.5": 2213
+      },
+      "longest_session_minutes": 9,
+      "message_count": 30,
+      "tool_uses": 10,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 44715,
+          "output_tokens": 6127
+        },
+        "codex": {
+          "input_tokens": 37131,
+          "output_tokens": 5087
+        }
+      }
+    },
+    "2026-04-14": {
+      "sessions": 48,
+      "active_minutes": 79,
+      "input_tokens": 260448,
+      "output_tokens": 39291,
+      "cache_read_tokens": 91438,
+      "cache_creation_tokens": 24343,
+      "models": {
+        "claude-sonnet-4-6": 20631,
+        "claude-opus-4-7": 8368,
+        "claude-opus-4-6": 7695,
+        "claude-haiku-4-5": 2597
+      },
+      "longest_session_minutes": 39,
+      "message_count": 211,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 260448,
+          "output_tokens": 39291
+        }
+      }
+    },
+    "2026-04-16": {
+      "sessions": 88,
+      "active_minutes": 136,
+      "input_tokens": 542558,
+      "output_tokens": 78679,
+      "cache_read_tokens": 239714,
+      "cache_creation_tokens": 40858,
+      "models": {
+        "claude-sonnet-4-6": 37860,
+        "claude-opus-4-7": 17619,
+        "claude-opus-4-6": 16132,
+        "claude-haiku-4-5": 7068
+      },
+      "longest_session_minutes": 48,
+      "message_count": 497,
+      "tool_uses": 100,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 542558,
+          "output_tokens": 78679
+        }
+      }
+    },
+    "2026-04-17": {
+      "sessions": 102,
+      "active_minutes": 143,
+      "input_tokens": 633003,
+      "output_tokens": 92013,
+      "cache_read_tokens": 200982,
+      "cache_creation_tokens": 61810,
+      "models": {
+        "claude-sonnet-4-6": 47963,
+        "claude-opus-4-7": 20962,
+        "claude-opus-4-6": 10763,
+        "claude-haiku-4-5": 12325,
+        "gpt-5.4": 42239,
+        "gpt-5.3-codex": 37548,
+        "gpt-5.5": 33683
+      },
+      "longest_session_minutes": 76,
+      "message_count": 443,
+      "tool_uses": 63,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 283452,
+          "output_tokens": 41203
+        },
+        "codex": {
+          "input_tokens": 349551,
+          "output_tokens": 50810
+        }
+      }
+    },
+    "2026-04-19": {
+      "sessions": 56,
+      "active_minutes": 99,
+      "input_tokens": 337809,
+      "output_tokens": 53301,
+      "cache_read_tokens": 144612,
+      "cache_creation_tokens": 26190,
+      "models": {
+        "claude-sonnet-4-6": 24738,
+        "claude-opus-4-7": 14035,
+        "claude-opus-4-6": 7387,
+        "claude-haiku-4-5": 7141
+      },
+      "longest_session_minutes": 32,
+      "message_count": 315,
+      "tool_uses": 37,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 337809,
+          "output_tokens": 53301
+        }
+      }
+    },
+    "2026-04-20": {
+      "sessions": 66,
+      "active_minutes": 96,
+      "input_tokens": 393820,
+      "output_tokens": 58578,
+      "cache_read_tokens": 173877,
+      "cache_creation_tokens": 32336,
+      "models": {
+        "claude-sonnet-4-6": 29273,
+        "claude-opus-4-7": 15910,
+        "claude-opus-4-6": 5865,
+        "claude-haiku-4-5": 7530,
+        "gpt-5.4": 34413,
+        "gpt-5.3-codex": 30575,
+        "gpt-5.5": 20473
+      },
+      "longest_session_minutes": 32,
+      "message_count": 374,
+      "tool_uses": 66,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 160160,
+          "output_tokens": 23823
+        },
+        "codex": {
+          "input_tokens": 233660,
+          "output_tokens": 34755
+        }
+      }
+    },
+    "2026-04-22": {
+      "sessions": 18,
+      "active_minutes": 45,
+      "input_tokens": 142310,
+      "output_tokens": 21662,
+      "cache_read_tokens": 50638,
+      "cache_creation_tokens": 8420,
+      "models": {
+        "claude-sonnet-4-6": 11080,
+        "claude-opus-4-7": 4972,
+        "claude-opus-4-6": 2435,
+        "claude-haiku-4-5": 3175,
+        "gpt-5.4": 13671,
+        "gpt-5.3-codex": 11417,
+        "gpt-5.5": 10724
+      },
+      "longest_session_minutes": 20,
+      "message_count": 97,
+      "tool_uses": 29,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 53636,
+          "output_tokens": 8165
+        },
+        "codex": {
+          "input_tokens": 88674,
+          "output_tokens": 13497
+        }
+      }
+    },
+    "2026-04-23": {
+      "sessions": 12,
+      "active_minutes": 30,
+      "input_tokens": 107684,
+      "output_tokens": 16384,
+      "cache_read_tokens": 48050,
+      "cache_creation_tokens": 8731,
+      "models": {
+        "claude-sonnet-4-6": 9222,
+        "claude-opus-4-7": 4110,
+        "claude-opus-4-6": 1976,
+        "claude-haiku-4-5": 1076,
+        "gpt-5.4": 8014,
+        "gpt-5.3-codex": 5935,
+        "gpt-5.5": 5373
+      },
+      "longest_session_minutes": 9,
+      "message_count": 51,
+      "tool_uses": 13,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 49411,
+          "output_tokens": 7518
+        },
+        "codex": {
+          "input_tokens": 58273,
+          "output_tokens": 8866
+        }
+      }
+    },
+    "2026-04-24": {
+      "sessions": 80,
+      "active_minutes": 139,
+      "input_tokens": 545798,
+      "output_tokens": 80615,
+      "cache_read_tokens": 230898,
+      "cache_creation_tokens": 53917,
+      "models": {
+        "claude-sonnet-4-6": 44181,
+        "claude-opus-4-7": 18134,
+        "claude-opus-4-6": 11276,
+        "claude-haiku-4-5": 7024
+      },
+      "longest_session_minutes": 72,
+      "message_count": 417,
+      "tool_uses": 83,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 545798,
+          "output_tokens": 80615
+        }
+      }
+    },
+    "2026-04-27": {
+      "sessions": 84,
+      "active_minutes": 135,
+      "input_tokens": 538995,
+      "output_tokens": 81701,
+      "cache_read_tokens": 231546,
+      "cache_creation_tokens": 51319,
+      "models": {
+        "claude-sonnet-4-6": 36717,
+        "claude-opus-4-7": 16670,
+        "claude-opus-4-6": 9298,
+        "claude-haiku-4-5": 10307,
+        "gpt-5.4": 35843,
+        "gpt-5.3-codex": 34407,
+        "gpt-5.5": 28443
+      },
+      "longest_session_minutes": 50,
+      "message_count": 575,
+      "tool_uses": 89,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 229153,
+          "output_tokens": 34735
+        },
+        "codex": {
+          "input_tokens": 309842,
+          "output_tokens": 46966
+        }
+      }
+    },
+    "2026-04-28": {
+      "sessions": 4,
+      "active_minutes": 12,
+      "input_tokens": 47540,
+      "output_tokens": 4866,
+      "cache_read_tokens": 19257,
+      "cache_creation_tokens": 2667,
+      "models": {
+        "claude-sonnet-4-6": 1999,
+        "claude-opus-4-7": 1065,
+        "claude-opus-4-6": 634,
+        "claude-haiku-4-5": 563
+      },
+      "longest_session_minutes": 6,
+      "message_count": 17,
+      "tool_uses": 3,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 47540,
+          "output_tokens": 4866
+        }
+      }
+    },
+    "2026-04-29": {
+      "sessions": 92,
+      "active_minutes": 140,
+      "input_tokens": 566089,
+      "output_tokens": 85926,
+      "cache_read_tokens": 179976,
+      "cache_creation_tokens": 33670,
+      "models": {
+        "claude-sonnet-4-6": 36950,
+        "claude-opus-4-7": 20619,
+        "claude-opus-4-6": 11724,
+        "claude-haiku-4-5": 5464
+      },
+      "longest_session_minutes": 65,
+      "message_count": 497,
+      "tool_uses": 104,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 566089,
+          "output_tokens": 85926
+        }
+      }
+    },
+    "2026-05-01": {
+      "sessions": 4,
+      "active_minutes": 15,
+      "input_tokens": 45665,
+      "output_tokens": 10574,
+      "cache_read_tokens": 17973,
+      "cache_creation_tokens": 3806,
+      "models": {
+        "claude-sonnet-4-6": 4830,
+        "claude-opus-4-7": 1883,
+        "claude-opus-4-6": 1639,
+        "claude-haiku-4-5": 605,
+        "gpt-5.4": 3655,
+        "gpt-5.3-codex": 3323,
+        "gpt-5.5": 3502
+      },
+      "longest_session_minutes": 7,
+      "message_count": 23,
+      "tool_uses": 6,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 21043,
+          "output_tokens": 4873
+        },
+        "codex": {
+          "input_tokens": 24622,
+          "output_tokens": 5701
+        }
+      }
+    },
+    "2026-05-04": {
+      "sessions": 66,
+      "active_minutes": 92,
+      "input_tokens": 392206,
+      "output_tokens": 59919,
+      "cache_read_tokens": 164899,
+      "cache_creation_tokens": 27878,
+      "models": {
+        "claude-sonnet-4-6": 32939,
+        "claude-opus-4-7": 12052,
+        "claude-opus-4-6": 8964,
+        "claude-haiku-4-5": 5964
+      },
+      "longest_session_minutes": 38,
+      "message_count": 251,
+      "tool_uses": 66,
+      "harnesses": {
+        "claude": {
+          "input_tokens": 392206,
+          "output_tokens": 59919
+        }
+      }
+    }
+  }
+}
