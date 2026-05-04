@@ -2,7 +2,7 @@
 
 [package]
 name = "vibestats"
-version = "2.1.1"
+version = "2.2.0"
 edition = "2021"
 description = "CLI that syncs Claude Code and Codex session activity to a private GitHub repo and renders a profile heatmap + analytics dashboard."
 license = "MIT"
