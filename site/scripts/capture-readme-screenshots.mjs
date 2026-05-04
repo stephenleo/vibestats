@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '..', '..');
 const SITE_DIR = join(REPO_ROOT, 'site');
 const FIXTURE_PATH = join(SITE_DIR, 'public', 'fixtures', 'screenshot-data.json');
 const OUT_DIR = join(REPO_ROOT, 'docs', 'images');
