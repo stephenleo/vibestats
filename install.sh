@@ -13,6 +13,12 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 _CLEANUP_TMPDIR=""
 
+# Skips the binary-download step when set to 1 (e.g. when the user already
+# has vibestats on their PATH via `cargo install vibestats`). Set by the
+# --skip-binary flag in main(). The setup steps (data repo, hooks, etc)
+# still run.
+SKIP_BINARY=0
+
 cleanup() {
   if [ -n "$_CLEANUP_TMPDIR" ]; then
     rm -rf "$_CLEANUP_TMPDIR"
@@ -694,12 +700,44 @@ trigger_initial_aggregate() {
 # Main entrypoint
 # ---------------------------------------------------------------------------
 main() {
+  # Parse flags. Currently only --skip-binary is recognized; unknown args
+  # exit non-zero so we don't silently swallow typos.
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --skip-binary)
+        SKIP_BINARY=1
+        shift
+        ;;
+      -h|--help)
+        echo "Usage: install.sh [--skip-binary]"
+        echo "  --skip-binary  Use the existing 'vibestats' on PATH (e.g. from"
+        echo "                 'cargo install') instead of downloading a release."
+        exit 0
+        ;;
+      *)
+        echo "Error: Unknown argument: $1" >&2
+        echo "Usage: install.sh [--skip-binary]" >&2
+        exit 2
+        ;;
+    esac
+  done
+
   echo "=== vibestats installer ==="
 
   install_gh_if_missing
   check_gh_version
   check_gh_auth
-  download_and_install_binary
+
+  if [ "$SKIP_BINARY" -eq 1 ]; then
+    if ! command -v vibestats > /dev/null 2>&1; then
+      echo "Error: --skip-binary set but 'vibestats' is not on PATH." >&2
+      echo "  Install it first (e.g. 'cargo install vibestats') and re-run." >&2
+      exit 1
+    fi
+    echo "Using existing vibestats binary at: $(command -v vibestats)"
+  else
+    download_and_install_binary
+  fi
 
   # Step 6: Detect install mode (first-install or multi-machine)
   detect_install_mode

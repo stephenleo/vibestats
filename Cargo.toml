@@ -4,6 +4,23 @@
 name = "vibestats"
 version = "2.1.1"
 edition = "2021"
+description = "CLI that syncs Claude Code and Codex session activity to a private GitHub repo and renders a profile heatmap + analytics dashboard."
+license = "MIT"
+repository = "https://github.com/stephenleo/vibestats"
+homepage = "https://vibestats.dev"
+readme = "README.md"
+keywords = ["claude-code", "codex", "analytics", "github-action", "heatmap"]
+categories = ["command-line-utilities", "development-tools"]
+# Whitelist what ships to crates.io. The repo also hosts the GitHub Action
+# (action.yml + action/), the dashboard site (site/), and planning artifacts
+# (_bmad-output, docs/) — none of which are needed by consumers of the crate.
+include = [
+    "/src/**/*",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/README.md",
+    "/LICENSE",
+]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

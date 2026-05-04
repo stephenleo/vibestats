@@ -4,6 +4,7 @@
   <a href="https://github.com/stephenleo/vibestats/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/stephenleo/vibestats/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
   <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/v/vibestats?style=flat-square" alt="Crates.io version"></a>
   <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/d/vibestats?label=crates%20downloads&style=flat-square" alt="Crates downloads"></a>
+  <a href="https://github.com/marketplace/actions/vibestats"><img src="https://img.shields.io/badge/marketplace-vibestats-blue?style=flat-square&logo=github" alt="GitHub Marketplace"></a>
   <a href="https://github.com/stephenleo/vibestats/releases/latest"><img src="https://img.shields.io/github/v/release/stephenleo/vibestats?style=flat-square" alt="GitHub release"></a>
   <a href="https://github.com/stephenleo/vibestats/releases"><img src="https://img.shields.io/github/downloads/stephenleo/vibestats/total?label=github%20downloads&style=flat-square" alt="GitHub downloads"></a>
   <a href="https://github.com/stephenleo/vibestats/blob/main/LICENSE"><img src="https://img.shields.io/github/license/stephenleo/vibestats?style=flat-square" alt="License"></a>
@@ -65,6 +66,8 @@ A live heatmap on your GitHub profile (the embed above), and a full analytics da
 
 ## Quickstart
 
+### Method 1: curl installer (recommended)
+
 ```bash
 curl -fsSL https://vibestats.dev/install.sh | bash
 ```
@@ -76,6 +79,21 @@ The installer handles everything in one step:
 - Configures Claude Code and Codex hooks to sync after each session when those tools are installed
 - Adds the heatmap to your profile `README.md`
 - Runs an initial backfill of existing session data
+
+### Method 2: cargo install
+
+If you already have a Rust toolchain set up and prefer crates.io:
+
+```bash
+# 1. Install the binary from crates.io
+cargo install vibestats
+
+# 2. Run the installer with --skip-binary to do the rest of the setup
+#    (creates the vibestats-data repo, wires hooks, registers this machine)
+curl -fsSL https://vibestats.dev/install.sh | bash -s -- --skip-binary
+```
+
+`cargo install` only ships the binary — the per-account setup (private data repo, daily workflow, hook wiring, profile-README markers) still has to run. The `--skip-binary` flag tells the installer to use the `vibestats` already on your `PATH` instead of downloading a release tarball.
 
 ### Adding a second machine
 
