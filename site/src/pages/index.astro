@@ -51,9 +51,16 @@ import 'cal-heatmap/cal-heatmap.css';
     <!-- Demo Heatmap -->
     <section class="section">
       <h2 class="section-label">See it in action <span class="info-icon" role="img" aria-label="Interactive demo with randomized data. Your real dashboard uses live data from your AI coding sessions.">i<span class="info-tooltip">Interactive demo with randomized data. Your real dashboard uses live data from your AI coding sessions.</span></span></h2>
+      <div id="demo-tabs" class="demo-tabs">
+        <button class="demo-tab active" data-metric="sessions">Sessions</button>
+        <button class="demo-tab" data-metric="tokens">Tokens</button>
+        <button class="demo-tab" data-metric="active_minutes">Active Time</button>
+        <button class="demo-tab" data-metric="tool_uses">Tool Uses</button>
+      </div>
       <div class="demo-card">
         <div id="demo-heatmap"></div>
       </div>
+      <p class="demo-caption">Try the tabs — your dashboard has the same view.</p>
     </section>
 
     <script>
@@ -496,6 +503,40 @@ import 'cal-heatmap/cal-heatmap.css';
   :global(.dark) .copy-btn:hover {
     background: #334155;
   }
+
+  /* ── Demo metric tabs ──────────────────────────────────────────── */
+  .demo-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  :global(.dark) .demo-tabs { border-bottom-color: #334155; }
+  .demo-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  :global(.dark) .demo-tab { color: #64748b; }
+  .demo-tab:hover { color: #111827; }
+  :global(.dark) .demo-tab:hover { color: #e2e8f0; }
+  .demo-tab.active {
+    color: #f97316;
+    border-bottom-color: #f97316;
+  }
+  .demo-caption {
+    text-align: center;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+  :global(.dark) .demo-caption { color: #94a3b8; }
 
   /* ── Demo card ─────────────────────────────────────────────────── */
   .demo-card {
