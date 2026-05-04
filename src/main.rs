@@ -5,7 +5,6 @@ mod config;
 mod github_api;
 mod harnesses;
 mod hooks;
-mod jsonl_parser;
 mod logger;
 mod sync;
 

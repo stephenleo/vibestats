@@ -2,7 +2,7 @@ use crate::checkpoint::Checkpoint;
 use crate::codex_parser;
 use crate::config::Config;
 use crate::github_api::GithubApi;
-use crate::jsonl_parser;
+use crate::harnesses::Harness as HarnessTrait;
 use crate::logger;
 use std::path::PathBuf;
 
@@ -151,7 +151,9 @@ pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
     for harness in harnesses {
         let activities = match harness {
-            Harness::Claude => jsonl_parser::parse_date_range(start_date, end_date),
+            Harness::Claude => {
+                crate::harnesses::claude::Claude.parse_date_range(start_date, end_date)
+            }
             Harness::Codex => codex_parser::parse_date_range(start_date, end_date),
         };
 

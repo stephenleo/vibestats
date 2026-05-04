@@ -1,5 +1,5 @@
 use crate::codex_parser;
-use crate::jsonl_parser;
+use crate::harnesses::Harness as HarnessTrait;
 use crate::sync::Harness;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -72,7 +72,9 @@ pub fn run(backfill: bool, selection: HarnessSelection, quiet: bool) {
         let mut activities = std::collections::HashMap::new();
         for harness in harnesses {
             let harness_activities = match harness {
-                Harness::Claude => jsonl_parser::parse_date_range("0000-00-00", &today),
+                Harness::Claude => {
+                    crate::harnesses::claude::Claude.parse_date_range("0000-00-00", &today)
+                }
                 Harness::Codex => codex_parser::parse_date_range("0000-00-00", &today),
             };
             for date in harness_activities.keys() {

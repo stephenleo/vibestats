@@ -9,6 +9,8 @@
 // Claude and Codex entries and migrate dispatch sites to call them.
 #![allow(dead_code)]
 
+pub mod claude;
+
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -52,8 +54,7 @@ pub trait Harness: Sync {
     fn parse_date_range(&self, start: &str, end: &str) -> HashMap<String, DailyActivity>;
 }
 
-// Registry starts empty; Tasks 2 and 3 add the Claude and Codex entries.
-static REGISTRY: &[&dyn Harness] = &[];
+static REGISTRY: &[&dyn Harness] = &[&claude::Claude];
 
 /// All registered harnesses, in registry order.
 pub fn all() -> &'static [&'static dyn Harness] {
