@@ -48,23 +48,6 @@ async function captureViewport(page, outPath) {
   console.log(`✓ ${outPath}`);
 }
 
-async function setTheme(page, theme) {
-  await page.evaluate((t) => {
-    document.documentElement.classList.toggle('dark', t === 'dark');
-    try { localStorage.setItem('theme', t); } catch { /* ignore */ }
-  }, theme);
-  // Trigger the dashboard's theme-toggle handler so cal-heatmap repaints.
-  await page.evaluate(() => {
-    document.getElementById('theme-toggle')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  });
-  await page.waitForTimeout(800);
-  // Force back to the requested theme in case the click toggled it the other way.
-  await page.evaluate((t) => {
-    document.documentElement.classList.toggle('dark', t === 'dark');
-  }, theme);
-  await page.waitForTimeout(400);
-}
-
 async function main() {
   if (!existsSync(FIXTURE_PATH)) {
     throw new Error(`Fixture not found at ${FIXTURE_PATH}`);
@@ -84,23 +67,42 @@ async function main() {
     await waitForServer(`http://localhost:${PORT}/`);
 
     const browser = await chromium.launch();
-    const context = await browser.newContext({ viewport: VIEWPORT });
-    const page = await context.newPage();
 
-    // Intercept the GitHub data.json fetch and serve the local fixture.
-    await page.route(/raw\.githubusercontent\.com\/.*\/vibestats\/data\.json.*/, (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        headers: { 'access-control-allow-origin': '*' },
-        body: fixtureBody,
-      });
-    });
-
+    // Each theme gets its own context so the theme class is set BEFORE any
+    // page script runs (no toggling — toggling caused cal-heatmap to render
+    // twice because the post-load repaint stacked on top of the initial one).
     for (const theme of ['light', 'dark']) {
       console.log(`\n— Theme: ${theme} —`);
-      await page.goto(`http://localhost:${PORT}/${FIXTURE_USERNAME}`, { waitUntil: 'networkidle' });
-      await setTheme(page, theme);
+      // colorScheme drives Base.astro's anti-flash script, which adds the
+      // .dark class on the html element when the OS prefers dark.
+      const context = await browser.newContext({ viewport: VIEWPORT, colorScheme: theme });
+
+      const page = await context.newPage();
+
+      // Intercept the GitHub data.json fetch and serve the local fixture.
+      await page.route(/raw\.githubusercontent\.com\/.*\/vibestats\/data\.json.*/, (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: { 'access-control-allow-origin': '*' },
+          body: fixtureBody,
+        });
+      });
+
+      // Astro dev does not honor Cloudflare _redirects, so /<username> 404s.
+      // Proxy the dashboard shell from /u while keeping the URL bar pointed at
+      // /<username> so the page's inline username-extraction logic still works.
+      await page.route(`http://localhost:${PORT}/${FIXTURE_USERNAME}`, async (route) => {
+        const upstream = await fetch(`http://localhost:${PORT}/u`);
+        const body = await upstream.text();
+        await route.fulfill({
+          status: 200,
+          contentType: upstream.headers.get('content-type') || 'text/html; charset=utf-8',
+          body,
+        });
+      });
+
+      await page.goto(`http://localhost:${PORT}/${FIXTURE_USERNAME}`, { waitUntil: 'domcontentloaded' });
       // Wait for the heatmap to render at least one cell.
       await page.waitForSelector('#cal-heatmap svg', { timeout: 15_000 });
       await page.waitForTimeout(800);
@@ -109,6 +111,8 @@ async function main() {
       await captureRegion(page, '.card.full-width', join(OUT_DIR, `dashboard-heatmap-${theme}.png`));
       await captureRegion(page, '#kpi-row', join(OUT_DIR, `dashboard-kpis-${theme}.png`));
       await captureRegion(page, '.grid-2', join(OUT_DIR, `dashboard-charts-${theme}.png`));
+
+      await context.close();
     }
 
     await browser.close();
