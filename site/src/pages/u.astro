@@ -167,7 +167,7 @@ import Base from '../layouts/Base.astro';
   // ── State ──────────────────────────────────────────────────────────
   let calInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
-  let currentYear = '';
+  let currentRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -355,22 +355,31 @@ import Base from '../layouts/Base.astro';
     });
   }
 
-  async function renderHeatmap(selectedYear: string, metric: string): Promise<void> {
+  async function renderHeatmap(range: 'L12M' | string, metric: string): Promise<void> {
     if (!vibestatsData) return;
 
     if (calInstance) { calInstance.destroy(); calInstance = null; }
 
+    const now = new Date();
+    let startDate: Date;
+    let datePredicate: (d: string) => boolean;
+
+    if (range === 'L12M') {
+      // Last 12 calendar months including the current (possibly partial) month.
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      const startKey = dateStr(startDate);
+      datePredicate = (d) => d >= startKey;
+    } else {
+      const yearNum = parseInt(range, 10);
+      startDate = new Date(yearNum, 0, 1);
+      datePredicate = (d) => d.startsWith(range);
+    }
+
     const calData = Object.entries(vibestatsData.days)
-      .filter(([date]) => date.startsWith(selectedYear))
+      .filter(([date]) => datePredicate(date))
       .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
 
-    const now = new Date();
-    const yearNum = parseInt(selectedYear, 10);
-    const isCurrentYear = yearNum === now.getFullYear();
-    const startDate = isCurrentYear
-      ? new Date(yearNum - 1, now.getMonth(), now.getDate())
-      : new Date(`${selectedYear}-01-01`);
-    const range = isCurrentYear ? 13 : 12;
+    const range12 = 12;
     const scale = colorScale(metric);
 
     const cal = new CalHeatmap();
@@ -384,7 +393,7 @@ import Base from '../layouts/Base.astro';
           defaultValue: 0,
         },
         date: { start: startDate },
-        range,
+        range: range12,
         domain: {
           type: 'month',
           label: { text: 'MMM', textAlign: 'start', position: 'top' },
@@ -441,7 +450,7 @@ import Base from '../layouts/Base.astro';
     for (const t of heatmapTabsEl.querySelectorAll('.tab')) {
       t.classList.toggle('active', t === btn);
     }
-    renderHeatmap(currentYear, metric);
+    renderHeatmap(currentRange, metric);
   });
 
   // ── Re-render heatmap on theme change ───────────────────────────────
@@ -449,7 +458,7 @@ import Base from '../layouts/Base.astro';
   themeBtn?.addEventListener('click', () => {
     // Small delay to let the .dark class toggle first
     requestAnimationFrame(() => {
-      if (vibestatsData) renderHeatmap(currentYear, currentMetric);
+      if (vibestatsData) renderHeatmap(currentRange, currentMetric);
     });
   });
 
@@ -788,21 +797,22 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Year toggle ────────────────────────────────────────────────────
-  function renderYearToggle(years: string[], selectedYear: string): void {
+  // ── Range toggle (L12M + per-year pills) ───────────────────────────
+  function renderRangeToggle(years: string[], selected: 'L12M' | string): void {
     clearEl(yearToggleEl);
-    for (const year of years) {
+    const ranges: Array<'L12M' | string> = ['L12M', ...years];
+    for (const r of ranges) {
       const btn = document.createElement('button');
-      btn.textContent = year;
-      btn.className = 'year-pill' + (year === selectedYear ? ' active' : '');
-      btn.setAttribute('aria-pressed', String(year === selectedYear));
+      btn.textContent = r;
+      btn.className = 'range-pill' + (r === selected ? ' active' : '');
+      btn.setAttribute('aria-pressed', String(r === selected));
       btn.addEventListener('click', async () => {
-        currentYear = year;
-        for (const b of yearToggleEl.querySelectorAll('.year-pill')) {
+        currentRange = r;
+        for (const b of yearToggleEl.querySelectorAll('.range-pill')) {
           b.classList.toggle('active', b === btn);
           b.setAttribute('aria-pressed', String(b === btn));
         }
-        await renderHeatmap(year, currentMetric);
+        await renderHeatmap(r, currentMetric);
       });
       yearToggleEl.appendChild(btn);
     }
@@ -841,8 +851,7 @@ import Base from '../layouts/Base.astro';
     const years = [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
     if (years.length === 0) { showError(`No vibestats data found for @${username}`); return; }
 
-    const nowYear = String(new Date().getFullYear());
-    currentYear = years.includes(nowYear) ? nowYear : years[0];
+    currentRange = 'L12M';
 
     const dayCount = Object.keys(data.days).length;
     const generated = new Date(data.generated_at);
@@ -853,8 +862,8 @@ import Base from '../layouts/Base.astro';
     contentEl.hidden = false;
 
     renderKPIs(data);
-    renderYearToggle(years, currentYear);
-    await renderHeatmap(currentYear, currentMetric);
+    renderRangeToggle(years, currentRange);
+    await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
     renderModelChart(data);
     renderSparklines(data);
