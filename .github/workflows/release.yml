@@ -115,7 +115,10 @@ jobs:
 
   publish-crate:
     name: Publish to crates.io
-    needs: build
+    # Wait for the GitHub Release to succeed first — crates.io publishes are
+    # irreversible (only yankable), so we don't want a live crate version
+    # without a matching GitHub Release if `release` fails.
+    needs: [build, release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

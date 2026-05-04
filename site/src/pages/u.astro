@@ -401,7 +401,7 @@ import Base from '../layouts/Base.astro';
         itemSelector: '#cal-heatmap',
         data: {
           source: calData,
-          x: (datum) => +new Date(datum['date'] as string),
+          x: (datum: { date: string }) => +new Date(datum.date),
           y: 'value',
           defaultValue: 0,
         },
@@ -840,7 +840,7 @@ import Base from '../layouts/Base.astro';
 
     let data: VibestatsData;
     try {
-      const earlyPromise = (window as Record<string, unknown>).__vibestatsData as
+      const earlyPromise = window.__vibestatsData as
         | Promise<VibestatsData | null> | undefined;
       if (earlyPromise) {
         const result = await earlyPromise;

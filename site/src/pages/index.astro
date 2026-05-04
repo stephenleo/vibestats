@@ -102,7 +102,10 @@ import 'cal-heatmap/cal-heatmap.css';
         }
       }
 
-      // Color thresholds per metric — mirror site/src/pages/u.astro colorScale().
+      // Color thresholds per metric. tokens/active_minutes/tool_uses mirror
+      // site/src/pages/u.astro colorScale() exactly; sessions uses a tighter
+      // domain (and an extra-dark top step) because the demo's mock data caps
+      // at ~12 sessions/day, well below the real dashboard's 1/10/50/100.
       const SCALE_BY_METRIC: Record<Metric, { range: string[]; domain: number[] }> = {
         sessions:       { range: ['#ebedf0', '#fed7aa', '#fb923c', '#f97316', '#c2410c'], domain: [1, 3, 7, 12] },
         tokens:         { range: ['#ebedf0', '#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'], domain: [1, 50_000, 200_000, 500_000] },
@@ -134,11 +137,11 @@ import 'cal-heatmap/cal-heatmap.css';
 
       const cal = new CalHeatmap();
 
-      function paintDemo(metric: Metric): Promise<void> {
+      async function paintDemo(metric: Metric): Promise<void> {
         const scale = SCALE_BY_METRIC[metric];
         // Override the "0" colour with the theme-aware empty colour.
         const range = [emptyColor(), ...scale.range.slice(1)];
-        return cal.paint(
+        await cal.paint(
           {
             itemSelector: '#demo-heatmap',
             data: { source: dataByMetric[metric], x: 'date', y: 'value', defaultValue: 0 },
@@ -163,7 +166,8 @@ import 'cal-heatmap/cal-heatmap.css';
               },
             ],
           ]
-        ).then(scrollDemoToEnd);
+        );
+        scrollDemoToEnd();
       }
 
       void paintDemo(currentMetric);
