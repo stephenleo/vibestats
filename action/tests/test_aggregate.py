@@ -44,6 +44,10 @@ EXPECTED_DAYS = {
         "cache_read_tokens": 1500, "cache_creation_tokens": 700,
         "models": {"claude-sonnet-4-5": 3500, "codex-mini": 500},
         "longest_session_minutes": 20, "message_count": 30, "tool_uses": 15,
+        "harnesses": {
+            "claude": {"input_tokens": 8000, "output_tokens": 3500},
+            "codex": {"input_tokens": 1000, "output_tokens": 500},
+        },
     },
     "2026-04-10": {
         "sessions": 5, "active_minutes": 75,
@@ -51,6 +55,9 @@ EXPECTED_DAYS = {
         "cache_read_tokens": 2300, "cache_creation_tokens": 900,
         "models": {"claude-sonnet-4-5": 3000, "claude-opus-4": 800},
         "longest_session_minutes": 30, "message_count": 26, "tool_uses": 15,
+        "harnesses": {
+            "claude": {"input_tokens": 10000, "output_tokens": 3800},
+        },
     },
     "2026-04-11": {
         "sessions": 5, "active_minutes": 75,
@@ -58,6 +65,9 @@ EXPECTED_DAYS = {
         "cache_read_tokens": 1500, "cache_creation_tokens": 600,
         "models": {"claude-sonnet-4-5": 2500},
         "longest_session_minutes": 25, "message_count": 18, "tool_uses": 10,
+        "harnesses": {
+            "claude": {"input_tokens": 6000, "output_tokens": 2500},
+        },
     },
 }
 
@@ -148,8 +158,9 @@ class TestAggregateOutputSchema(unittest.TestCase):
             "sessions", "active_minutes", "input_tokens", "output_tokens",
             "cache_read_tokens", "cache_creation_tokens", "models",
             "longest_session_minutes", "message_count", "tool_uses",
+            "harnesses",
         }
-        numeric_fields = expected_keys - {"models"}
+        numeric_fields = expected_keys - {"models", "harnesses"}
 
         for date_key, day_data in result["days"].items():
             self.assertEqual(
@@ -441,6 +452,64 @@ class TestAggregateRegistryMissingOrMalformed(unittest.TestCase):
 
         # Malformed registry → empty purged set → machine included
         self.assertEqual(result["days"]["2026-04-09"]["sessions"], 5)
+
+
+class TestAggregateHarnessBreakdown(unittest.TestCase):
+    """5.1-UNIT-012/013/014: Per-harness token breakdown preserved in days output."""
+
+    def test_harnesses_field_present_with_claude_and_codex_keys(self):
+        """Given fixtures with both claude and codex partitions on 2026-04-09,
+        the day record must contain a 'harnesses' field with both keys."""
+        agg = _import_aggregate()
+        result = agg.aggregate(FIXTURES_ROOT, "testuser")
+
+        day = result["days"]["2026-04-09"]
+        self.assertIn("harnesses", day)
+        self.assertIn("claude", day["harnesses"])
+        self.assertIn("codex", day["harnesses"])
+
+    def test_harness_token_totals_match_partition_sources(self):
+        """Given 2026-04-09 has claude=machine-a(5000in,2000out)+machine-b(3000in,1500out)
+        and codex=machine-a(1000in,500out), the harness breakdown must reflect those exact sums.
+        machine-purged on the same day is excluded by registry.json."""
+        agg = _import_aggregate()
+        result = agg.aggregate(FIXTURES_ROOT, "testuser")
+
+        harnesses = result["days"]["2026-04-09"]["harnesses"]
+        self.assertEqual(harnesses["claude"]["input_tokens"], 8000)
+        self.assertEqual(harnesses["claude"]["output_tokens"], 3500)
+        self.assertEqual(harnesses["codex"]["input_tokens"], 1000)
+        self.assertEqual(harnesses["codex"]["output_tokens"], 500)
+
+    def test_harness_input_token_sum_equals_day_input_tokens(self):
+        """Invariant: sum_h(harnesses[h].input_tokens) == day.input_tokens
+        for every day (and same for output_tokens)."""
+        agg = _import_aggregate()
+        result = agg.aggregate(FIXTURES_ROOT, "testuser")
+
+        for date_key, day in result["days"].items():
+            harness_input_sum = sum(h["input_tokens"] for h in day["harnesses"].values())
+            harness_output_sum = sum(h["output_tokens"] for h in day["harnesses"].values())
+            self.assertEqual(
+                harness_input_sum, day["input_tokens"],
+                msg=f"input_tokens harness-sum mismatch on {date_key}",
+            )
+            self.assertEqual(
+                harness_output_sum, day["output_tokens"],
+                msg=f"output_tokens harness-sum mismatch on {date_key}",
+            )
+
+    def test_single_harness_day_still_emits_harnesses_field(self):
+        """Given 2026-04-11 has only claude data (machine-a/claude),
+        the harnesses field still exists with a single 'claude' key."""
+        agg = _import_aggregate()
+        result = agg.aggregate(FIXTURES_ROOT, "testuser")
+
+        day = result["days"]["2026-04-11"]
+        self.assertIn("harnesses", day)
+        self.assertEqual(set(day["harnesses"].keys()), {"claude"})
+        self.assertEqual(day["harnesses"]["claude"]["input_tokens"], 6000)
+        self.assertEqual(day["harnesses"]["claude"]["output_tokens"], 2500)
 
 
 if __name__ == "__main__":

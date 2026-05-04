@@ -62,6 +62,14 @@ def _extract_machine_id_from_path(path: pathlib.Path):
     return None
 
 
+def _extract_harness_from_path(path: pathlib.Path):
+    """Extract harness value from a Hive partition path. Returns str or None."""
+    for part in path.parts:
+        if part.startswith("harness="):
+            return part[len("harness="):]
+    return None
+
+
 def aggregate(root: pathlib.Path, username: str) -> dict:
     """Aggregate all Hive partition files under root/machines/. Returns public data.json dict."""
     purged_machines = load_purged_machines(root)
@@ -77,6 +85,7 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
         "longest_session_minutes": 0,
         "message_count": 0,
         "tool_uses": 0,
+        "harnesses": {},
     })
 
     machines_dir = root / "machines"
@@ -107,6 +116,14 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
                 days[date_key]["longest_session_minutes"],
                 record.get("longest_session_minutes", 0),
             )
+
+            harness = _extract_harness_from_path(data_file)
+            if harness:
+                h_bucket = days[date_key]["harnesses"].setdefault(
+                    harness, {"input_tokens": 0, "output_tokens": 0}
+                )
+                h_bucket["input_tokens"] += record.get("input_tokens", 0)
+                h_bucket["output_tokens"] += record.get("output_tokens", 0)
 
     generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
