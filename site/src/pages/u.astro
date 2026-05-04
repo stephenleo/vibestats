@@ -374,12 +374,17 @@ import Base from '../layouts/Base.astro';
 
     if (range === 'L12M') {
       // Last 12 calendar months including the current (possibly partial) month.
-      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      // Use Date.UTC because cal-heatmap interprets `date.start` in UTC; if
+      // we constructed a local-time date here, users east of UTC (e.g. SGT)
+      // would see the window shifted back by one month — the leading partial
+      // week of the previous month would render and the current month would
+      // get clipped off the right edge.
+      startDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
       const startKey = dateStr(startDate);
       datePredicate = (d) => d >= startKey;
     } else {
       const yearNum = parseInt(range, 10);
-      startDate = new Date(yearNum, 0, 1);
+      startDate = new Date(Date.UTC(yearNum, 0, 1));
       datePredicate = (d) => d.startsWith(range);
     }
 
