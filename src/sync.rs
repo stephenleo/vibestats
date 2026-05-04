@@ -1,5 +1,4 @@
 use crate::checkpoint::Checkpoint;
-use crate::codex_parser;
 use crate::config::Config;
 use crate::github_api::GithubApi;
 use crate::harnesses::Harness as HarnessTrait;
@@ -154,7 +153,7 @@ pub fn run_harnesses(start_date: &str, end_date: &str, harnesses: &[Harness]) {
             Harness::Claude => {
                 crate::harnesses::claude::Claude.parse_date_range(start_date, end_date)
             }
-            Harness::Codex => codex_parser::parse_date_range(start_date, end_date),
+            Harness::Codex => crate::harnesses::codex::Codex.parse_date_range(start_date, end_date),
         };
 
         // Iterate dates in sorted order so log output and HTTP call ordering are

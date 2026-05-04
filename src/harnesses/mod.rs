@@ -5,11 +5,13 @@
 //! supports — adding a new harness is two lines in this file plus a new
 //! `src/harnesses/<name>.rs`. See `CONTRIBUTING.md` for the recipe.
 
-// The trait, registry, and lookup helpers are unused until Tasks 2-3 add the
-// Claude and Codex entries and migrate dispatch sites to call them.
+// The trait methods id/display_name/is_installed, the registry, and the lookup
+// helpers are reported as dead code until Tasks 4-6 migrate the dispatch sites
+// away from the Harness/HarnessSelection enums to call them directly.
 #![allow(dead_code)]
 
 pub mod claude;
+pub mod codex;
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -54,7 +56,7 @@ pub trait Harness: Sync {
     fn parse_date_range(&self, start: &str, end: &str) -> HashMap<String, DailyActivity>;
 }
 
-static REGISTRY: &[&dyn Harness] = &[&claude::Claude];
+static REGISTRY: &[&dyn Harness] = &[&claude::Claude, &codex::Codex];
 
 /// All registered harnesses, in registry order.
 pub fn all() -> &'static [&'static dyn Harness] {

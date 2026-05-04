@@ -1,4 +1,3 @@
-use crate::codex_parser;
 use crate::harnesses::Harness as HarnessTrait;
 use crate::sync::Harness;
 
@@ -75,7 +74,9 @@ pub fn run(backfill: bool, selection: HarnessSelection, quiet: bool) {
                 Harness::Claude => {
                     crate::harnesses::claude::Claude.parse_date_range("0000-00-00", &today)
                 }
-                Harness::Codex => codex_parser::parse_date_range("0000-00-00", &today),
+                Harness::Codex => {
+                    crate::harnesses::codex::Codex.parse_date_range("0000-00-00", &today)
+                }
             };
             for date in harness_activities.keys() {
                 activities.insert(date.clone(), ());

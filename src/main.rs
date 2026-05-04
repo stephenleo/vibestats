@@ -1,5 +1,4 @@
 mod checkpoint;
-mod codex_parser;
 mod commands;
 mod config;
 mod github_api;
