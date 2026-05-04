@@ -119,6 +119,7 @@ import Base from '../layouts/Base.astro';
     longest_session_minutes?: number;
     message_count?: number;
     tool_uses?: number;
+    harnesses?: Record<string, { input_tokens: number; output_tokens: number }>;
   }
 
   interface VibestatsData {
