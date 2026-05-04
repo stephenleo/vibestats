@@ -1,4 +1,4 @@
-use crate::jsonl_parser::DailyActivity;
+use crate::harnesses::DailyActivity;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};

@@ -250,7 +250,7 @@ mod tests {
         // format (field order, spacing, new fields) breaks loudly rather than
         // silently violating idempotency (NFR12) against already-synced data.
         // Fields serialized in DailyActivity definition order; BTreeMap models: {}.
-        use crate::jsonl_parser::DailyActivity;
+        use crate::harnesses::DailyActivity;
         let activity = DailyActivity {
             sessions: 4,
             active_minutes: 87,
@@ -267,7 +267,7 @@ mod tests {
     fn payload_format_matches_hashed_bytes() {
         // Verify the exact JSON bytes produced by serde_json for a known DailyActivity.
         // This pins the field order and ensures the payload is byte-for-byte deterministic.
-        use crate::jsonl_parser::DailyActivity;
+        use crate::harnesses::DailyActivity;
         let activity = DailyActivity {
             sessions: 4,
             active_minutes: 87,

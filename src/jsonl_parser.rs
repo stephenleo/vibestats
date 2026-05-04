@@ -1,23 +1,7 @@
-use serde::{Deserialize, Serialize};
+use crate::harnesses::DailyActivity;
+use serde::Deserialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::{BufRead, BufReader};
-
-/// Per-day aggregated session activity.
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct DailyActivity {
-    pub sessions: u32,
-    pub active_minutes: u32,
-    pub input_tokens: u64,
-    pub output_tokens: u64,
-    pub cache_read_tokens: u64,
-    pub cache_creation_tokens: u64,
-    /// Maps model name → total output tokens attributed to that model on this day.
-    /// BTreeMap ensures deterministic serialization order (alphabetical keys).
-    pub models: BTreeMap<String, u64>,
-    pub longest_session_minutes: u32,
-    pub message_count: u32,
-    pub tool_uses: u32,
-}
 
 /// Token usage from an assistant message's `usage` object.
 #[derive(Debug, Default, Deserialize)]

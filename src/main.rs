@@ -3,6 +3,7 @@ mod codex_parser;
 mod commands;
 mod config;
 mod github_api;
+mod harnesses;
 mod hooks;
 mod jsonl_parser;
 mod logger;
