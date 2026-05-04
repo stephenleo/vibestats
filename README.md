@@ -1,20 +1,31 @@
-# vibestats
+<h1 align="center">⚡ VibeStats</h1>
 
-> Track your Claude Code and Codex sessions. Get a GitHub-style heatmap on your profile and a full analytics dashboard at **vibestats.dev/<username>**.
+<p align="center">
+  <a href="https://github.com/stephenleo/vibestats/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/stephenleo/vibestats/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
+  <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/v/vibestats?style=flat-square" alt="Crates.io version"></a>
+  <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/d/vibestats?label=crates%20downloads&style=flat-square" alt="Crates downloads"></a>
+  <a href="https://github.com/stephenleo/vibestats/releases/latest"><img src="https://img.shields.io/github/v/release/stephenleo/vibestats?style=flat-square" alt="GitHub release"></a>
+  <a href="https://github.com/stephenleo/vibestats/releases"><img src="https://img.shields.io/github/downloads/stephenleo/vibestats/total?label=github%20downloads&style=flat-square" alt="GitHub downloads"></a>
+  <a href="https://github.com/stephenleo/vibestats/blob/main/LICENSE"><img src="https://img.shields.io/github/license/stephenleo/vibestats?style=flat-square" alt="License"></a>
+</p>
+
+<p align="center">
+  Track your Claude Code and Codex sessions. Get a GitHub-style heatmap on your profile and a full analytics dashboard at <strong>vibestats.dev/&lt;username&gt;</strong>.
+</p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-hero-dark.png">
-  <img src="docs/images/dashboard-hero-light.png" alt="vibestats dashboard — full view">
+  <img src="docs/images/dashboard-hero-light.png" alt="VibeStats dashboard — full view">
 </picture>
 
 <!-- vibestats-start -->
 <!-- vibestats-end -->
 
-## Why vibestats?
+## Why VibeStats?
 
 Claude Code [clears local session transcripts after 30 days by default](https://code.claude.com/docs/en/data-usage) (configurable via `cleanupPeriodDays` in `~/.claude/settings.json`). Tools that read those JSONL files can only show what's still on disk — your stats silently shrink as old sessions age out.
 
-vibestats syncs aggregated daily stats — tokens, sessions, minutes, model breakdown, harness mix — to your private `vibestats-data` GitHub repo on every session, *before* that cleanup fires. The sync is non-destructive by design: once a day's stats are uploaded, they stay there indefinitely.
+VibeStats syncs aggregated daily stats — tokens, sessions, minutes, model breakdown, harness mix — to your private `vibestats-data` GitHub repo on every session, *before* that cleanup fires. The sync is non-destructive by design: once a day's stats are uploaded, they stay there indefinitely.
 
 What that gets you:
 
@@ -72,7 +83,7 @@ On any additional machine, re-run the same install command. The installer detect
 
 ## How it works
 
-vibestats has three components that work together:
+VibeStats has three components that work together:
 
 1. **CLI** — installed locally, hooks into Claude Code and Codex to record session activity into a private `vibestats-data` GitHub repo after each session.
 2. **GitHub Action** (`stephenleo/vibestats@v2`) — runs daily in your `vibestats-data` repo, aggregates the recorded sessions, and pushes an SVG heatmap to your GitHub profile repo.
