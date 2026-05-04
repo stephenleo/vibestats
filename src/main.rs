@@ -9,20 +9,19 @@ mod sync;
 
 use clap::{Parser, Subcommand};
 
-#[derive(Clone, Debug, clap::ValueEnum)]
-enum HarnessArg {
-    All,
-    Claude,
-    Codex,
+fn harness_arg_parser() -> clap::builder::PossibleValuesParser {
+    let mut values: Vec<&'static str> = vec!["all"];
+    for id in harnesses::ids() {
+        values.push(id);
+    }
+    clap::builder::PossibleValuesParser::new(values)
 }
 
-impl From<HarnessArg> for commands::sync::HarnessSelection {
-    fn from(value: HarnessArg) -> Self {
-        match value {
-            HarnessArg::All => Self::All,
-            HarnessArg::Claude => Self::Claude,
-            HarnessArg::Codex => Self::Codex,
-        }
+fn parse_harness_selection(value: &str) -> Option<&'static dyn harnesses::Harness> {
+    if value == "all" {
+        None
+    } else {
+        harnesses::by_id(value)
     }
 }
 
@@ -45,8 +44,12 @@ enum Commands {
         #[arg(long)]
         backfill: bool,
         /// Which harness to sync. Defaults to all supported harnesses.
-        #[arg(long, value_enum, default_value_t = HarnessArg::All)]
-        harness: HarnessArg,
+        #[arg(
+            long,
+            value_parser = harness_arg_parser(),
+            default_value = "all"
+        )]
+        harness: String,
         /// Suppress human-readable output for hook execution
         #[arg(long, hide = true)]
         quiet: bool,
@@ -87,7 +90,7 @@ fn main() {
             backfill,
             harness,
             quiet,
-        } => commands::sync::run(backfill, harness.into(), quiet),
+        } => commands::sync::run(backfill, parse_harness_selection(&harness), quiet),
         Commands::Status => commands::status::run(),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => commands::machines::list(),
