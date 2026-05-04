@@ -4,7 +4,6 @@
   <a href="https://github.com/stephenleo/vibestats/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/stephenleo/vibestats/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
   <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/v/vibestats?style=flat-square" alt="Crates.io version"></a>
   <a href="https://crates.io/crates/vibestats"><img src="https://img.shields.io/crates/d/vibestats?label=crates%20downloads&style=flat-square" alt="Crates downloads"></a>
-  <a href="https://github.com/marketplace/actions/vibestats"><img src="https://img.shields.io/badge/marketplace-vibestats-blue?style=flat-square&logo=github" alt="GitHub Marketplace"></a>
   <a href="https://github.com/stephenleo/vibestats/releases/latest"><img src="https://img.shields.io/github/v/release/stephenleo/vibestats?style=flat-square" alt="GitHub release"></a>
   <a href="https://github.com/stephenleo/vibestats/releases"><img src="https://img.shields.io/github/downloads/stephenleo/vibestats/total?label=github%20downloads&style=flat-square" alt="GitHub downloads"></a>
   <a href="https://github.com/stephenleo/vibestats/blob/main/LICENSE"><img src="https://img.shields.io/github/license/stephenleo/vibestats?style=flat-square" alt="License"></a>
