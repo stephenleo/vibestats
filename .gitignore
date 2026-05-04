@@ -34,3 +34,6 @@ _bmad/
 .playwright-mcp/
 package-lock.json
 skills-lock.json
+
+# Superpowers
+docs/superpowers/
