@@ -293,14 +293,14 @@ import Base from '../layouts/Base.astro';
     const topHarnessName = topHarness
       ? topHarness[0].charAt(0).toUpperCase() + topHarness[0].slice(1)
       : '';
-    const topHarnessValue = topHarnessShare > 0 ? `${topHarnessName} ${topHarnessShare}%` : '—';
+    const topHarnessValue = topHarnessShare > 0 ? `${topHarnessShare}%` : '—';
 
-    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean }> = [
+    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean; sub?: string }> = [
       { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
       { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
       { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
-      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output) on your most-used harness, across all machines.' },
+      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
       { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
     ];
 
@@ -334,6 +334,12 @@ import Base from '../layouts/Base.astro';
         delta.className = 'kpi-delta' + (k.up ? '' : ' down');
         delta.textContent = k.delta + ' vs last 30d';
         card.appendChild(delta);
+      }
+      if (k.sub) {
+        const sub = document.createElement('span');
+        sub.className = 'kpi-sub';
+        sub.textContent = k.sub;
+        card.appendChild(sub);
       }
       kpiRowEl.appendChild(card);
     }
@@ -1178,6 +1184,7 @@ import Base from '../layouts/Base.astro';
   }
   .kpi-delta { font-size: 0.72rem; color: var(--c-green); }
   .kpi-delta.down { color: #ef4444; }
+  .kpi-sub { font-size: 0.78rem; color: var(--color-text-dim); font-weight: 500; }
 
   /* ── Token chart ────────────────────────────────────────────────── */
   .chart-area {

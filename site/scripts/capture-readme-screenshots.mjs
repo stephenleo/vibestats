@@ -103,8 +103,13 @@ async function main() {
       });
 
       await page.goto(`http://localhost:${PORT}/${FIXTURE_USERNAME}`, { waitUntil: 'domcontentloaded' });
-      // Wait for the heatmap to render at least one cell.
+      // Wait for the heatmap to render at least one cell. (waitForSelector
+      // tolerates Vite's HMR-triggered reload that fires on the first nav.)
       await page.waitForSelector('#cal-heatmap svg', { timeout: 15_000 });
+      // Hide the Astro dev toolbar so it doesn't bleed into the screenshots.
+      // Inject the style after the page is settled to avoid context-destroyed
+      // errors when Vite optimizes deps mid-load.
+      await page.addStyleTag({ content: 'astro-dev-toolbar{display:none!important}' });
       await page.waitForTimeout(800);
 
       await captureViewport(page, join(OUT_DIR, `dashboard-hero-${theme}.png`));
