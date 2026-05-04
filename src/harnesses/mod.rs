@@ -5,11 +5,6 @@
 //! supports — adding a new harness is two lines in this file plus a new
 //! `src/harnesses/<name>.rs`. See `CONTRIBUTING.md` for the recipe.
 
-// The trait methods id/display_name/is_installed, the registry, and the lookup
-// helpers are reported as dead code until Tasks 4-6 migrate the dispatch sites
-// away from the Harness/HarnessSelection enums to call them directly.
-#![allow(dead_code)]
-
 pub mod claude;
 pub mod codex;
 
@@ -44,10 +39,12 @@ pub trait Harness: Sync {
     fn id(&self) -> &'static str;
 
     /// Human-readable name for log/error messages.
+    #[allow(dead_code)] // intentionally kept: trait surface for future harnesses
     fn display_name(&self) -> &'static str;
 
     /// Returns true if this harness is installed on the local machine
     /// (typically: its session directory exists under `$HOME`).
+    #[allow(dead_code)] // intentionally kept: trait surface for future harnesses
     fn is_installed(&self) -> bool;
 
     /// Walk local session files and aggregate per-day activity for dates in
