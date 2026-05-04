@@ -254,10 +254,11 @@ import 'cal-heatmap/cal-heatmap.css';
           <div class="preview-donut-row">
             <div class="preview-donut"></div>
             <div class="preview-legend">
-              <div class="preview-legend-item"><span class="preview-dot" style="background:#f97316"></span>Sonnet 4.5 — 45%</div>
-              <div class="preview-legend-item"><span class="preview-dot" style="background:#3b82f6"></span>Opus 4 — 27%</div>
-              <div class="preview-legend-item"><span class="preview-dot" style="background:#a855f7"></span>Sonnet 4 — 16%</div>
-              <div class="preview-legend-item"><span class="preview-dot" style="background:#06b6d4"></span>Haiku 4.5 — 7%</div>
+              <div class="preview-legend-item" title="Sonnet 4.5: 45%"><span class="preview-dot" style="background:#f97316"></span>Sonnet 4.5</div>
+              <div class="preview-legend-item" title="Opus 4: 27%"><span class="preview-dot" style="background:#3b82f6"></span>Opus 4</div>
+              <div class="preview-legend-item" title="Sonnet 4: 16%"><span class="preview-dot" style="background:#a855f7"></span>Sonnet 4</div>
+              <div class="preview-legend-item" title="Haiku 4.5: 7%"><span class="preview-dot" style="background:#06b6d4"></span>Haiku 4.5</div>
+              <div class="preview-legend-item" title="Other: 5%"><span class="preview-dot" style="background:#64748b"></span>Other</div>
             </div>
           </div>
         </div>
@@ -711,6 +712,8 @@ import 'cal-heatmap/cal-heatmap.css';
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
   }
   :global(.dark) .preview-card {
     background: #1e293b;
@@ -728,7 +731,8 @@ import 'cal-heatmap/cal-heatmap.css';
 
   /* Mock bars */
   .preview-bars {
-    height: 100px;
+    flex: 1;
+    min-height: 100px;
     display: flex;
     align-items: flex-end;
     gap: 2px;
@@ -736,13 +740,16 @@ import 'cal-heatmap/cal-heatmap.css';
 
   /* Mock donut */
   .preview-donut-row {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    justify-content: center;
+    gap: 1rem;
   }
   .preview-donut {
-    width: 90px;
-    height: 90px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     flex-shrink: 0;
     background: conic-gradient(
@@ -757,15 +764,16 @@ import 'cal-heatmap/cal-heatmap.css';
   .preview-donut::after {
     content: '';
     position: absolute;
-    inset: 28%;
+    inset: 22%;
     border-radius: 50%;
     background: #f9fafb;
   }
   :global(.dark) .preview-donut::after { background: #1e293b; }
   .preview-legend {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.9rem;
   }
   .preview-legend-item {
     display: flex;
