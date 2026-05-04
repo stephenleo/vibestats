@@ -91,7 +91,8 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
       "input_tokens": 8000, "output_tokens": 2500,
       "cache_read_tokens": 1200, "cache_creation_tokens": 300,
       "models": { "claude-sonnet-4-5": 2500 },
-      "longest_session_minutes": 30, "message_count": 18, "tool_uses": 10
+      "longest_session_minutes": 30, "message_count": 18, "tool_uses": 10,
+      "harnesses": { "claude": { "input_tokens": 8000, "output_tokens": 2500 } }
     }
   }
 }
@@ -119,6 +120,9 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
 | `longest_session_minutes` | integer | max | Longest single session across all machines on this date |
 | `message_count` | integer | sum | Total message count across all machines |
 | `tool_uses` | integer | sum | Total tool use count across all machines |
+| `harnesses` | object | — | Map of harness name → `{ input_tokens, output_tokens }`. Keys are lowercase harness names (`claude`, `codex`). The sum of `input_tokens` (resp. `output_tokens`) across all harness keys equals the day's top-level `input_tokens` (resp. `output_tokens`) by construction. |
+
+**Backward compatibility:** `harnesses` is optional. Public `data.json` files written before this field existed remain valid; consumers must default a missing `harnesses` to `{}`.
 
 ### Design Notes
 
