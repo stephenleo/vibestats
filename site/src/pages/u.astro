@@ -276,14 +276,29 @@ import Base from '../layouts/Base.astro';
     const check = new Date(dateStr(now));
     while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
 
-    const avgMin = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+    // Top harness: largest share of all-time tokens (input + output) per harness.
+    const harnessTotals: Record<string, number> = {};
+    for (const day of allDays) {
+      for (const [h, v] of Object.entries(day.harnesses ?? {})) {
+        harnessTotals[h] = (harnessTotals[h] ?? 0) + (v.input_tokens ?? 0) + (v.output_tokens ?? 0);
+      }
+    }
+    const harnessTotal = Object.values(harnessTotals).reduce((s, v) => s + v, 0);
+    const topHarness = Object.entries(harnessTotals).sort((a, b) => b[1] - a[1])[0];
+    const topHarnessShare = topHarness && harnessTotal > 0
+      ? Math.round((topHarness[1] / harnessTotal) * 100)
+      : 0;
+    const topHarnessName = topHarness
+      ? topHarness[0].charAt(0).toUpperCase() + topHarness[0].slice(1)
+      : '';
+    const topHarnessValue = topHarnessShare > 0 ? `${topHarnessName} ${topHarnessShare}%` : '—';
 
     const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean }> = [
       { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
       { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
       { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
-      { label: 'Avg Session', value: avgMin > 0 ? `${avgMin}m` : '—', info: 'Average session duration: total active time / total sessions.' },
+      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output) on your most-used harness, across all machines.' },
       { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
     ];
 
