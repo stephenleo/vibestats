@@ -120,9 +120,13 @@ For example, user `stephenleo` stores at `stephenleo/stephenleo/vibestats/data.j
 | `longest_session_minutes` | integer | max | Longest single session across all machines on this date |
 | `message_count` | integer | sum | Total message count across all machines |
 | `tool_uses` | integer | sum | Total tool use count across all machines |
-| `harnesses` | object | — | Map of harness name → `{ input_tokens, output_tokens }`. Keys are lowercase harness names (`claude`, `codex`). The sum of `input_tokens` (resp. `output_tokens`) across all harness keys equals the day's top-level `input_tokens` (resp. `output_tokens`) by construction. |
+| `harnesses` | object | — | Map of harness name → `{ input_tokens, output_tokens, cache_creation_tokens }`. Keys are lowercase harness names (`claude`, `codex`). The sum of `input_tokens` (resp. `output_tokens`, `cache_creation_tokens`) across all harness keys equals the day's top-level value by construction. |
 
-**Backward compatibility:** `harnesses` is optional. Public `data.json` files written before this field existed remain valid; consumers must default a missing `harnesses` to `{}`.
+**Backward compatibility:** `harnesses` is optional. Public `data.json` files written before this field existed remain valid; consumers must default a missing `harnesses` to `{}`. The `cache_creation_tokens` entry inside each harness bucket is also optional for rollups produced before that field was added — consumers should default it to `0`.
+
+### Dashboard headline conventions
+
+The web dashboard's headline **Total Tokens** value is computed as `input_tokens + output_tokens + cache_creation_tokens`, matching Claude Code's built-in `/stats`. `cache_read_tokens` is uploaded for completeness but intentionally excluded from the headline — it represents cheap cache reuse rather than user-visible spend and is typically 10–30× larger than the other buckets combined.
 
 ### Design Notes
 
