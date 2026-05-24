@@ -120,10 +120,11 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
             harness = _extract_harness_from_path(data_file)
             if harness:
                 h_bucket = days[date_key]["harnesses"].setdefault(
-                    harness, {"input_tokens": 0, "output_tokens": 0}
+                    harness, {"input_tokens": 0, "output_tokens": 0, "cache_creation_tokens": 0}
                 )
                 h_bucket["input_tokens"] += record.get("input_tokens", 0)
                 h_bucket["output_tokens"] += record.get("output_tokens", 0)
+                h_bucket["cache_creation_tokens"] += record.get("cache_creation_tokens", 0)
 
     generated_at = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 

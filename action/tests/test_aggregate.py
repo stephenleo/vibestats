@@ -45,8 +45,8 @@ EXPECTED_DAYS = {
         "models": {"claude-sonnet-4-5": 3500, "codex-mini": 500},
         "longest_session_minutes": 20, "message_count": 30, "tool_uses": 15,
         "harnesses": {
-            "claude": {"input_tokens": 8000, "output_tokens": 3500},
-            "codex": {"input_tokens": 1000, "output_tokens": 500},
+            "claude": {"input_tokens": 8000, "output_tokens": 3500, "cache_creation_tokens": 700},
+            "codex": {"input_tokens": 1000, "output_tokens": 500, "cache_creation_tokens": 0},
         },
     },
     "2026-04-10": {
@@ -56,7 +56,7 @@ EXPECTED_DAYS = {
         "models": {"claude-sonnet-4-5": 3000, "claude-opus-4": 800},
         "longest_session_minutes": 30, "message_count": 26, "tool_uses": 15,
         "harnesses": {
-            "claude": {"input_tokens": 10000, "output_tokens": 3800},
+            "claude": {"input_tokens": 10000, "output_tokens": 3800, "cache_creation_tokens": 900},
         },
     },
     "2026-04-11": {
@@ -66,7 +66,7 @@ EXPECTED_DAYS = {
         "models": {"claude-sonnet-4-5": 2500},
         "longest_session_minutes": 25, "message_count": 18, "tool_uses": 10,
         "harnesses": {
-            "claude": {"input_tokens": 6000, "output_tokens": 2500},
+            "claude": {"input_tokens": 6000, "output_tokens": 2500, "cache_creation_tokens": 600},
         },
     },
 }
@@ -478,18 +478,23 @@ class TestAggregateHarnessBreakdown(unittest.TestCase):
         harnesses = result["days"]["2026-04-09"]["harnesses"]
         self.assertEqual(harnesses["claude"]["input_tokens"], 8000)
         self.assertEqual(harnesses["claude"]["output_tokens"], 3500)
+        self.assertEqual(harnesses["claude"]["cache_creation_tokens"], 700)
         self.assertEqual(harnesses["codex"]["input_tokens"], 1000)
         self.assertEqual(harnesses["codex"]["output_tokens"], 500)
+        self.assertEqual(harnesses["codex"]["cache_creation_tokens"], 0)
 
     def test_harness_input_token_sum_equals_day_input_tokens(self):
         """Invariant: sum_h(harnesses[h].input_tokens) == day.input_tokens
-        for every day (and same for output_tokens)."""
+        for every day (and same for output_tokens and cache_creation_tokens)."""
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
         for date_key, day in result["days"].items():
             harness_input_sum = sum(h["input_tokens"] for h in day["harnesses"].values())
             harness_output_sum = sum(h["output_tokens"] for h in day["harnesses"].values())
+            harness_cache_create_sum = sum(
+                h["cache_creation_tokens"] for h in day["harnesses"].values()
+            )
             self.assertEqual(
                 harness_input_sum, day["input_tokens"],
                 msg=f"input_tokens harness-sum mismatch on {date_key}",
@@ -497,6 +502,10 @@ class TestAggregateHarnessBreakdown(unittest.TestCase):
             self.assertEqual(
                 harness_output_sum, day["output_tokens"],
                 msg=f"output_tokens harness-sum mismatch on {date_key}",
+            )
+            self.assertEqual(
+                harness_cache_create_sum, day["cache_creation_tokens"],
+                msg=f"cache_creation_tokens harness-sum mismatch on {date_key}",
             )
 
     def test_single_harness_day_still_emits_harnesses_field(self):
@@ -510,6 +519,7 @@ class TestAggregateHarnessBreakdown(unittest.TestCase):
         self.assertEqual(set(day["harnesses"].keys()), {"claude"})
         self.assertEqual(day["harnesses"]["claude"]["input_tokens"], 6000)
         self.assertEqual(day["harnesses"]["claude"]["output_tokens"], 2500)
+        self.assertEqual(day["harnesses"]["claude"]["cache_creation_tokens"], 600)
 
 
 if __name__ == "__main__":

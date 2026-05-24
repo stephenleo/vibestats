@@ -65,12 +65,17 @@ import Base from '../layouts/Base.astro';
       <!-- Token Trend + Model Mix -->
       <div class="grid-2">
         <div class="card">
-          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span> <span class="info-icon" role="img" aria-label="Daily input + output tokens over the last 30 days. Darker bars = more output tokens relative to input.">i<span class="info-tooltip">Daily input + output tokens over the last 30 days, all machines. Darker bars = more output tokens relative to input.</span></span></h3>
+          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span> <span class="info-icon" role="img" aria-label="Daily input + output + cache-creation tokens over the last 30 days, all machines. Bars are stacked: output (bottom, darkest), cache create (middle), input (top, lightest). Cache reads are excluded.">i<span class="info-tooltip">Daily input + output + cache-creation tokens over the last 30 days, all machines. Bars are stacked: output (bottom, darkest), cache create (middle), input (top, lightest). Cache reads are excluded.</span></span></h3>
           <div id="token-chart" class="chart-area"></div>
           <div id="token-chart-labels" class="chart-labels"></div>
+          <div class="chart-legend" aria-label="Chart legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand)"></span>output</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand-mid)"></span>cache create</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand-light)"></span>input</span>
+          </div>
         </div>
         <div class="card">
-          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of total tokens (input + output) by model, all time across all machines. Per-model input tokens are estimated from each model's daily output share within its harness, so harness totals match the Top Harness tile.">i<span class="info-tooltip">Share of total tokens (input + output) by model, all time across all machines. Per-model input tokens are estimated from each model's daily output share within its harness, so harness totals match the Top Harness tile.</span></span></h3>
+          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of total tokens (input + output + cache-creation) by model, all time across all machines. Per-model input and cache-creation are prorated from each model's daily output share within its harness, so harness totals match the Top Harness tile and headline Total Tokens.">i<span class="info-tooltip">Share of total tokens (input + output + cache-creation) by model, all time across all machines. Per-model input and cache-creation are prorated from each model's daily output share within its harness, so harness totals match the Top Harness tile and headline Total Tokens.</span></span></h3>
           <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
@@ -121,7 +126,7 @@ import Base from '../layouts/Base.astro';
     longest_session_minutes?: number;
     message_count?: number;
     tool_uses?: number;
-    harnesses?: Record<string, { input_tokens: number; output_tokens: number }>;
+    harnesses?: Record<string, { input_tokens: number; output_tokens: number; cache_creation_tokens?: number }>;
   }
 
   interface VibestatsData {
@@ -213,7 +218,7 @@ import Base from '../layouts/Base.astro';
   function metricValue(entry: DayEntry, metric: string): number {
     switch (metric) {
       case 'sessions': return entry.sessions;
-      case 'tokens': return (entry.input_tokens ?? 0) + (entry.output_tokens ?? 0);
+      case 'tokens': return tokensTotal(entry);
       case 'active_minutes': return entry.active_minutes;
       case 'tool_uses': return entry.tool_uses ?? 0;
       default: return entry.sessions;
@@ -286,6 +291,12 @@ import Base from '../layouts/Base.astro';
     return entries.reduce((s, e) => s + fn(e), 0);
   }
 
+  // Headline "Total Tokens" formula, matching Claude Code /stats.
+  // Cache reads are intentionally excluded (cheap reuse, not user-visible spend).
+  function tokensTotal(e: DayEntry): number {
+    return (e.input_tokens ?? 0) + (e.output_tokens ?? 0) + (e.cache_creation_tokens ?? 0);
+  }
+
   // ── KPI rendering ─────────────────────────────────────────────────
   function renderKPIs(data: VibestatsData): void {
     const now = new Date();
@@ -293,15 +304,15 @@ import Base from '../layouts/Base.astro';
     const prev30 = daysInRange(data, daysAgo(59), daysAgo(30));
     const allDays = Object.values(data.days);
 
-    const totalTokens = sumField(allDays, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+    const totalTokens = sumField(allDays, tokensTotal);
     const totalSessions = sumField(allDays, e => e.sessions);
     const totalMinutes = sumField(allDays, e => e.active_minutes);
     const totalToolUses = sumField(allDays, e => e.tool_uses ?? 0);
 
     const dSessions = fmtDelta(sumField(cur30, e => e.sessions), sumField(prev30, e => e.sessions));
     const dTokens = fmtDelta(
-      sumField(cur30, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0)),
-      sumField(prev30, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0))
+      sumField(cur30, tokensTotal),
+      sumField(prev30, tokensTotal)
     );
     const dMinutes = fmtDelta(sumField(cur30, e => e.active_minutes), sumField(prev30, e => e.active_minutes));
 
@@ -311,11 +322,14 @@ import Base from '../layouts/Base.astro';
     const check = new Date(dateStr(now));
     while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
 
-    // Top harness: largest share of all-time tokens (input + output) per harness.
+    // Top harness: largest share of all-time tokens (input + output + cache_creation) per harness.
     const harnessTotals: Record<string, number> = {};
     for (const day of allDays) {
       for (const [h, v] of Object.entries(day.harnesses ?? {})) {
-        harnessTotals[h] = (harnessTotals[h] ?? 0) + (v.input_tokens ?? 0) + (v.output_tokens ?? 0);
+        harnessTotals[h] = (harnessTotals[h] ?? 0)
+          + (v.input_tokens ?? 0)
+          + (v.output_tokens ?? 0)
+          + (v.cache_creation_tokens ?? 0);
       }
     }
     const harnessTotal = Object.values(harnessTotals).reduce((s, v) => s + v, 0);
@@ -329,11 +343,11 @@ import Base from '../layouts/Base.astro';
     const topHarnessValue = topHarnessShare > 0 ? `${topHarnessShare}%` : '—';
 
     const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean; sub?: string }> = [
-      { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output tokens across all sessions and machines, all time.', delta: dTokens.text, up: dTokens.up },
+      { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output + cache-creation tokens across all sessions and machines, all time. Matches Claude Code /stats. Cache reads excluded.', delta: dTokens.text, up: dTokens.up },
       { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
       { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
-      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
+      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output + cache-creation) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
       { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
     ];
 
@@ -463,7 +477,7 @@ import Base from '../layouts/Base.astro';
               const day = vibestatsData?.days[dateKey];
               if (!day || value === null || value === 0)
                 return `No activity on ${djs.format('MMM D, YYYY')}`;
-              const totalTok = (day.input_tokens ?? 0) + (day.output_tokens ?? 0);
+              const totalTok = tokensTotal(day);
               const topModel = day.models
                 ? Object.entries(day.models).sort((a, b) => b[1] - a[1])[0]?.[0]
                 : null;
@@ -510,7 +524,7 @@ import Base from '../layouts/Base.astro';
 
   // ── Token trend chart ──────────────────────────────────────────────
   function renderTokenChart(data: VibestatsData): void {
-    const days: Array<{ date: string; input: number; output: number }> = [];
+    const days: Array<{ date: string; input: number; output: number; cacheCreate: number }> = [];
     for (let i = 29; i >= 0; i--) {
       const d = dateStr(daysAgo(i));
       const entry = data.days[d];
@@ -518,10 +532,11 @@ import Base from '../layouts/Base.astro';
         date: d,
         input: entry?.input_tokens ?? 0,
         output: entry?.output_tokens ?? 0,
+        cacheCreate: entry?.cache_creation_tokens ?? 0,
       });
     }
 
-    const maxVal = Math.max(1, ...days.map(d => d.input + d.output));
+    const maxVal = Math.max(1, ...days.map(d => d.input + d.output + d.cacheCreate));
     clearEl(tokenChartEl);
     clearEl(tokenChartLabelsEl);
     tokenChartRangeEl.textContent = '(last 30 days)';
@@ -529,17 +544,26 @@ import Base from '../layouts/Base.astro';
     for (const day of days) {
       const bar = document.createElement('div');
       bar.className = 'chart-bar';
-      const total = day.input + day.output;
-      const hPct = (total / maxVal) * 100;
-      bar.style.height = `${Math.max(hPct, 2)}%`;
-      const outputPct = total > 0 ? Math.round((day.output / total) * 100) : 50;
+      const total = day.output + day.cacheCreate + day.input;
       if (total === 0) {
-        bar.style.background = 'var(--color-border)';
+        bar.classList.add('empty');
         bar.style.height = '3%';
       } else {
-        bar.style.background = `linear-gradient(to top, var(--color-brand) ${outputPct}%, var(--color-brand-light) ${outputPct}%)`;
+        bar.style.height = `${Math.max((total / maxVal) * 100, 2)}%`;
+        // Bottom → top: output, cache create, input. flex-direction: column-reverse handles ordering.
+        for (const [value, color] of [
+          [day.output, 'var(--color-brand)'],
+          [day.cacheCreate, 'var(--color-brand-mid)'],
+          [day.input, 'var(--color-brand-light)'],
+        ] as Array<[number, string]>) {
+          const seg = document.createElement('div');
+          seg.className = 'chart-bar-segment';
+          seg.style.flexBasis = `${(value / total) * 100}%`;
+          seg.style.background = color;
+          bar.appendChild(seg);
+        }
       }
-      bar.title = `${day.date}: ${fmtTokens(day.output)} output, ${fmtTokens(day.input)} input`;
+      bar.title = `${day.date}: ${fmtTokens(day.output)} output, ${fmtTokens(day.cacheCreate)} cache, ${fmtTokens(day.input)} input (${fmtTokens(total)} total)`;
       tokenChartEl.appendChild(bar);
     }
 
@@ -554,13 +578,12 @@ import Base from '../layouts/Base.astro';
   // ── Model donut chart ──────────────────────────────────────────────
   function renderModelChart(data: VibestatsData): void {
     // d.models stores OUTPUT tokens per model (see src/harnesses/{claude,codex}.rs).
-    // The Top Harness KPI uses INPUT + OUTPUT tokens, so we reconstruct each
-    // model's total tokens by prorating input tokens *within* the model's own
-    // harness (using d.harnesses[h].input_tokens as the truth and the model's
-    // output share inside that harness as the weight). Doing the proration per
-    // harness — instead of across the whole day — means each harness's slices
-    // sum exactly to that harness's totals, so the donut reconciles with the
-    // Top Harness tile.
+    // The headline Total Tokens KPI is input + output + cache_creation; we reconstruct
+    // each model's contribution by prorating both INPUT and CACHE_CREATION *within* the
+    // model's own harness, weighted by the model's output share inside that harness.
+    // Doing the proration per harness — instead of across the whole day — means each
+    // harness's slices sum exactly to that harness's totals, so the donut reconciles
+    // with the Top Harness tile and with the headline Total Tokens.
     const harnessOf = (model: string): string | null => {
       if (/^claude-/.test(model)) return 'claude';
       if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
@@ -579,9 +602,12 @@ import Base from '../layouts/Base.astro';
       for (const [model, out] of Object.entries(d.models ?? {})) {
         const h = harnessOf(model);
         const harnessIn = h ? (d.harnesses?.[h]?.input_tokens ?? 0) : 0;
+        const harnessCacheCreate = h ? (d.harnesses?.[h]?.cache_creation_tokens ?? 0) : 0;
         const totalOutForHarness = h ? harnessOut[h] : 0;
-        const inputShare = totalOutForHarness > 0 ? (out / totalOutForHarness) * harnessIn : 0;
-        modelTotals[model] = (modelTotals[model] ?? 0) + out + inputShare;
+        const weight = totalOutForHarness > 0 ? out / totalOutForHarness : 0;
+        const inputShare = weight * harnessIn;
+        const cacheCreateShare = weight * harnessCacheCreate;
+        modelTotals[model] = (modelTotals[model] ?? 0) + out + inputShare + cacheCreateShare;
       }
     }
 
@@ -690,7 +716,7 @@ import Base from '../layouts/Base.astro';
       const entries = daysInRange(data, weekStart, weekEnd);
       weeks.push({
         sessions: sumField(entries, e => e.sessions),
-        tokens: sumField(entries, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0)),
+        tokens: sumField(entries, tokensTotal),
         minutes: sumField(entries, e => e.active_minutes),
         messages: sumField(entries, e => e.message_count ?? 0),
       });
@@ -795,7 +821,7 @@ import Base from '../layouts/Base.astro';
       detail.textContent = `${entry.sessions} session${entry.sessions === 1 ? '' : 's'}, ~${entry.active_minutes} min`;
       const tokens = document.createElement('span');
       tokens.className = 'timeline-tokens';
-      const totalTok = (entry.input_tokens ?? 0) + (entry.output_tokens ?? 0);
+      const totalTok = tokensTotal(entry);
       tokens.textContent = totalTok > 0 ? `${fmtTokens(totalTok)} tokens` : '';
       item.appendChild(dot);
       item.appendChild(dateEl);
@@ -808,7 +834,7 @@ import Base from '../layouts/Base.astro';
   // ── Efficiency metrics ─────────────────────────────────────────────
   function renderEfficiency(data: VibestatsData): void {
     const allDays = Object.values(data.days);
-    const totalTokens = sumField(allDays, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+    const totalTokens = sumField(allDays, tokensTotal);
     const totalMinutes = sumField(allDays, e => e.active_minutes);
     const totalSessions = sumField(allDays, e => e.sessions);
     const totalMessages = sumField(allDays, e => e.message_count ?? 0);
@@ -834,7 +860,7 @@ import Base from '../layouts/Base.astro';
       const weekStart = new Date(weekEnd);
       weekStart.setDate(weekStart.getDate() - 6);
       const entries = daysInRange(data, weekStart, weekEnd);
-      const wTok = sumField(entries, e => (e.input_tokens ?? 0) + (e.output_tokens ?? 0));
+      const wTok = sumField(entries, tokensTotal);
       const wMin = sumField(entries, e => e.active_minutes);
       const wSes = sumField(entries, e => e.sessions);
       const wMsg = sumField(entries, e => e.message_count ?? 0);
@@ -1120,7 +1146,8 @@ import Base from '../layouts/Base.astro';
   /* ── CSS Variables ─────────────────────────────────────────────── */
   :root {
     --color-brand: #f97316;
-    --color-brand-light: #fb923c;
+    --color-brand-mid: #fb8a2c;
+    --color-brand-light: #fdba74;
     --color-border: #e5e7eb;
     --color-card-bg: #f9fafb;
     --color-card-border: #e5e7eb;
@@ -1287,8 +1314,29 @@ import Base from '../layouts/Base.astro';
     min-width: 4px;
     transition: opacity 0.15s;
     cursor: default;
+    display: flex;
+    flex-direction: column-reverse;
+    overflow: hidden;
   }
+  .chart-bar.empty { background: var(--color-border); }
   .chart-bar:hover { opacity: 0.8; }
+  .chart-bar-segment { width: 100%; }
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--color-text-dim);
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
   .chart-labels {
     display: flex;
     justify-content: space-between;
