@@ -60,6 +60,10 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-submetric="reviews">Reviews</button>
           <button class="tab" data-submetric="private">Private</button>
         </div>
+        <div class="heatmap-range-row">
+          <label class="range-label" for="year-select">Range</label>
+          <select id="year-select" class="range-select" aria-label="Select range"></select>
+        </div>
         <div class="heatmap-grid-row">
           <div class="heatmap-wrapper">
             <div class="day-labels" aria-hidden="true">
@@ -67,7 +71,6 @@ import Base from '../layouts/Base.astro';
             </div>
             <div id="cal-heatmap"></div>
           </div>
-          <div id="year-toggle" class="range-pills-vertical" aria-label="Select range"></div>
         </div>
       </div>
 
@@ -163,7 +166,7 @@ import Base from '../layouts/Base.astro';
   const subtitleEl = document.getElementById('dash-subtitle')!;
   const avatarEl = document.getElementById('dash-avatar') as HTMLImageElement;
   avatarEl.onerror = () => { avatarEl.hidden = true; };
-  const yearToggleEl = document.getElementById('year-toggle')!;
+  const yearSelectEl = document.getElementById('year-select') as HTMLSelectElement;
   const kpiRowEl = document.getElementById('kpi-row')!;
   const tokenChartEl = document.getElementById('token-chart')!;
   const tokenChartLabelsEl = document.getElementById('token-chart-labels')!;
@@ -979,26 +982,23 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Range toggle (L12M + per-year pills) ───────────────────────────
+  // ── Range selector (Last 12 months + per-year options) ─────────────
   function renderRangeToggle(years: string[], selected: 'L12M' | string): void {
-    clearEl(yearToggleEl);
+    clearEl(yearSelectEl);
     const ranges: Array<'L12M' | string> = ['L12M', ...years];
     for (const r of ranges) {
-      const btn = document.createElement('button');
-      btn.textContent = r;
-      btn.className = 'range-pill' + (r === selected ? ' active' : '');
-      btn.setAttribute('aria-pressed', String(r === selected));
-      btn.addEventListener('click', async () => {
-        currentRange = r;
-        for (const b of yearToggleEl.querySelectorAll('.range-pill')) {
-          b.classList.toggle('active', b === btn);
-          b.setAttribute('aria-pressed', String(b === btn));
-        }
-        await renderHeatmap(r, currentMetric);
-      });
-      yearToggleEl.appendChild(btn);
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = r === 'L12M' ? 'Last 12 months' : r;
+      if (r === selected) opt.selected = true;
+      yearSelectEl.appendChild(opt);
     }
   }
+
+  yearSelectEl.addEventListener('change', async () => {
+    currentRange = yearSelectEl.value;
+    await renderHeatmap(currentRange, currentMetric);
+  });
 
   // ── Main init ──────────────────────────────────────────────────────
   async function init(): Promise<void> {
@@ -1189,22 +1189,26 @@ import Base from '../layouts/Base.astro';
     align-items: flex-start;
     gap: 0.75rem;
   }
-  .range-pills-vertical {
+  .heatmap-range-row {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding-top: 22px; /* align with cal-heatmap month labels */
-    flex-shrink: 0;
-    min-width: 56px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
-  @media (max-width: 640px) {
-    .heatmap-grid-row { flex-direction: column-reverse; }
-    .range-pills-vertical {
-      flex-direction: row;
-      flex-wrap: wrap;
-      padding-top: 0;
-      margin-bottom: 0.5rem;
-    }
+  .range-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+  .range-select {
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
   }
   .heatmap-wrapper {
     display: flex;
