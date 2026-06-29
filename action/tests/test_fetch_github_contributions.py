@@ -159,6 +159,21 @@ class TestSync(unittest.TestCase):
         self.assertEqual(day["commits"], 5)
         self.assertEqual(day["prs"], 1)
 
+    def test_rolling_window_refreshes_previous_year(self):
+        """Even when backfill is already complete, the rolling window must re-fetch
+        the previous year so newly-visible contributions self-heal (issue #117 B)."""
+        cy = CURRENT_YEAR
+        fake = FakeGitHub(
+            calendars={cy: {f"{cy}-03-01": 5}, cy - 1: {f"{cy - 1}-08-01": 7}},
+            created_year=cy - 1,
+        )
+        # backfill marked complete → only the rolling window can fetch cy-1
+        seed = {"last_updated": "", "backfilled_to_year": cy - 1, "days": {}}
+        _, data = self._run(fake, seed=seed)
+        self.assertIn(f"{cy}-03-01", data["days"])
+        self.assertIn(f"{cy - 1}-08-01", data["days"], "previous year must be refreshed by the rolling window")
+        self.assertEqual(data["days"][f"{cy - 1}-08-01"]["total"], 7)
+
     def test_backfills_down_to_created_year(self):
         cy = CURRENT_YEAR
         fake = FakeGitHub(
