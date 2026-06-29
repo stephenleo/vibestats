@@ -6,24 +6,30 @@ interface Props {
 const { title } = Astro.props;
 ---
 <Base title={title}>
-  <div class="max-w-4xl mx-auto px-4 py-12 flex gap-10 items-start">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 flex gap-12 items-start">
 
     <!-- Sidebar -->
-    <nav aria-label="Docs navigation" class="hidden sm:block w-44 shrink-0 sticky top-20">
-      <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Documentation</p>
-      <ul class="space-y-1">
-        <li><a href="/docs/quickstart"      class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Quickstart</a></li>
-        <li><a href="/docs/how-it-works"    class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">How it works</a></li>
-        <li><a href="/docs/cli-reference"   class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">CLI reference</a></li>
-        <li><a href="/docs/troubleshooting" class="block px-3 py-1.5 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Troubleshooting</a></li>
+    <nav aria-label="Docs navigation" class="hidden sm:block w-48 shrink-0 sticky top-24">
+      <p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)] mb-3" style="font-family:var(--font-mono)">Get started</p>
+      <ul class="space-y-0.5">
+        <li><a href="/docs/quickstart"      class="block px-3 py-1.5 rounded-md text-sm text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-colors">Quickstart</a></li>
+        <li><a href="/docs/how-it-works"    class="block px-3 py-1.5 rounded-md text-sm text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-colors">How it works</a></li>
+        <li><a href="/docs/cli-reference"   class="block px-3 py-1.5 rounded-md text-sm text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-colors">CLI reference</a></li>
+        <li><a href="/docs/troubleshooting" class="block px-3 py-1.5 rounded-md text-sm text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-colors">Troubleshooting</a></li>
       </ul>
+      <div class="mt-5 pt-5 border-t border-[var(--hair)]">
+        <a href="https://github.com/stephenleo/vibestats" target="_blank" rel="noopener noreferrer"
+           class="flex items-center gap-1.5 px-3 text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors">
+          <span aria-hidden="true">↗</span> View source
+        </a>
+      </div>
     </nav>
 
     <!-- Content -->
     <main class="min-w-0 flex-1 docs-content max-w-none">
+      <p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)] mb-3" style="font-family:var(--font-mono)">Documentation</p>
       <slot />
     </main>
 
   </div>
 </Base>
-
