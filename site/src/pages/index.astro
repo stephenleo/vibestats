@@ -262,6 +262,14 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
           }]]
         );
         updateChrome(metric);
+        // Line the Less/More legend up with the heatmap's right edge.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const svg = document.querySelector('#demo-heatmap svg');
+          const row = document.querySelector<HTMLElement>('.demo-stat-row');
+          if (!svg || !row) return;
+          row.style.paddingRight = '0px';
+          row.style.paddingRight = `${Math.max(0, Math.round(row.getBoundingClientRect().right - svg.getBoundingClientRect().right))}px`;
+        }));
       }
 
       void paintDemo(currentMetric);

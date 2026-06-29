@@ -68,12 +68,7 @@ import Base from '../layouts/Base.astro';
             <span>Less</span><span id="heat-legend" class="legend-swatches"></span><span>More</span>
           </div>
         </div>
-        <div class="heatmap-wrapper">
-          <div class="day-labels" aria-hidden="true">
-            <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
-          </div>
-          <div id="cal-heatmap"></div>
-        </div>
+        <div id="cal-heatmap"></div>
       </div>
 
       <!-- 40 / 40 / 20 row -->
@@ -120,7 +115,7 @@ import Base from '../layouts/Base.astro';
               <select id="gh-year-select" class="range-select" aria-label="Select GitHub range"></select>
             </div>
           </div>
-          <div class="heatmap-wrapper"><div id="gh-heatmap"></div></div>
+          <div id="gh-heatmap"></div>
         </div>
       </div>
 
@@ -423,7 +418,7 @@ import Base from '../layouts/Base.astro';
     // Size cells so the 52-week grid fills the card width (no dead space).
     const host = document.querySelector(selector) as HTMLElement | null;
     const w = host?.clientWidth ?? 800;
-    const cell = Math.max(11, Math.min(26, Math.floor((w - 53 * 3) / 53)));
+    const cell = Math.max(10, Math.min(15, Math.round(w / 53) - 3));
     const cal = new CalHeatmap();
     await cal.paint(
       {
@@ -444,6 +439,16 @@ import Base from '../layouts/Base.astro';
     const el = document.getElementById(id);
     if (!el) return;
     requestAnimationFrame(() => requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; }));
+  }
+
+  // Pull the Less/More legend in so its right edge lines up with the heatmap's.
+  function alignHeatmapLegend(): void {
+    const svg = document.querySelector('#cal-heatmap svg') as SVGElement | null;
+    const row = document.querySelector('.stat-row') as HTMLElement | null;
+    if (!svg || !row) return;
+    row.style.paddingRight = '0px';
+    const pad = Math.max(0, Math.round(row.getBoundingClientRect().right - svg.getBoundingClientRect().right));
+    row.style.paddingRight = `${pad}px`;
   }
 
   async function renderHeatmap(range: 'L12M' | string, metric: string): Promise<void> {
@@ -485,6 +490,7 @@ import Base from '../layouts/Base.astro';
       return `${djs.format('MMM D, YYYY')}: ${day.sessions} session${day.sessions === 1 ? '' : 's'}, ~${day.active_minutes} min${tStr}${mStr}`;
     });
     scrollToEnd('cal-heatmap');
+    requestAnimationFrame(() => requestAnimationFrame(alignHeatmapLegend));
   }
 
   // ── GitHub contributions heatmap (its own card + range) ────────────
@@ -854,7 +860,7 @@ import Base from '../layouts/Base.astro';
 
 <!-- Scoped: Astro-template elements -->
 <style>
-  .dashboard { max-width: 72rem; margin: 2rem auto; padding: 0 1.5rem; }
+  .dashboard { max-width: 60rem; margin: 2rem auto; padding: 0 1.5rem; }
 
   /* Profile header */
   .profile { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
@@ -926,9 +932,6 @@ import Base from '../layouts/Base.astro';
   .legend-swatches { display: inline-flex; gap: 3px; }
   .legend-swatches :global(.swatch) { width: 13px; height: 13px; border-radius: 3px; }
 
-  .heatmap-wrapper { display: flex; align-items: flex-start; }
-  .day-labels { display: flex; flex-direction: column; margin-right: 6px; flex-shrink: 0; }
-  .day-labels span { height: 14px; margin-bottom: 3px; font-size: 10px; line-height: 14px; color: var(--faint); }
   #cal-heatmap, #gh-heatmap { overflow-x: auto; scrollbar-width: none; }
   #cal-heatmap::-webkit-scrollbar, #gh-heatmap::-webkit-scrollbar { display: none; }
 
