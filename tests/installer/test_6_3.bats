@@ -31,13 +31,14 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# P0 — AC #1 (FR5, R-004): multi-machine path skips first-install steps
-# When vibestats-data repo already exists, installer must NOT call:
-#   - gh repo create
-#   - gh api (workflow write)
-#   - gh secret set VIBESTATS_TOKEN
+# P0 — AC #1 (FR5, R-004): the multi-machine CASE DISPATCH stays minimal.
+# When vibestats-data already exists, the case branch runs only register_machine
+# and must NOT call gh repo create or set VIBESTATS_TOKEN (the fine-grained PAT is
+# first-install only). NOTE: the shared steps that run on EVERY path do refresh
+# the workflow template and set VIBESTATS_GH_TOKEN — covered by the re-install
+# test below.
 # ---------------------------------------------------------------------------
-@test "[P0] multi-machine path: vibestats-data exists → repo creation skipped, workflow write skipped, VIBESTATS_TOKEN not set" {
+@test "[P0] multi-machine case dispatch: only register_machine runs (no repo create, no VIBESTATS_TOKEN)" {
 
   cat > "${HOME}/stub_env.sh" <<STUB
 _gh() {
@@ -108,6 +109,73 @@ STUB
   # Assert workflow write was NOT called (no api with aggregate.yml path)
   run grep "aggregate.yml" "${GH_SPY_LOG}"
   [ "$status" -ne 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# P0 — re-install (#117): the shared steps that run on EVERY path must refresh the
+# workflow template with a SHA-aware UPDATE (not a 422-prone create) and set
+# VIBESTATS_GH_TOKEN, so existing multi-machine users pick up the GitHub
+# contributions feature on re-run.
+# ---------------------------------------------------------------------------
+@test "[P0] re-install: write_aggregate_workflow updates existing file (with sha) and VIBESTATS_GH_TOKEN is set" {
+
+  cat > "${HOME}/stub_env.sh" <<STUB
+_gh() {
+  echo "_gh \$*" >> "${GH_SPY_LOG}"
+  case "\$1 \$2" in
+    "api /user")
+      echo '{"login": "testuser"}'
+      ;;
+    "auth token")
+      echo "ghp_TESTMACHINETOKEN"
+      return 0
+      ;;
+    "secret set")
+      return 0
+      ;;
+    "api repos"*)
+      case "\$*" in
+        *"aggregate.yml"*"--method PUT"*)
+          echo '{"content": {"sha": "newsha"}}'
+          return 0
+          ;;
+        *"aggregate.yml"*"--jq"*)
+          # GET for the existing file's SHA — file already exists on re-install
+          echo "existingsha123"
+          return 0
+          ;;
+        *"aggregate.yml"*)
+          echo "existingsha123"
+          return 0
+          ;;
+      esac
+      return 0
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+export -f _gh
+STUB
+
+  run bash --noprofile --norc -c "
+    source '${HOME}/stub_env.sh'
+    source '${INSTALL_SH}'
+    export GITHUB_USER=testuser
+    write_aggregate_workflow
+    setup_github_contributions_token
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+
+  # Workflow PUT must include the existing SHA → UPDATE path, not a create that
+  # would 422 against the existing file.
+  grep -q -- "--method PUT" "${GH_SPY_LOG}"
+  grep -q "sha=existingsha123" "${GH_SPY_LOG}"
+
+  # The contributions token secret must be set on this (re-install) path.
+  grep -q "secret set VIBESTATS_GH_TOKEN" "${GH_SPY_LOG}"
 }
 
 # ---------------------------------------------------------------------------

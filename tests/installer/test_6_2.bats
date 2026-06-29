@@ -204,7 +204,7 @@ STUB
 # AC #2 — aggregate.yml written into vibestats-data/.github/workflows/ (FR7)
 # P1 — Story 6.2, FR7
 # ---------------------------------------------------------------------------
-@test "[P1] aggregate.yml written calling stephenleo/vibestats@v1" {
+@test "[P1] aggregate.yml written calling stephenleo/vibestats@v2" {
   make_gh_stub
 
   run bash --noprofile --norc -c "
@@ -214,8 +214,9 @@ STUB
   " 2>&1
 
   [ "$status" -eq 0 ]
-  # The workflow content echoed during write_aggregate_workflow must reference stephenleo/vibestats@v1
-  [[ "$output" == *"stephenleo/vibestats@v1"* ]] || grep -rq "stephenleo/vibestats@v1" "${HOME}/" 2>/dev/null
+  # The workflow content echoed during write_aggregate_workflow must reference
+  # the floating major tag stephenleo/vibestats@v2 (current major).
+  [[ "$output" == *"stephenleo/vibestats@v2"* ]] || grep -rq "stephenleo/vibestats@v2" "${HOME}/" 2>/dev/null
 }
 
 # ---------------------------------------------------------------------------
