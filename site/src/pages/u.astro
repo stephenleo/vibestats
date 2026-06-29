@@ -1,8 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-<Base title="vibestats dashboard">
-  <!-- Early fetch: start data download in <head>, before the 316KB module loads -->
+<Base title="VibeStats dashboard">
+  <!-- Early fetch: start data download in <head>, before the module loads -->
   <script is:inline slot="head">
     (function() {
       var RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
@@ -18,14 +18,21 @@ import Base from '../layouts/Base.astro';
   </script>
 
   <main class="dashboard">
-    <!-- Header -->
-    <div class="dash-header">
-      <div class="dash-header-left">
-        <img id="dash-avatar" class="dash-avatar" src="" alt="" hidden />
+    <!-- Profile header -->
+    <div class="profile">
+      <div class="profile-left">
+        <img id="dash-avatar" class="avatar" src="" alt="" hidden />
         <div>
-          <h1 id="dash-title">vibestats dashboard</h1>
-          <p id="dash-subtitle" class="dash-meta"></p>
+          <div class="profile-name-row">
+            <h1 id="dash-title">VibeStats dashboard</h1>
+            <span id="machines-pill" class="machines-pill" hidden></span>
+          </div>
+          <p id="dash-subtitle" class="profile-meta"></p>
         </div>
+      </div>
+      <div class="profile-actions" id="profile-actions" hidden>
+        <button id="share-btn" type="button" class="btn-secondary">Share</button>
+        <a id="gh-link" class="btn-primary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
       </div>
     </div>
 
@@ -36,80 +43,88 @@ import Base from '../layouts/Base.astro';
     </div>
     <div id="error-state" class="state-msg error" hidden></div>
 
-    <!-- Dashboard content (hidden until data loads) -->
     <section id="dashboard-content" hidden>
 
       <!-- KPI Row -->
       <div id="kpi-row" class="kpi-row"></div>
 
-      <!-- Activity Heatmap (full width) -->
-      <div class="card full-width">
-        <h3 class="card-title">Activity Heatmap <span class="info-icon" role="img" aria-label="GitHub-style heatmap of daily activity. Use the tabs to switch between metrics. Shows the selected year across all machines.">i<span class="info-tooltip">GitHub-style heatmap of daily activity. Use the tabs to switch between metrics. Shows the selected year across all machines.</span></span></h3>
-        <div id="heatmap-tabs" class="tabs">
-          <button class="tab active" data-metric="sessions">Sessions</button>
-          <button class="tab" data-metric="tokens">Tokens</button>
-          <button class="tab" data-metric="active_minutes">Active Time</button>
-          <button class="tab" data-metric="tool_uses">Tool Uses</button>
-          <button class="tab" data-metric="github" id="github-tab" hidden>GitHub</button>
-        </div>
-        <div class="heatmap-grid-row">
-          <div class="heatmap-wrapper">
-            <div class="day-labels" aria-hidden="true">
-              <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
-            </div>
-            <div id="cal-heatmap"></div>
+      <!-- Activity Heatmap -->
+      <div class="card">
+        <div class="card-head">
+          <div id="heatmap-tabs" class="pill-tabs">
+            <button class="pill active" data-metric="sessions">Sessions</button>
+            <button class="pill" data-metric="tokens">Tokens</button>
+            <button class="pill" data-metric="active_minutes">Active Time</button>
+            <button class="pill" data-metric="tool_uses">Tool Uses</button>
           </div>
-          <div class="heatmap-range-control">
-            <label class="range-label" for="year-select">Range</label>
-            <select id="year-select" class="range-select" aria-label="Select range"></select>
+          <select id="year-select" class="range-select" aria-label="Select range"></select>
+        </div>
+        <div class="stat-row">
+          <div>
+            <div id="heat-number" class="big-number">0</div>
+            <div id="heat-caption" class="big-caption"></div>
+          </div>
+          <div class="legend-scale">
+            <span>Less</span><span id="heat-legend" class="legend-swatches"></span><span>More</span>
           </div>
         </div>
+        <div id="cal-heatmap"></div>
       </div>
 
-      <!-- Token Trend + Model Mix -->
-      <div class="grid-2">
+      <!-- 40 / 40 / 20 row -->
+      <div class="three-col">
+        <!-- Weekly token consumption -->
         <div class="card">
-          <h3 class="card-title">Daily Token Consumption <span id="token-chart-range" class="card-range"></span> <span class="info-icon" role="img" aria-label="Daily input + output + cache-creation tokens over the last 30 days, all machines. Bars are stacked: output (bottom, darkest), cache create (middle), input (top, lightest). Cache reads are excluded.">i<span class="info-tooltip">Daily input + output + cache-creation tokens over the last 30 days, all machines. Bars are stacked: output (bottom, darkest), cache create (middle), input (top, lightest). Cache reads are excluded.</span></span></h3>
-          <div id="token-chart" class="chart-area"></div>
-          <div id="token-chart-labels" class="chart-labels"></div>
-          <div class="chart-legend" aria-label="Chart legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand-deep)"></span>output</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand)"></span>cache create</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--color-brand-light)"></span>input</span>
+          <div class="card-head">
+            <h3 class="card-title">Weekly Token Consumption</h3>
+            <span class="card-meta">last 12 weeks</span>
+          </div>
+          <div id="token-chart" class="token-bars"></div>
+          <div class="bars-axis"><span>12 weeks ago</span><span>This week</span></div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#ea580c"></span>Output</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#fb923c"></span>Input</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#fed7aa"></span>Cache create</span>
           </div>
         </div>
+        <!-- Efficiency -->
         <div class="card">
-          <h3 class="card-title">Model Usage Breakdown <span class="info-icon" role="img" aria-label="Share of total tokens (input + output + cache-creation) by model, all time across all machines. Per-model input and cache-creation are prorated from each model's daily output share within its harness, so harness totals match the Top Harness tile and headline Total Tokens.">i<span class="info-tooltip">Share of total tokens (input + output + cache-creation) by model, all time across all machines. Per-model input and cache-creation are prorated from each model's daily output share within its harness, so harness totals match the Top Harness tile and headline Total Tokens.</span></span></h3>
+          <div class="card-head">
+            <h3 class="card-title">Efficiency</h3>
+            <span class="card-meta">12-week avg</span>
+          </div>
+          <div id="efficiency" class="eff-rows"></div>
+        </div>
+        <!-- Model usage -->
+        <div class="card">
+          <h3 class="card-title">Model Usage</h3>
           <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
 
-      <!-- Sparkline Trends + Streak -->
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">Weekly Trends <span class="info-icon" role="img" aria-label="Sparklines showing the last 12 weeks. Each bar is one week's total. The value on the right is the most recent week.">i<span class="info-tooltip">Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.</span></span></h3>
-          <div id="sparklines"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title" id="streak-title">Current Streak</h3>
-          <p id="streak-subtitle" class="streak-sub"></p>
-          <div id="streak-grid" class="streak-visual"></div>
-        </div>
-      </div>
-
-      <!-- Recent Activity + Efficiency -->
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">Recent Active Days <span class="info-icon" role="img" aria-label="The 5 most recent days with at least one session, across all machines.">i<span class="info-tooltip">The 5 most recent days with at least one session, across all machines.</span></span></h3>
-          <div id="recent-days" class="timeline"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">Efficiency Metrics <span class="info-icon" role="img" aria-label="Derived ratios over 12 weeks. Tokens/min = throughput, cache hit % = prompt cache reuse, tools/session = tool invocations per session.">i<span class="info-tooltip">Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse. Tools/session = tool invocations per session.</span></span></h3>
-          <div id="efficiency"></div>
+      <!-- GitHub Contributions -->
+      <div id="github-card" class="card gh-card" hidden>
+        <h3 class="card-title">GitHub Contributions</h3>
+        <p class="card-desc">The heatmap that renders on your GitHub profile — includes your aggregated private contributions too, updated daily.</p>
+        <div class="gh-panel">
+          <div class="gh-panel-head">
+            <span id="gh-panel-label" class="gh-panel-label"></span>
+            <div class="gh-panel-right">
+              <span id="gh-count" class="gh-count"></span>
+              <select id="gh-year-select" class="range-select" aria-label="Select GitHub range"></select>
+            </div>
+          </div>
+          <div id="gh-heatmap"></div>
         </div>
       </div>
 
     </section>
+
+    <p class="star-line">
+      ⭐ Found VibeStats useful?
+      <a href="https://github.com/stephenleo/vibestats" target="_blank" rel="noopener noreferrer">Star it on GitHub</a>
+      to help others discover it.
+    </p>
   </main>
 </Base>
 
@@ -132,22 +147,13 @@ import Base from '../layouts/Base.astro';
     tool_uses?: number;
     harnesses?: Record<string, { input_tokens: number; output_tokens: number; cache_creation_tokens?: number }>;
   }
-
-  // GitHub contribution counts (issue #117). `total` is GitHub's authoritative
-  // daily total (incl. private); the four typed fields power the sub-filters.
-  interface GithubDay {
-    total: number;
-    commits: number;
-    prs: number;
-    issues: number;
-    reviews: number;
-  }
-
+  interface GithubDay { total: number; commits: number; prs: number; issues: number; reviews: number; }
   interface VibestatsData {
     generated_at: string;
     username: string;
     days: Record<string, DayEntry>;
     github_contributions?: Record<string, GithubDay>;
+    machines?: unknown[];
   }
 
   // ── DOM refs ───────────────────────────────────────────────────────
@@ -158,19 +164,23 @@ import Base from '../layouts/Base.astro';
   const subtitleEl = document.getElementById('dash-subtitle')!;
   const avatarEl = document.getElementById('dash-avatar') as HTMLImageElement;
   avatarEl.onerror = () => { avatarEl.hidden = true; };
+  const machinesPillEl = document.getElementById('machines-pill')!;
+  const profileActionsEl = document.getElementById('profile-actions')!;
+  const shareBtnEl = document.getElementById('share-btn')!;
+  const ghLinkEl = document.getElementById('gh-link') as HTMLAnchorElement;
   const yearSelectEl = document.getElementById('year-select') as HTMLSelectElement;
   const kpiRowEl = document.getElementById('kpi-row')!;
+  const heatNumberEl = document.getElementById('heat-number')!;
+  const heatCaptionEl = document.getElementById('heat-caption')!;
+  const heatLegendEl = document.getElementById('heat-legend')!;
   const tokenChartEl = document.getElementById('token-chart')!;
-  const tokenChartLabelsEl = document.getElementById('token-chart-labels')!;
-  const tokenChartRangeEl = document.getElementById('token-chart-range')!;
   const modelChartEl = document.getElementById('model-chart')!;
-  const sparklinesEl = document.getElementById('sparklines')!;
-  const streakTitleEl = document.getElementById('streak-title')!;
-  const streakSubEl = document.getElementById('streak-subtitle')!;
-  const streakGridEl = document.getElementById('streak-grid')!;
-  const recentDaysEl = document.getElementById('recent-days')!;
   const efficiencyEl = document.getElementById('efficiency')!;
   const heatmapTabsEl = document.getElementById('heatmap-tabs')!;
+  const githubCardEl = document.getElementById('github-card')!;
+  const ghYearSelectEl = document.getElementById('gh-year-select') as HTMLSelectElement;
+  const ghCountEl = document.getElementById('gh-count')!;
+  const ghPanelLabelEl = document.getElementById('gh-panel-label')!;
 
   // ── Username discovery ─────────────────────────────────────────────
   const GH_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
@@ -178,18 +188,22 @@ import Base from '../layouts/Base.astro';
   const username = GH_RE.test(rawSegment) ? rawSegment : '';
 
   if (username) {
-    document.title = `vibestats — @${username}`;
-    titleEl.textContent = `@${username}`;
-    subtitleEl.textContent = 'AI Coding Analytics';
+    document.title = `VibeStats — @${username}`;
+    titleEl.textContent = username;
     avatarEl.alt = `${username}'s GitHub avatar`;
-    avatarEl.src = `https://github.com/${username}.png?size=80`;
+    avatarEl.src = `https://github.com/${username}.png?size=120`;
     avatarEl.hidden = false;
+    ghLinkEl.href = `https://github.com/${username}`;
+    profileActionsEl.hidden = false;
+    ghPanelLabelEl.textContent = `${username}'s GitHub contributions`;
   }
 
   // ── State ──────────────────────────────────────────────────────────
   let calInstance: CalHeatmap | null = null;
+  let ghInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
   let currentRange: 'L12M' | string = 'L12M';
+  let ghRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -198,37 +212,22 @@ import Base from '../layouts/Base.astro';
     errorEl.textContent = msg;
     errorEl.hidden = false;
   }
-
-  function clearEl(el: HTMLElement): void {
-    while (el.firstChild) el.removeChild(el.firstChild);
-  }
-
+  function clearEl(el: HTMLElement): void { while (el.firstChild) el.removeChild(el.firstChild); }
   function fmtTokens(n: number): string {
     if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
     return String(n);
   }
-
-  function fmtMinutes(m: number): string {
-    if (m >= 60) return `${Math.round(m / 60)}h`;
-    return `${m}m`;
-  }
-
+  function fmtMinutes(m: number): string { return m >= 60 ? `${Math.round(m / 60)}h` : `${m}m`; }
   function fmtDelta(current: number, previous: number): { text: string; up: boolean } {
     if (previous === 0) return { text: current > 0 ? 'new' : '—', up: true };
     const pct = Math.round(((current - previous) / previous) * 100);
-    const arrow = pct >= 0 ? '\u25B2' : '\u25BC';
+    const arrow = pct >= 0 ? '▲' : '▼';
     return { text: `${arrow} ${Math.abs(pct)}%`, up: pct >= 0 };
   }
-
   function dateStr(d: Date): string { return d.toISOString().slice(0, 10); }
-
-  function daysAgo(n: number): Date {
-    const d = new Date();
-    d.setDate(d.getDate() - n);
-    return d;
-  }
+  function daysAgo(n: number): Date { const d = new Date(); d.setDate(d.getDate() - n); return d; }
 
   function metricValue(entry: DayEntry, metric: string): number {
     switch (metric) {
@@ -240,55 +239,53 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // Per-metric colour ramps. Lowest shade is intentionally a saturated mid-tone
-  // (not a pale wash) so a single-event day stays visible against both the card
-  // background and the "empty" cell colour — same approach as GitHub's
-  // contributions heatmap.
+  // Per-metric colour ramps (4 active steps). GitHub keeps its canonical green.
   const PALETTES: Record<string, string[]> = {
-    sessions:       ['#fdba74', '#fb923c', '#f97316', '#c2410c'],
+    sessions:       ['#fed7aa', '#fb923c', '#f97316', '#c2410c'],
     tokens:         ['#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8'],
     active_minutes: ['#6ee7b7', '#34d399', '#10b981', '#047857'],
     tool_uses:      ['#c4b5fd', '#a78bfa', '#8b5cf6', '#6d28d9'],
-    // GitHub's canonical green ramp so the contributions heatmap reads as "GitHub".
     github:         ['#9be9a8', '#40c463', '#30a14e', '#216e39'],
   };
+  // Step-4 (headline) colour per metric — the saturated mid-dark step.
+  const STEP4: Record<string, string> = {
+    sessions: '#f97316', tokens: '#3b82f6', active_minutes: '#10b981', tool_uses: '#8b5cf6', github: '#30a14e',
+  };
+  const METRIC_CAPTION: Record<string, string> = {
+    sessions: 'sessions across all machines',
+    tokens: 'tokens across all machines',
+    active_minutes: 'minutes active across all machines',
+    tool_uses: 'tool uses across all machines',
+  };
+  function metricNumber(metric: string, n: number): string {
+    if (metric === 'tokens') return fmtTokens(n);
+    if (metric === 'active_minutes') return fmtMinutes(n);
+    return n.toLocaleString();
+  }
 
   function quantile(sortedAsc: number[], q: number): number {
     const idx = Math.min(sortedAsc.length - 1, Math.floor(sortedAsc.length * q));
     return sortedAsc[idx];
   }
-
-  // Round up to a "nice" number so threshold tooltips don't show 47, 211, etc.
   function niceCeil(n: number): number {
     if (n <= 10) return Math.ceil(n);
     const mag = Math.pow(10, Math.floor(Math.log10(n)));
     return Math.ceil(n / mag) * mag;
   }
-
+  function emptyColor(): string {
+    return document.documentElement.classList.contains('dark') ? '#2a3346' : '#ebedf0';
+  }
   function colorScale(metric: string, values: number[]): { range: string[]; domain: number[] } {
-    const isDark = document.documentElement.classList.contains('dark');
-    const empty = isDark ? '#2a3346' : '#ebedf0';
+    const empty = emptyColor();
     const palette = PALETTES[metric] ?? PALETTES.sessions;
-
     const nz = values.filter(v => v > 0).sort((a, b) => a - b);
-
-    // No active days: any strictly-positive thresholds work — every cell is empty.
-    if (nz.length === 0) {
-      return { range: [empty, ...palette], domain: [1, 2, 3, 4] };
-    }
-
-    // Threshold scale: value < domain[i] → range[i]. domain[0] = 1 means any
-    // non-zero value lands in the lowest active bucket; the upper three bands
-    // come from quantiles of the user's own non-zero distribution.
+    if (nz.length === 0) return { range: [empty, ...palette], domain: [1, 2, 3, 4] };
     const raw = [1, niceCeil(quantile(nz, 0.4)), niceCeil(quantile(nz, 0.7)), niceCeil(quantile(nz, 0.9))];
-
-    // Enforce strictly-increasing order (collisions happen on uniform data).
     const domain: number[] = [];
     for (const v of raw) {
       const prev = domain[domain.length - 1];
       domain.push(prev !== undefined && v <= prev ? prev + 1 : v);
     }
-
     return { range: [empty, ...palette], domain };
   }
 
@@ -303,13 +300,9 @@ import Base from '../layouts/Base.astro';
     }
     return entries;
   }
-
   function sumField(entries: DayEntry[], fn: (e: DayEntry) => number): number {
     return entries.reduce((s, e) => s + fn(e), 0);
   }
-
-  // Headline "Total Tokens" formula, matching Claude Code /stats.
-  // Cache reads are intentionally excluded (cheap reuse, not user-visible spend).
   function tokensTotal(e: DayEntry): number {
     return (e.input_tokens ?? 0) + (e.output_tokens ?? 0) + (e.cache_creation_tokens ?? 0);
   }
@@ -327,45 +320,44 @@ import Base from '../layouts/Base.astro';
     const totalToolUses = sumField(allDays, e => e.tool_uses ?? 0);
 
     const dSessions = fmtDelta(sumField(cur30, e => e.sessions), sumField(prev30, e => e.sessions));
-    const dTokens = fmtDelta(
-      sumField(cur30, tokensTotal),
-      sumField(prev30, tokensTotal)
-    );
+    const dTokens = fmtDelta(sumField(cur30, tokensTotal), sumField(prev30, tokensTotal));
     const dMinutes = fmtDelta(sumField(cur30, e => e.active_minutes), sumField(prev30, e => e.active_minutes));
 
-    // Streaks
     const activeDates = new Set(Object.keys(data.days));
     let currentStreak = 0;
     const check = new Date(dateStr(now));
     while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
+    let longestStreak = 0, streak = 0;
+    const sortedDates = [...activeDates].sort();
+    for (let i = 0; i < sortedDates.length; i++) {
+      if (i === 0) streak = 1;
+      else {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        streak = (curr.getTime() - prev.getTime()) / 86_400_000 === 1 ? streak + 1 : 1;
+      }
+      longestStreak = Math.max(longestStreak, streak);
+    }
 
-    // Top harness: largest share of all-time tokens (input + output + cache_creation) per harness.
     const harnessTotals: Record<string, number> = {};
     for (const day of allDays) {
       for (const [h, v] of Object.entries(day.harnesses ?? {})) {
         harnessTotals[h] = (harnessTotals[h] ?? 0)
-          + (v.input_tokens ?? 0)
-          + (v.output_tokens ?? 0)
-          + (v.cache_creation_tokens ?? 0);
+          + (v.input_tokens ?? 0) + (v.output_tokens ?? 0) + (v.cache_creation_tokens ?? 0);
       }
     }
     const harnessTotal = Object.values(harnessTotals).reduce((s, v) => s + v, 0);
     const topHarness = Object.entries(harnessTotals).sort((a, b) => b[1] - a[1])[0];
-    const topHarnessShare = topHarness && harnessTotal > 0
-      ? Math.round((topHarness[1] / harnessTotal) * 100)
-      : 0;
-    const topHarnessName = topHarness
-      ? topHarness[0].charAt(0).toUpperCase() + topHarness[0].slice(1)
-      : '';
-    const topHarnessValue = topHarnessShare > 0 ? `${topHarnessShare}%` : '—';
+    const topHarnessShare = topHarness && harnessTotal > 0 ? Math.round((topHarness[1] / harnessTotal) * 100) : 0;
+    const topHarnessName = topHarness ? topHarness[0].charAt(0).toUpperCase() + topHarness[0].slice(1) : '';
 
-    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean; sub?: string }> = [
+    const kpis: Array<{ label: string; value: string; info: string; delta?: string; up?: boolean; sub?: string; accent?: boolean }> = [
       { label: 'Total Tokens', value: fmtTokens(totalTokens), info: 'Input + output + cache-creation tokens across all sessions and machines, all time. Matches Claude Code /stats. Cache reads excluded.', delta: dTokens.text, up: dTokens.up },
       { label: 'Sessions', value: totalSessions.toLocaleString(), info: 'Total AI coding sessions across all machines, all time.', delta: dSessions.text, up: dSessions.up },
       { label: 'Active Time', value: fmtMinutes(totalMinutes), info: 'Sum of all session durations across all machines, all time.', delta: dMinutes.text, up: dMinutes.up },
-      { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.' },
-      { label: 'Top Harness', value: topHarnessValue, info: 'Share of all-time tokens (input + output + cache-creation) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
-      { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.' },
+      { label: 'Current Streak', value: currentStreak > 0 ? `${currentStreak}d` : '—', info: 'Consecutive days with at least one session, ending today.', sub: longestStreak > 0 ? `longest ${longestStreak}d` : undefined, accent: true },
+      { label: 'Top Harness', value: topHarnessShare > 0 ? `${topHarnessShare}%` : '—', info: 'Share of all-time tokens (input + output + cache-creation) on your most-used harness, across all machines.', sub: topHarnessName || undefined },
+      { label: 'Tool Uses', value: fmtTokens(totalToolUses), info: 'Total tool invocations (file edits, searches, commands, etc.) all time.', sub: 'all time' },
     ];
 
     clearEl(kpiRowEl);
@@ -389,17 +381,16 @@ import Base from '../layouts/Base.astro';
       header.appendChild(label);
       header.appendChild(infoBtn);
       const value = document.createElement('span');
-      value.className = 'kpi-value';
+      value.className = 'kpi-value' + (k.accent ? ' accent' : '');
       value.textContent = k.value;
       card.appendChild(header);
       card.appendChild(value);
       if (k.delta && k.delta !== '—') {
         const delta = document.createElement('span');
         delta.className = 'kpi-delta' + (k.up ? '' : ' down');
-        delta.textContent = k.delta + ' vs last 30d';
+        delta.textContent = k.delta + ' vs 30d';
         card.appendChild(delta);
-      }
-      if (k.sub) {
+      } else if (k.sub) {
         const sub = document.createElement('span');
         sub.className = 'kpi-sub';
         sub.textContent = k.sub;
@@ -409,223 +400,181 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Heatmap ────────────────────────────────────────────────────────
-  // #cal-heatmap is the actual overflow container (it has `overflow-x: auto`
-  // in the stylesheet), so the cal-heatmap SVG scrolls inside it — not
-  // inside .heatmap-wrapper. Scroll that element to show the most recent
-  // months on narrow viewports.
-  const calHeatmapEl = document.getElementById('cal-heatmap');
+  // ── Heatmap (shared painter) ───────────────────────────────────────
+  function rangeBounds(range: 'L12M' | string): { startDate: Date; predicate: (d: string) => boolean } {
+    const now = new Date();
+    if (range === 'L12M') {
+      const startDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
+      const startKey = dateStr(startDate);
+      return { startDate, predicate: (d) => d >= startKey };
+    }
+    const yearNum = parseInt(range, 10);
+    return { startDate: new Date(Date.UTC(yearNum, 0, 1)), predicate: (d) => d.startsWith(range) };
+  }
 
-  function scrollHeatmapToEnd(): void {
-    if (!calHeatmapEl) return;
-    // Double rAF: cal-heatmap's SVG layout completes across the next
-    // paint, so we wait two frames to read a stable scrollWidth.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        calHeatmapEl.scrollLeft = calHeatmapEl.scrollWidth;
-      });
-    });
+  async function paintHeatmap(
+    selector: string,
+    startDate: Date,
+    calData: Array<{ date: string; value: number }>,
+    scale: { range: string[]; domain: number[] },
+    tooltipText: (value: number | null, djs: { format: (f: string) => string }) => string,
+  ): Promise<CalHeatmap> {
+    // Size cells so the 52-week grid fills the card width (no dead space).
+    const host = document.querySelector(selector) as HTMLElement | null;
+    const w = host?.clientWidth ?? 800;
+    const cell = Math.max(10, Math.min(15, Math.round(w / 53) - 3));
+    const cal = new CalHeatmap();
+    await cal.paint(
+      {
+        itemSelector: selector,
+        data: { source: calData, x: (d: { date: string }) => +new Date(d.date), y: 'value', defaultValue: 0 },
+        date: { start: startDate },
+        range: 12,
+        domain: { type: 'month', label: { text: 'MMM', textAlign: 'start', position: 'bottom' }, gutter: 4 },
+        subDomain: { type: 'ghDay', radius: 2, width: cell, height: cell, gutter: 3 },
+        scale: { color: { type: 'threshold', range: scale.range, domain: scale.domain } },
+      },
+      [[Tooltip, { text: (_ts: number, value: number | null, djs: { format: (f: string) => string }) => tooltipText(value, djs) }]]
+    );
+    return cal;
+  }
+
+  function scrollToEnd(id: string): void {
+    const el = document.getElementById(id);
+    if (!el) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; }));
+  }
+
+  // Pull the Less/More legend in so its right edge lines up with the heatmap's.
+  function alignHeatmapLegend(): void {
+    const svg = document.querySelector('#cal-heatmap svg') as SVGElement | null;
+    const row = document.querySelector('.stat-row') as HTMLElement | null;
+    if (!svg || !row) return;
+    row.style.paddingRight = '0px';
+    const pad = Math.max(0, Math.round(row.getBoundingClientRect().right - svg.getBoundingClientRect().right));
+    row.style.paddingRight = `${pad}px`;
   }
 
   async function renderHeatmap(range: 'L12M' | string, metric: string): Promise<void> {
     if (!vibestatsData) return;
-
     if (calInstance) { calInstance.destroy(); calInstance = null; }
-
-    const now = new Date();
-    let startDate: Date;
-    let datePredicate: (d: string) => boolean;
-
-    if (range === 'L12M') {
-      // Last 12 calendar months including the current (possibly partial) month.
-      // Use Date.UTC because cal-heatmap interprets `date.start` in UTC; if
-      // we constructed a local-time date here, users east of UTC (e.g. SGT)
-      // would see the window shifted back by one month — the leading partial
-      // week of the previous month would render and the current month would
-      // get clipped off the right edge.
-      startDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
-      const startKey = dateStr(startDate);
-      datePredicate = (d) => d >= startKey;
-    } else {
-      const yearNum = parseInt(range, 10);
-      startDate = new Date(Date.UTC(yearNum, 0, 1));
-      datePredicate = (d) => d.startsWith(range);
-    }
-
-    // The GitHub metric reads from a separate source map (github_contributions),
-    // shaded by the currently-selected contribution type; all other metrics read
-    // from `days`.
-    const isGithub = metric === 'github';
-    const calData = isGithub
-      ? Object.entries(vibestatsData.github_contributions ?? {})
-          .filter(([date]) => datePredicate(date))
-          .map(([date, v]) => ({ date, value: v.total ?? 0 }))
-      : Object.entries(vibestatsData.days)
-          .filter(([date]) => datePredicate(date))
-          .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
-
-    const range12 = 12;
+    const { startDate, predicate } = rangeBounds(range);
+    const calData = Object.entries(vibestatsData.days)
+      .filter(([date]) => predicate(date))
+      .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
     const scale = colorScale(metric, calData.map(d => d.value));
 
-    const cal = new CalHeatmap();
-    await cal.paint(
-      {
-        itemSelector: '#cal-heatmap',
-        data: {
-          source: calData,
-          x: (datum: { date: string }) => +new Date(datum.date),
-          y: 'value',
-          defaultValue: 0,
-        },
-        date: { start: startDate },
-        range: range12,
-        domain: {
-          type: 'month',
-          label: { text: 'MMM', textAlign: 'start', position: 'top' },
-          gutter: 4,
-        },
-        subDomain: {
-          type: 'ghDay',
-          radius: 2,
-          width: 14,
-          height: 14,
-          gutter: 3,
-        },
-        scale: { color: { type: 'threshold', range: scale.range, domain: scale.domain } },
-      },
-      [
-        [
-          Tooltip,
-          {
-            text: (_ts: number, value: number | null, djs: { format: (f: string) => string }) => {
-              const dateKey = djs.format('YYYY-MM-DD');
-              if (isGithub) {
-                const gh = vibestatsData?.github_contributions?.[dateKey];
-                if (!gh || value === null || value === 0)
-                  return `No contributions on ${djs.format('MMM D, YYYY')}`;
-                const priv = Math.max(0, gh.total - gh.commits - gh.prs - gh.issues - gh.reviews);
-                return `${djs.format('MMM D, YYYY')}: ${gh.total} contribution${gh.total === 1 ? '' : 's'} `
-                  + `(${gh.commits} commits, ${gh.prs} PRs, ${gh.issues} issues, ${gh.reviews} reviews, ${priv} private)`;
-              }
-              const day = vibestatsData?.days[dateKey];
-              if (!day || value === null || value === 0)
-                return `No activity on ${djs.format('MMM D, YYYY')}`;
-              const totalTok = tokensTotal(day);
-              const topModel = day.models
-                ? Object.entries(day.models).sort((a, b) => b[1] - a[1])[0]?.[0]
-                : null;
-              const mStr = topModel ? `, ${topModel.replace(/^claude-/, '')}` : '';
-              const tStr = totalTok > 0 ? `, ${fmtTokens(totalTok)} tokens` : '';
-              return `${djs.format('MMM D, YYYY')}: ${day.sessions} session${day.sessions === 1 ? '' : 's'}, ~${day.active_minutes} min${tStr}${mStr}`;
-            },
-          },
-        ],
-      ]
-    );
-    calInstance = cal;
-    scrollHeatmapToEnd();
+    // Headline number + caption + legend, all in the metric's colour.
+    const total = calData.reduce((s, d) => s + d.value, 0);
+    heatNumberEl.textContent = metricNumber(metric, total);
+    heatNumberEl.style.color = STEP4[metric];
+    heatCaptionEl.textContent = METRIC_CAPTION[metric] ?? '';
+    heatLegendEl.replaceChildren();
+    for (const c of scale.range) {
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.background = c;
+      heatLegendEl.appendChild(sw);
+    }
+    for (const t of heatmapTabsEl.querySelectorAll<HTMLElement>('.pill')) {
+      const active = t.dataset.metric === metric;
+      t.classList.toggle('active', active);
+      t.style.color = active ? STEP4[metric] : '';
+      t.style.background = active ? `color-mix(in srgb, ${STEP4[metric]} 12%, transparent)` : '';
+    }
+
+    calInstance = await paintHeatmap('#cal-heatmap', startDate, calData, scale, (value, djs) => {
+      const dateKey = djs.format('YYYY-MM-DD');
+      const day = vibestatsData?.days[dateKey];
+      if (!day || value === null || value === 0) return `No activity on ${djs.format('MMM D, YYYY')}`;
+      const totalTok = tokensTotal(day);
+      const topModel = day.models ? Object.entries(day.models).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
+      const mStr = topModel ? `, ${topModel.replace(/^claude-/, '')}` : '';
+      const tStr = totalTok > 0 ? `, ${fmtTokens(totalTok)} tokens` : '';
+      return `${djs.format('MMM D, YYYY')}: ${day.sessions} session${day.sessions === 1 ? '' : 's'}, ~${day.active_minutes} min${tStr}${mStr}`;
+    });
+    scrollToEnd('cal-heatmap');
+    requestAnimationFrame(() => requestAnimationFrame(alignHeatmapLegend));
   }
 
-  // ── Re-scroll heatmap to most-recent on viewport changes ───────────
-  let heatmapResizeTimer = 0;
-  window.addEventListener('resize', () => {
-    window.clearTimeout(heatmapResizeTimer);
-    heatmapResizeTimer = window.setTimeout(scrollHeatmapToEnd, 100);
-  });
+  // ── GitHub contributions heatmap (its own card + range) ────────────
+  async function renderGithub(range: 'L12M' | string): Promise<void> {
+    if (!vibestatsData?.github_contributions) return;
+    if (ghInstance) { ghInstance.destroy(); ghInstance = null; }
+    const { startDate, predicate } = rangeBounds(range);
+    const calData = Object.entries(vibestatsData.github_contributions)
+      .filter(([date]) => predicate(date))
+      .map(([date, v]) => ({ date, value: v.total ?? 0 }));
+    const scale = colorScale('github', calData.map(d => d.value));
+    const total = calData.reduce((s, d) => s + d.value, 0);
+    ghCountEl.textContent = `${total.toLocaleString()} contribution${total === 1 ? '' : 's'}`;
 
-  // ── Heatmap tabs ───────────────────────────────────────────────────
-  heatmapTabsEl.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('.tab') as HTMLButtonElement | null;
-    if (!btn || !vibestatsData) return;
-    const metric = btn.dataset.metric!;
-    if (metric === currentMetric) return;
-    currentMetric = metric;
-    for (const t of heatmapTabsEl.querySelectorAll('.tab')) {
-      t.classList.toggle('active', t === btn);
-    }
-    renderHeatmap(currentRange, metric);
-  });
-
-  // ── Re-render heatmap on theme change ───────────────────────────────
-  const themeBtn = document.getElementById('theme-toggle');
-  themeBtn?.addEventListener('click', () => {
-    // Small delay to let the .dark class toggle first
-    requestAnimationFrame(() => {
-      if (vibestatsData) renderHeatmap(currentRange, currentMetric);
+    ghInstance = await paintHeatmap('#gh-heatmap', startDate, calData, scale, (value, djs) => {
+      const dateKey = djs.format('YYYY-MM-DD');
+      const gh = vibestatsData?.github_contributions?.[dateKey];
+      if (!gh || value === null || value === 0) return `No contributions on ${djs.format('MMM D, YYYY')}`;
+      const priv = Math.max(0, gh.total - gh.commits - gh.prs - gh.issues - gh.reviews);
+      return `${djs.format('MMM D, YYYY')}: ${gh.total} contribution${gh.total === 1 ? '' : 's'} `
+        + `(${gh.commits} commits, ${gh.prs} PRs, ${gh.issues} issues, ${gh.reviews} reviews, ${priv} private)`;
     });
-  });
+    scrollToEnd('gh-heatmap');
+  }
 
-  // ── Token trend chart ──────────────────────────────────────────────
+  // ── Weekly token consumption (12 weeks, stacked) ───────────────────
   function renderTokenChart(data: VibestatsData): void {
-    const days: Array<{ date: string; input: number; output: number; cacheCreate: number }> = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = dateStr(daysAgo(i));
-      const entry = data.days[d];
-      days.push({
-        date: d,
-        input: entry?.input_tokens ?? 0,
-        output: entry?.output_tokens ?? 0,
-        cacheCreate: entry?.cache_creation_tokens ?? 0,
+    const now = new Date();
+    const weeks: Array<{ input: number; output: number; cacheCreate: number }> = [];
+    for (let w = 11; w >= 0; w--) {
+      const weekEnd = new Date(now);
+      weekEnd.setDate(weekEnd.getDate() - w * 7);
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      const entries = daysInRange(data, weekStart, weekEnd);
+      weeks.push({
+        input: sumField(entries, e => e.input_tokens ?? 0),
+        output: sumField(entries, e => e.output_tokens ?? 0),
+        cacheCreate: sumField(entries, e => e.cache_creation_tokens ?? 0),
       });
     }
-
-    const maxVal = Math.max(1, ...days.map(d => d.input + d.output + d.cacheCreate));
+    const maxVal = Math.max(1, ...weeks.map(w => w.input + w.output + w.cacheCreate));
     clearEl(tokenChartEl);
-    clearEl(tokenChartLabelsEl);
-    tokenChartRangeEl.textContent = '(last 30 days)';
-
-    for (const day of days) {
-      const bar = document.createElement('div');
-      bar.className = 'chart-bar';
-      const total = day.output + day.cacheCreate + day.input;
-      if (total === 0) {
-        bar.classList.add('empty');
-        bar.style.height = '3%';
-      } else {
-        bar.style.height = `${Math.max((total / maxVal) * 100, 2)}%`;
-        // Bottom → top: output, cache create, input. flex-direction: column-reverse handles ordering.
+    for (const wk of weeks) {
+      const total = wk.output + wk.input + wk.cacheCreate;
+      const col = document.createElement('div');
+      col.className = 'tbar';
+      const fill = document.createElement('div');
+      fill.className = 'tbar-fill';
+      fill.style.height = `${(total / maxVal) * 100}%`;
+      if (total === 0) { fill.classList.add('empty'); fill.style.height = '2%'; }
+      else {
+        // Bottom → top: output (deep), input (mid), cache create (light).
         for (const [value, color] of [
-          [day.output, 'var(--color-brand-deep)'],
-          [day.cacheCreate, 'var(--color-brand)'],
-          [day.input, 'var(--color-brand-light)'],
+          [wk.output, '#ea580c'],
+          [wk.input, '#fb923c'],
+          [wk.cacheCreate, '#fed7aa'],
         ] as Array<[number, string]>) {
           const seg = document.createElement('div');
-          seg.className = 'chart-bar-segment';
+          seg.className = 'tseg';
           seg.style.flexBasis = `${(value / total) * 100}%`;
           seg.style.background = color;
-          bar.appendChild(seg);
+          fill.appendChild(seg);
         }
       }
-      bar.title = `${day.date}: ${fmtTokens(day.output)} output, ${fmtTokens(day.cacheCreate)} cache, ${fmtTokens(day.input)} input (${fmtTokens(total)} total)`;
-      tokenChartEl.appendChild(bar);
-    }
-
-    for (let i = 0; i < 30; i += 7) {
-      const lbl = document.createElement('span');
-      const d = new Date(days[i].date + 'T00:00:00');
-      lbl.textContent = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-      tokenChartLabelsEl.appendChild(lbl);
+      col.title = `${fmtTokens(wk.output)} output · ${fmtTokens(wk.input)} input · ${fmtTokens(wk.cacheCreate)} cache (${fmtTokens(total)} total)`;
+      col.appendChild(fill);
+      tokenChartEl.appendChild(col);
     }
   }
 
-  // ── Model donut chart ──────────────────────────────────────────────
+  // ── Model donut ────────────────────────────────────────────────────
   function renderModelChart(data: VibestatsData): void {
-    // d.models stores OUTPUT tokens per model (see src/harnesses/{claude,codex}.rs).
-    // The headline Total Tokens KPI is input + output + cache_creation; we reconstruct
-    // each model's contribution by prorating both INPUT and CACHE_CREATION *within* the
-    // model's own harness, weighted by the model's output share inside that harness.
-    // Doing the proration per harness — instead of across the whole day — means each
-    // harness's slices sum exactly to that harness's totals, so the donut reconciles
-    // with the Top Harness tile and with the headline Total Tokens.
     const harnessOf = (model: string): string | null => {
       if (/^claude-/.test(model)) return 'claude';
       if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
       return null;
     };
-
     const modelTotals: Record<string, number> = {};
     for (const d of Object.values(data.days)) {
-      // Per-harness output sum from per-model output (used as proration weights).
       const harnessOut: Record<string, number> = {};
       for (const [model, out] of Object.entries(d.models ?? {})) {
         const h = harnessOf(model);
@@ -638,37 +587,32 @@ import Base from '../layouts/Base.astro';
         const harnessCacheCreate = h ? (d.harnesses?.[h]?.cache_creation_tokens ?? 0) : 0;
         const totalOutForHarness = h ? harnessOut[h] : 0;
         const weight = totalOutForHarness > 0 ? out / totalOutForHarness : 0;
-        const inputShare = weight * harnessIn;
-        const cacheCreateShare = weight * harnessCacheCreate;
-        modelTotals[model] = (modelTotals[model] ?? 0) + out + inputShare + cacheCreateShare;
+        modelTotals[model] = (modelTotals[model] ?? 0) + out + weight * harnessIn + weight * harnessCacheCreate;
       }
     }
-
     const sorted = Object.entries(modelTotals).sort((a, b) => b[1] - a[1]);
     const total = sorted.reduce((s, [, v]) => s + v, 0);
+    const modelCount = sorted.length;
     clearEl(modelChartEl);
     if (total === 0) {
       const msg = document.createElement('p');
-      msg.style.cssText = 'color:var(--color-text-muted);font-size:0.85rem';
+      msg.style.cssText = 'color:var(--muted);font-size:0.85rem';
       msg.textContent = 'No model data available';
       modelChartEl.appendChild(msg);
       return;
     }
-
-    // Top 4 models by share + everything else collapsed into "Other".
-    const TOP_N = 4;
+    // Single-hue accent ramp (green is reserved for GitHub).
     const colors = [
-      'var(--color-brand)',
-      'var(--c-blue)',
-      'var(--c-purple)',
-      'var(--c-cyan)',
-      'var(--color-text-muted)', // Other
+      'var(--accent)',
+      'color-mix(in srgb, var(--accent) 70%, #fff)',
+      'color-mix(in srgb, var(--accent) 46%, #fff)',
+      'color-mix(in srgb, var(--accent) 26%, #fff)',
+      'var(--border)',
     ];
-    const formatModelLabel = (model: string): string =>
-      model === 'Other'
-        ? model
-        : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
+    const formatModelLabel = (m: string): string =>
+      m === 'Other' ? m : m.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
+    const TOP_N = 3;
     const top: Array<[string, number]> = sorted.slice(0, TOP_N);
     const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
     if (otherTotal > 0) top.push(['Other', otherTotal]);
@@ -677,21 +621,13 @@ import Base from '../layouts/Base.astro';
     let cumPct = 0;
     for (let i = 0; i < top.length; i++) {
       const pct = (top[i][1] / total) * 100;
-      const color = colors[i] ?? colors[colors.length - 1];
-      slices.push({ name: top[i][0], pct: Math.round(pct), color, startPct: cumPct / 100, endPct: (cumPct + pct) / 100 });
+      slices.push({ name: top[i][0], pct: Math.round(pct), color: colors[i] ?? colors[colors.length - 1], startPct: cumPct / 100, endPct: (cumPct + pct) / 100 });
       cumPct += pct;
     }
 
-    // SVG annulus: outer arc forward, line in, inner arc back, close.
-    const SIZE = 180;
-    const CX = SIZE / 2;
-    const CY = SIZE / 2;
-    const R_OUTER = 84;
-    const R_INNER = 38;
+    const SIZE = 170, CX = 85, CY = 85, R_OUTER = 80, R_INNER = 50;
     const SVG_NS = 'http://www.w3.org/2000/svg';
-
     const arcPath = (startPct: number, endPct: number): string => {
-      // Epsilon avoids the degenerate single-100% case where start/end angles coincide.
       const sweep = Math.min(endPct - startPct, 0.9999);
       const a0 = startPct * 2 * Math.PI - Math.PI / 2;
       const a1 = (startPct + sweep) * 2 * Math.PI - Math.PI / 2;
@@ -702,7 +638,8 @@ import Base from '../layouts/Base.astro';
       const large = sweep > 0.5 ? 1 : 0;
       return `M${xO0} ${yO0} A${R_OUTER} ${R_OUTER} 0 ${large} 1 ${xO1} ${yO1} L${xI1} ${yI1} A${R_INNER} ${R_INNER} 0 ${large} 0 ${xI0} ${yI0} Z`;
     };
-
+    const donutWrap = document.createElement('div');
+    donutWrap.className = 'donut-box';
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('class', 'donut');
     svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
@@ -712,15 +649,20 @@ import Base from '../layouts/Base.astro';
       const path = document.createElementNS(SVG_NS, 'path');
       path.setAttribute('d', arcPath(s.startPct, s.endPct));
       path.setAttribute('fill', s.color);
-      const title = document.createElementNS(SVG_NS, 'title');
-      title.textContent = `${formatModelLabel(s.name)}: ${s.pct}%`;
-      path.appendChild(title);
+      const t = document.createElementNS(SVG_NS, 'title');
+      t.textContent = `${formatModelLabel(s.name)}: ${s.pct}%`;
+      path.appendChild(t);
       svg.appendChild(path);
     }
+    const center = document.createElement('div');
+    center.className = 'donut-center';
+    center.innerHTML = `<span class="donut-center-num">${modelCount}</span><span class="donut-center-lbl">models</span>`;
+    donutWrap.appendChild(svg);
+    donutWrap.appendChild(center);
 
     const legend = document.createElement('div');
     legend.className = 'donut-legend';
-    for (const s of slices) {
+    for (const s of slices.slice(0, 3)) {
       const item = document.createElement('div');
       item.className = 'legend-item';
       item.title = `${formatModelLabel(s.name)}: ${s.pct}%`;
@@ -728,165 +670,32 @@ import Base from '../layouts/Base.astro';
       dot.className = 'legend-dot';
       dot.style.background = s.color;
       const label = document.createElement('span');
-      label.textContent = formatModelLabel(s.name);
+      label.textContent = `${formatModelLabel(s.name)} · ${s.pct}%`;
       item.appendChild(dot);
       item.appendChild(label);
       legend.appendChild(item);
     }
-    modelChartEl.appendChild(svg);
+    modelChartEl.appendChild(donutWrap);
     modelChartEl.appendChild(legend);
   }
 
-  // ── Sparklines ─────────────────────────────────────────────────────
-  function renderSparklines(data: VibestatsData): void {
-    const now = new Date();
-    const weeks: Array<{ sessions: number; tokens: number; minutes: number; messages: number }> = [];
-    for (let w = 11; w >= 0; w--) {
-      const weekEnd = new Date(now);
-      weekEnd.setDate(weekEnd.getDate() - w * 7);
-      const weekStart = new Date(weekEnd);
-      weekStart.setDate(weekStart.getDate() - 6);
-      const entries = daysInRange(data, weekStart, weekEnd);
-      weeks.push({
-        sessions: sumField(entries, e => e.sessions),
-        tokens: sumField(entries, tokensTotal),
-        minutes: sumField(entries, e => e.active_minutes),
-        messages: sumField(entries, e => e.message_count ?? 0),
-      });
-    }
-
-    const latestWeek = weeks[weeks.length - 1];
-    const metrics = [
-      { label: 'Sessions', key: 'sessions' as const, value: String(latestWeek.sessions), color: 'var(--color-brand)' },
-      { label: 'Tokens', key: 'tokens' as const, value: fmtTokens(latestWeek.tokens), color: 'var(--c-blue)' },
-      { label: 'Active min', key: 'minutes' as const, value: `${latestWeek.minutes}m`, color: 'var(--c-green)' },
-      { label: 'Messages', key: 'messages' as const, value: latestWeek.messages.toLocaleString(), color: 'var(--c-purple)' },
-    ];
-
-    clearEl(sparklinesEl);
-    for (const m of metrics) {
-      const row = document.createElement('div');
-      row.className = 'spark-row';
-      const label = document.createElement('span');
-      label.className = 'spark-label';
-      label.textContent = m.label;
-      const sparkline = document.createElement('div');
-      sparkline.className = 'sparkline';
-      const vals = weeks.map(w => w[m.key]);
-      const max = Math.max(1, ...vals);
-      for (let i = 0; i < vals.length; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'spark-bar';
-        bar.style.height = `${Math.max((vals[i] / max) * 100, 3)}%`;
-        bar.style.background = m.color;
-        bar.style.opacity = String(0.3 + (i / vals.length) * 0.7);
-        sparkline.appendChild(bar);
-      }
-      const value = document.createElement('span');
-      value.className = 'spark-value';
-      value.textContent = m.value;
-      row.appendChild(label);
-      row.appendChild(sparkline);
-      row.appendChild(value);
-      sparklinesEl.appendChild(row);
-    }
-  }
-
-  // ── Streak calendar ────────────────────────────────────────────────
-  function renderStreak(data: VibestatsData): void {
-    const activeDates = new Set(Object.keys(data.days));
-    const today = dateStr(new Date());
-
-    let currentStreak = 0;
-    const check = new Date(today);
-    while (activeDates.has(dateStr(check))) { currentStreak++; check.setDate(check.getDate() - 1); }
-
-    let longestStreak = 0, streak = 0;
-    const sorted = [...activeDates].sort();
-    for (let i = 0; i < sorted.length; i++) {
-      if (i === 0) { streak = 1; }
-      else {
-        const prev = new Date(sorted[i - 1]);
-        const curr = new Date(sorted[i]);
-        streak = (curr.getTime() - prev.getTime()) / 86_400_000 === 1 ? streak + 1 : 1;
-      }
-      longestStreak = Math.max(longestStreak, streak);
-    }
-
-    streakTitleEl.textContent = `Current Streak — ${currentStreak > 0 ? `${currentStreak} days` : 'none'}`;
-    if (longestStreak > 0) {
-      streakSubEl.textContent = `Your longest streak was ${longestStreak} days.`;
-    }
-
-    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    clearEl(streakGridEl);
-    for (let i = 27; i >= 0; i--) {
-      const d = daysAgo(i);
-      const key = dateStr(d);
-      const isActive = activeDates.has(key);
-      const isToday = key === today;
-      const el = document.createElement('div');
-      el.className = `streak-day ${isActive ? 'active' : 'inactive'}${isToday ? ' today' : ''}`;
-      el.textContent = dayNames[d.getDay()];
-      el.title = `${key}: ${isActive ? 'active' : 'no activity'}`;
-      streakGridEl.appendChild(el);
-    }
-  }
-
-  // ── Recent active days ─────────────────────────────────────────────
-  function renderRecentDays(data: VibestatsData): void {
-    const sorted = Object.entries(data.days)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .slice(0, 5);
-
-    clearEl(recentDaysEl);
-    for (const [date, entry] of sorted) {
-      const item = document.createElement('div');
-      item.className = 'timeline-item';
-      const dot = document.createElement('span');
-      dot.className = 'timeline-dot';
-      const dateEl = document.createElement('span');
-      dateEl.className = 'timeline-time';
-      const d = new Date(date + 'T00:00:00');
-      dateEl.textContent = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-      const detail = document.createElement('span');
-      detail.className = 'timeline-detail';
-      detail.textContent = `${entry.sessions} session${entry.sessions === 1 ? '' : 's'}, ~${entry.active_minutes} min`;
-      const tokens = document.createElement('span');
-      tokens.className = 'timeline-tokens';
-      const totalTok = tokensTotal(entry);
-      tokens.textContent = totalTok > 0 ? `${fmtTokens(totalTok)} tokens` : '';
-      item.appendChild(dot);
-      item.appendChild(dateEl);
-      item.appendChild(detail);
-      item.appendChild(tokens);
-      recentDaysEl.appendChild(item);
-    }
-  }
-
-  // ── Efficiency metrics ─────────────────────────────────────────────
+  // ── Efficiency (Tokens/min · Cache hit rate · Avg session) ─────────
   function renderEfficiency(data: VibestatsData): void {
     const allDays = Object.values(data.days);
     const totalTokens = sumField(allDays, tokensTotal);
     const totalMinutes = sumField(allDays, e => e.active_minutes);
     const totalSessions = sumField(allDays, e => e.sessions);
-    const totalMessages = sumField(allDays, e => e.message_count ?? 0);
-    const totalToolUses = sumField(allDays, e => e.tool_uses ?? 0);
     const totalCacheRead = sumField(allDays, e => e.cache_read_tokens ?? 0);
     const totalCacheCreation = sumField(allDays, e => e.cache_creation_tokens ?? 0);
     const totalInput = sumField(allDays, e => e.input_tokens ?? 0);
 
     const tokPerMin = totalMinutes > 0 ? Math.round(totalTokens / totalMinutes) : 0;
-    const msgsPerSession = totalSessions > 0 ? Math.round(totalMessages / totalSessions) : 0;
     const cacheDenom = totalInput + totalCacheCreation;
     const cacheHitPct = cacheDenom > 0 ? Math.round((totalCacheRead / cacheDenom) * 100) : 0;
-    const toolsPerSession = totalSessions > 0 ? (totalToolUses / totalSessions).toFixed(1) : '0';
+    const avgSession = totalSessions > 0 ? (totalMinutes / totalSessions) : 0;
 
     const now = new Date();
-    const weeklyTokPerMin: number[] = [];
-    const weeklyMsgsPerSession: number[] = [];
-    const weeklyCacheHit: number[] = [];
-    const weeklyToolsPerSession: number[] = [];
+    const wTokPerMin: number[] = [], wCacheHit: number[] = [], wAvgSession: number[] = [];
     for (let w = 11; w >= 0; w--) {
       const weekEnd = new Date(now);
       weekEnd.setDate(weekEnd.getDate() - w * 7);
@@ -896,83 +705,95 @@ import Base from '../layouts/Base.astro';
       const wTok = sumField(entries, tokensTotal);
       const wMin = sumField(entries, e => e.active_minutes);
       const wSes = sumField(entries, e => e.sessions);
-      const wMsg = sumField(entries, e => e.message_count ?? 0);
-      const wTool = sumField(entries, e => e.tool_uses ?? 0);
       const wCacheRead = sumField(entries, e => e.cache_read_tokens ?? 0);
       const wInput = sumField(entries, e => e.input_tokens ?? 0);
       const wCacheCreate = sumField(entries, e => e.cache_creation_tokens ?? 0);
-      weeklyTokPerMin.push(wMin > 0 ? wTok / wMin : 0);
-      weeklyMsgsPerSession.push(wSes > 0 ? wMsg / wSes : 0);
+      wTokPerMin.push(wMin > 0 ? wTok / wMin : 0);
       const wd = wInput + wCacheCreate;
-      weeklyCacheHit.push(wd > 0 ? (wCacheRead / wd) * 100 : 0);
-      weeklyToolsPerSession.push(wSes > 0 ? wTool / wSes : 0);
+      wCacheHit.push(wd > 0 ? (wCacheRead / wd) * 100 : 0);
+      wAvgSession.push(wSes > 0 ? wMin / wSes : 0);
     }
 
-    const effMetrics = [
-      { label: 'Tokens/min', value: fmtTokens(tokPerMin), data: weeklyTokPerMin, color: 'var(--c-cyan)' },
-      { label: 'Msgs/session', value: String(msgsPerSession), data: weeklyMsgsPerSession, color: 'var(--color-brand)' },
-      { label: 'Cache hit %', value: `${cacheHitPct}%`, data: weeklyCacheHit, color: 'var(--c-green)', highlight: true },
-      { label: 'Tools/session', value: String(toolsPerSession), data: weeklyToolsPerSession, color: 'var(--c-yellow)' },
+    const rows = [
+      { label: 'Tokens / min', value: fmtTokens(tokPerMin), data: wTokPerMin },
+      { label: 'Cache hit rate', value: `${cacheHitPct}%`, data: wCacheHit },
+      { label: 'Avg session', value: `${avgSession.toFixed(1)}m`, data: wAvgSession },
     ];
-
     clearEl(efficiencyEl);
-    for (const m of effMetrics) {
+    for (const m of rows) {
       const row = document.createElement('div');
-      row.className = 'spark-row';
-      const label = document.createElement('span');
-      label.className = 'spark-label';
-      label.textContent = m.label;
-      const sparkline = document.createElement('div');
-      sparkline.className = 'sparkline';
+      row.className = 'eff-row';
+      const meta = document.createElement('div');
+      meta.className = 'eff-meta';
+      meta.innerHTML = `<span class="eff-label">${m.label}</span><span class="eff-value">${m.value}</span>`;
+      const spark = document.createElement('div');
+      spark.className = 'eff-spark';
       const max = Math.max(1, ...m.data);
       for (let i = 0; i < m.data.length; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'spark-bar';
-        bar.style.height = `${Math.max((m.data[i] / max) * 100, 3)}%`;
-        bar.style.background = m.color;
-        bar.style.opacity = String(0.3 + (i / m.data.length) * 0.7);
-        sparkline.appendChild(bar);
+        const bar = document.createElement('span');
+        bar.style.height = `${Math.max((m.data[i] / max) * 100, 4)}%`;
+        bar.style.opacity = String(0.4 + (i / m.data.length) * 0.6);
+        spark.appendChild(bar);
       }
-      const value = document.createElement('span');
-      value.className = 'spark-value';
-      value.textContent = m.value;
-      if (m.highlight) value.style.color = 'var(--c-green)';
-      row.appendChild(label);
-      row.appendChild(sparkline);
-      row.appendChild(value);
+      row.appendChild(meta);
+      row.appendChild(spark);
       efficiencyEl.appendChild(row);
     }
   }
 
-  // ── Range selector (Last 12 months + per-year options) ─────────────
-  function renderRangeToggle(years: string[], selected: 'L12M' | string): void {
-    clearEl(yearSelectEl);
-    const ranges: Array<'L12M' | string> = ['L12M', ...years];
-    for (const r of ranges) {
+  // ── Range selector ─────────────────────────────────────────────────
+  function fillRangeSelect(sel: HTMLSelectElement, years: string[], selected: 'L12M' | string): void {
+    clearEl(sel);
+    for (const r of ['L12M', ...years] as Array<'L12M' | string>) {
       const opt = document.createElement('option');
       opt.value = r;
       opt.textContent = r === 'L12M' ? 'Last 12 months' : r;
       if (r === selected) opt.selected = true;
-      yearSelectEl.appendChild(opt);
+      sel.appendChild(opt);
     }
   }
 
-  yearSelectEl.addEventListener('change', async () => {
-    currentRange = yearSelectEl.value;
-    await renderHeatmap(currentRange, currentMetric);
+  // ── Events ─────────────────────────────────────────────────────────
+  heatmapTabsEl.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.pill') as HTMLButtonElement | null;
+    if (!btn || !vibestatsData) return;
+    const metric = btn.dataset.metric!;
+    if (metric === currentMetric) return;
+    currentMetric = metric;
+    renderHeatmap(currentRange, metric);
+  });
+  yearSelectEl.addEventListener('change', () => { currentRange = yearSelectEl.value; renderHeatmap(currentRange, currentMetric); });
+  ghYearSelectEl.addEventListener('change', () => { ghRange = ghYearSelectEl.value; renderGithub(ghRange); });
+
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    requestAnimationFrame(() => {
+      if (!vibestatsData) return;
+      renderHeatmap(currentRange, currentMetric);
+      if (!githubCardEl.hidden) renderGithub(ghRange);
+    });
   });
 
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      if (!vibestatsData) return;
+      renderHeatmap(currentRange, currentMetric);
+      if (!githubCardEl.hidden) renderGithub(ghRange);
+    }, 150);
+  });
+
+  shareBtnEl.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(window.location.href); shareBtnEl.textContent = 'Copied ✓'; }
+    catch { shareBtnEl.textContent = 'Failed'; }
+    window.setTimeout(() => { shareBtnEl.textContent = 'Share'; }, 1600);
+  });
   // ── Main init ──────────────────────────────────────────────────────
   async function init(): Promise<void> {
-    if (!username) {
-      showError(`No vibestats data found for @${rawSegment || 'unknown'}`);
-      return;
-    }
-
+    if (!username) { showError(`No vibestats data found for @${rawSegment || 'unknown'}`); return; }
     let data: VibestatsData;
     try {
-      const earlyPromise = window.__vibestatsData as
-        | Promise<VibestatsData | null> | undefined;
+      const earlyPromise = window.__vibestatsData as Promise<VibestatsData | null> | undefined;
       if (earlyPromise) {
         const result = await earlyPromise;
         if (!result) { showError(`No vibestats data found for @${username}`); return; }
@@ -986,560 +807,205 @@ import Base from '../layouts/Base.astro';
     } catch { showError(`No vibestats data found for @${username}`); return; }
 
     if (!data || typeof data.days !== 'object' || data.days === null) {
-      showError(`No vibestats data found for @${username}`);
-      return;
+      showError(`No vibestats data found for @${username}`); return;
     }
-
     vibestatsData = data;
 
-    // Reveal the GitHub heatmap tab only when contribution data is present.
-    if (data.github_contributions && Object.keys(data.github_contributions).length > 0) {
-      const githubTab = document.getElementById('github-tab');
-      if (githubTab) githubTab.hidden = false;
-    }
-
-    // Year pills span both AI-session history and GitHub contribution history,
-    // so years with only GitHub data (e.g. before vibestats was installed) are
-    // still selectable on the GitHub heatmap tab.
     const years = [...new Set([
       ...Object.keys(data.days),
       ...Object.keys(data.github_contributions ?? {}),
     ].map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
     if (years.length === 0) { showError(`No vibestats data found for @${username}`); return; }
 
-    currentRange = 'L12M';
+    // Profile meta: "Tracking since <Mon YYYY> · Claude Code + Codex"
+    const dayKeys = Object.keys(data.days).sort();
+    const since = dayKeys.length ? new Date(dayKeys[0] + 'T00:00:00') : null;
+    const sinceStr = since ? since.toLocaleDateString('en', { month: 'short', year: 'numeric' }) : '';
+    subtitleEl.textContent = sinceStr
+      ? `Tracking since ${sinceStr} · Claude Code + Codex`
+      : 'AI Coding Analytics';
 
-    const dayCount = Object.keys(data.days).length;
-    const generated = new Date(data.generated_at);
-    const ago = Math.round((Date.now() - generated.getTime()) / 3_600_000);
-    subtitleEl.textContent = `AI Coding Analytics \u00B7 ${dayCount} active days \u00B7 updated ${ago < 1 ? 'just now' : `${ago}h ago`}`;
+    // Machines pill (only if the aggregate exposes a machine list).
+    const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
+    if (machineCount > 0) {
+      machinesPillEl.textContent = `${machineCount} machine${machineCount === 1 ? '' : 's'}`;
+      machinesPillEl.hidden = false;
+    }
+
+    currentRange = 'L12M';
+    ghRange = 'L12M';
 
     loadingEl.hidden = true;
     contentEl.hidden = false;
 
     renderKPIs(data);
-    renderRangeToggle(years, currentRange);
+    fillRangeSelect(yearSelectEl, years, currentRange);
     await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
     renderModelChart(data);
-    renderSparklines(data);
-    renderStreak(data);
-    renderRecentDays(data);
     renderEfficiency(data);
+
+    if (data.github_contributions && Object.keys(data.github_contributions).length > 0) {
+      githubCardEl.hidden = false;
+      fillRangeSelect(ghYearSelectEl, years, ghRange);
+      await renderGithub(ghRange);
+    }
   }
 
   init();
 </script>
 
-<!-- Scoped: only for elements in the Astro template -->
+<!-- Scoped: Astro-template elements -->
 <style>
-  .dashboard {
-    max-width: 1120px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+  .dashboard { max-width: 60rem; margin: 2rem auto; padding: 0 1.5rem; }
+
+  /* Profile header */
+  .profile { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+  .profile-left { display: flex; align-items: center; gap: 1rem; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--border); object-fit: cover; flex-shrink: 0; }
+  .profile-name-row { display: flex; align-items: center; gap: 0.6rem; }
+  .profile h1 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--text); }
+  .machines-pill {
+    font-family: var(--font-mono); font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 999px;
+    background: var(--accent-tint); border: 1px solid var(--accent-line); color: var(--accent);
   }
-  .dash-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+  .profile-meta { font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0; }
+  .profile-actions { display: flex; gap: 0.6rem; }
+  .btn-secondary, .btn-primary {
+    padding: 0.5rem 1rem; border-radius: 9px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center;
   }
-  .dash-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .dash-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 2px solid var(--color-border);
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-  .dash-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-brand);
-  }
-  .dash-meta {
-    font-size: 0.8rem;
-    color: #6b7280;
-    margin: 0.25rem 0 0;
-  }
-  :global(.dark) .dash-meta { color: #94a3b8; }
-  .state-msg {
-    text-align: center;
-    padding: 2rem;
-    color: #6b7280;
-  }
+  .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-primary { background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .state-msg { text-align: center; padding: 3rem; color: var(--muted); }
   .state-msg.error { color: #dc2626; }
   .spinner {
-    width: 24px; height: 24px;
-    margin: 0 auto 0.5rem;
-    border: 3px solid #e5e7eb;
-    border-top-color: #f97316;
-    border-radius: 50%;
+    width: 24px; height: 24px; margin: 0 auto 0.5rem;
+    border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
   .card {
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-card-border);
-    border-radius: 12px;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem;
+    box-shadow: 0 14px 38px rgba(20, 20, 55, 0.06);
   }
-  .card-title {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-    margin-bottom: 1rem;
-    font-weight: 600;
+  :global(.dark) .card { box-shadow: 0 18px 46px rgba(0, 0, 0, 0.4); }
+  .card + .card, .three-col, .gh-card { margin-top: 1rem; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .card-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--text); }
+  .card-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
+  .card-desc { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0 1rem; }
+
+  .three-col { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
+  @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+  .three-col .card { display: flex; flex-direction: column; }
+
+  /* Pill tabs + range select */
+  .pill-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .pill {
+    padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 500;
+    color: var(--muted); border: none; background: none; cursor: pointer; font-family: inherit; transition: color 0.15s, background 0.15s;
   }
-  .card-range { font-weight: 400; opacity: 0.7; }
-  .full-width { margin-bottom: 1rem; }
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  @media (max-width: 768px) {
-    .grid-2 { grid-template-columns: 1fr; }
-  }
-  .tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--color-card-border);
-  }
-  .tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.78rem;
-    color: var(--color-text-muted);
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    background: none;
-    font-family: inherit;
-    transition: color 0.15s;
-  }
-  .tab:hover { color: var(--color-text); }
-  .tab.active {
-    color: var(--color-brand);
-    border-bottom-color: var(--color-brand);
-  }
-  .heatmap-grid-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  .heatmap-range-control {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex-shrink: 0;
-    padding-top: 22px; /* align with cal-heatmap month labels */
-  }
-  .range-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-text-muted);
-  }
+  .pill:hover { color: var(--text); }
   .range-select {
-    font-family: inherit;
-    font-size: 0.8rem;
-    color: var(--color-text);
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-card-border);
-    border-radius: 6px;
-    padding: 0.3rem 0.5rem;
-    cursor: pointer;
+    font-family: inherit; font-size: 0.8rem; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.7rem; cursor: pointer;
   }
-  .heatmap-wrapper {
-    display: flex;
-    align-items: flex-start;
-    overflow-x: auto;
-    scrollbar-width: none;          /* Firefox: hide scrollbar, keep scroll */
-  }
-  .heatmap-wrapper::-webkit-scrollbar { display: none; }  /* WebKit/Blink */
-  .day-labels {
-    display: flex;
-    flex-direction: column;
-    padding-top: 22px;
-    margin-right: 4px;
-    flex-shrink: 0;
-  }
-  .day-labels span {
-    height: 14px;
-    margin-bottom: 3px;
-    font-size: 10px;
-    line-height: 14px;
-    color: var(--color-text-muted);
-  }
-  .streak-sub {
-    font-size: 0.8rem;
-    color: var(--color-text-dim);
-    margin-bottom: 1rem;
-  }
+
+  /* Heatmap headline */
+  .stat-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .big-number { font-family: var(--font-display); font-size: 2.75rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .big-caption { color: var(--muted); font-size: 0.9rem; margin-top: 0.35rem; }
+  .legend-scale { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--faint); }
+  .legend-swatches { display: inline-flex; gap: 3px; }
+  .legend-swatches :global(.swatch) { width: 13px; height: 13px; border-radius: 3px; }
+
+  #cal-heatmap, #gh-heatmap { overflow-x: auto; scrollbar-width: none; }
+  #cal-heatmap::-webkit-scrollbar, #gh-heatmap::-webkit-scrollbar { display: none; }
+
+  /* GitHub card inner panel */
+  .gh-panel { border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem; background: var(--surface2); }
+  .gh-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .gh-panel-label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+  .gh-panel-right { display: flex; align-items: center; gap: 0.9rem; }
+  .gh-count { font-family: var(--font-mono); font-size: 0.74rem; color: var(--faint); }
+
+  .star-line { margin-top: 3rem; text-align: center; font-size: 0.95rem; color: var(--muted); }
+  .star-line a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .star-line a:hover { color: var(--accent-hover); }
 </style>
 
-<!-- Global: CSS variables + all dynamically created element styles -->
+<!-- Global: tokens already in global.css; only dynamically-created elements here -->
 <style is:global>
-  /* ── CSS Variables ─────────────────────────────────────────────── */
-  :root {
-    --color-brand: #f97316;
-    --color-brand-deep: #c2410c;
-    --color-brand-light: #fdba74;
-    --color-border: #e5e7eb;
-    --color-card-bg: #f9fafb;
-    --color-card-border: #e5e7eb;
-    --color-text: #111827;
-    --color-text-dim: #6b7280;
-    --color-text-muted: #9ca3af;
-    --c-green: #22c55e;
-    --c-blue: #3b82f6;
-    --c-purple: #a855f7;
-    --c-cyan: #06b6d4;
-    --c-yellow: #eab308;
-  }
-  .dark {
-    --color-border: #334155;
-    --color-card-bg: #1e293b;
-    --color-card-border: #334155;
-    --color-text: #e2e8f0;
-    --color-text-dim: #94a3b8;
-    --color-text-muted: #64748b;
-  }
-
-  /* ── Range pills (L12M + per-year) ──────────────────────────────── */
-  .year-pills, .range-pills-vertical { display: flex; gap: 0.5rem; }
-  .year-pill, .range-pill {
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-card-border);
-    color: var(--color-text-dim);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-    text-align: center;
-  }
-  .year-pill:hover, .range-pill:hover { border-color: var(--color-text-muted); }
-  .year-pill.active, .range-pill.active {
-    background: var(--color-brand);
-    border-color: var(--color-brand);
-    color: #fff;
-    font-weight: 600;
-  }
-
-  /* ── Info tooltips ───────────────────────────────────────────────── */
+  /* Info tooltips */
   .info-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1px solid var(--color-text-muted);
-    font-size: 0.55rem;
-    font-weight: 700;
-    font-style: italic;
-    color: var(--color-text-muted);
-    cursor: help;
-    position: relative;
-    vertical-align: middle;
-    margin-left: 4px;
-    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+    border-radius: 50%; border: 1px solid var(--faint); font-size: 0.55rem; font-weight: 700; font-style: italic;
+    color: var(--faint); cursor: help; position: relative; vertical-align: middle; margin-left: 4px; flex-shrink: 0;
   }
-  .info-icon:hover {
-    border-color: var(--color-brand);
-    color: var(--color-brand);
-  }
+  .info-icon:hover { border-color: var(--accent); color: var(--accent); }
   .info-tooltip {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-text, #111827);
-    color: #fff;
-    font-size: 0.72rem;
-    font-weight: 400;
-    font-style: normal;
-    line-height: 1.4;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    width: max-content;
-    max-width: 240px;
-    z-index: 100;
-    pointer-events: none;
-    text-transform: none;
-    letter-spacing: normal;
-  }
-  .dark .info-tooltip {
-    background: #e2e8f0;
-    color: #0f172a;
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); font-size: 0.72rem; font-weight: 400; font-style: normal; line-height: 1.4;
+    padding: 0.5rem 0.75rem; border-radius: 6px; width: max-content; max-width: 240px; z-index: 100;
+    pointer-events: none; text-transform: none; letter-spacing: normal;
   }
   .info-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--color-text, #111827);
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--text);
   }
-  .dark .info-tooltip::after {
-    border-top-color: #e2e8f0;
-  }
-  .info-icon:hover .info-tooltip {
-    display: block;
-  }
+  .info-icon:hover .info-tooltip { display: block; }
 
-  /* ── KPI Row ────────────────────────────────────────────────────── */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+  @media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 540px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
   .kpi {
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-card-border);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem;
+    display: flex; flex-direction: column; gap: 0.3rem; box-shadow: 0 14px 38px rgba(20, 20, 55, 0.05);
   }
-  .kpi-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 2px;
-  }
-  .kpi-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-    /* Reserve two lines so values align across tiles when some labels wrap
-       at narrow viewports (e.g. "Total Tokens" wraps; "Sessions" doesn't). */
-    line-height: 1.25;
-    min-height: 2lh;
-  }
-  .kpi-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .kpi-delta { font-size: 0.72rem; color: var(--c-green); }
+  .dark .kpi { box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35); }
+  .kpi-header { display: flex; align-items: flex-start; gap: 2px; }
+  .kpi-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); line-height: 1.25; min-height: 2lh; }
+  .kpi-value { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-delta { font-size: 0.72rem; color: var(--accent); }
   .kpi-delta.down { color: #ef4444; }
-  .kpi-sub { font-size: 0.78rem; color: var(--color-text-dim); font-weight: 500; }
+  .kpi-sub { font-size: 0.74rem; color: var(--muted); }
 
-  /* ── Token chart ────────────────────────────────────────────────── */
-  .chart-area {
-    flex: 1;
-    min-height: 140px;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    padding-top: 0.5rem;
-  }
-  .chart-bar {
-    flex: 1;
-    border-radius: 3px 3px 0 0;
-    min-width: 4px;
-    transition: opacity 0.15s;
-    cursor: default;
-    display: flex;
-    flex-direction: column-reverse;
-    overflow: hidden;
-  }
-  .chart-bar.empty { background: var(--color-border); }
-  .chart-bar:hover { opacity: 0.8; }
-  .chart-bar-segment { width: 100%; }
-  .chart-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: center;
-    margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--color-text-dim);
-  }
-  .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
-  .legend-swatch {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-  }
-  .chart-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.65rem;
-    color: var(--color-text-muted);
-    margin-top: 0.5rem;
-  }
+  /* Weekly token bars */
+  .token-bars { flex: 1; min-height: 150px; display: flex; align-items: flex-end; gap: 5px; padding-top: 0.5rem; }
+  .tbar { flex: 1; height: 100%; display: flex; align-items: flex-end; background: var(--surface2); border-radius: 4px 4px 0 0; min-width: 6px; }
+  .tbar-fill { width: 100%; border-radius: 4px 4px 0 0; display: flex; flex-direction: column-reverse; overflow: hidden; }
+  .tbar-fill.empty { background: var(--border); }
+  .tseg { width: 100%; }
+  .bars-axis { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint); margin-top: 0.5rem; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.9rem; font-size: 0.72rem; color: var(--muted); }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
 
-  /* ── Donut chart ────────────────────────────────────────────────── */
-  .donut-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.25rem;
-  }
-  .donut {
-    width: 180px;
-    height: 180px;
-    flex-shrink: 0;
-    display: block;
-  }
-  .donut path {
-    transition: opacity 120ms ease;
-  }
-  .donut:hover path:not(:hover) {
-    opacity: 0.55;
-  }
-  .donut-legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.4rem 0.9rem;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.78rem;
-    color: var(--color-text-dim);
-  }
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  /* Efficiency rows */
+  .eff-rows { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+  .eff-row { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--hair); }
+  .eff-row:last-child { border-bottom: none; }
+  .eff-meta { min-width: 0; flex: 1; }
+  .eff-label { display: block; font-size: 0.78rem; color: var(--muted); }
+  .eff-value { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
+  .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; }
 
-  /* ── Sparklines ─────────────────────────────────────────────────── */
-  .spark-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--color-card-border);
-  }
-  .spark-row:last-child { border-bottom: none; }
-  .spark-label {
-    width: 90px;
-    font-size: 0.78rem;
-    color: var(--color-text-dim);
-  }
-  .spark-value {
-    width: 70px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    text-align: right;
-    color: var(--color-text);
-  }
-  .sparkline {
-    flex: 1;
-    height: 28px;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-  }
-  .spark-bar {
-    flex: 1;
-    border-radius: 1.5px;
-    min-height: 2px;
-  }
-
-  /* ── Streak ─────────────────────────────────────────────────────── */
-  .streak-visual {
-    display: flex;
-    gap: 3px;
-    flex-wrap: wrap;
-  }
-  .streak-day {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.55rem;
-    font-weight: 600;
-  }
-  .streak-day.active {
-    background: var(--color-brand);
-    color: white;
-  }
-  .streak-day.inactive {
-    background: var(--color-border);
-    color: var(--color-text-muted);
-  }
-  .streak-day.today {
-    box-shadow: 0 0 0 2px var(--color-brand-light);
-  }
-
-  /* ── Timeline ───────────────────────────────────────────────────── */
-  .timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .timeline-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    transition: background 0.15s;
-  }
-  .timeline-item:hover {
-    background: rgba(249, 115, 22, 0.06);
-  }
-  .timeline-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--color-brand);
-    flex-shrink: 0;
-  }
-  .timeline-time {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    width: 55px;
-    flex-shrink: 0;
-  }
-  .timeline-detail {
-    font-size: 0.8rem;
-    flex: 1;
-    color: var(--color-text);
-  }
-  .timeline-tokens {
-    font-size: 0.72rem;
-    color: var(--color-text-dim);
-    flex-shrink: 0;
-  }
-
-  /* ── Cal-heatmap container ──────────────────────────────────────── */
-  #cal-heatmap { overflow-x: auto; scrollbar-width: none; }  /* hide scrollbar, keep scroll */
-  #cal-heatmap::-webkit-scrollbar { display: none; }
+  /* Donut */
+  .donut-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; }
+  .donut-box { position: relative; width: 170px; height: 170px; }
+  .donut { width: 170px; height: 170px; display: block; }
+  .donut path { transition: opacity 120ms ease; }
+  .donut:hover path:not(:hover) { opacity: 0.55; }
+  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .donut-center-num { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1; }
+  .donut-center-lbl { font-size: 0.68rem; color: var(--faint); }
+  .donut-legend { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 </style>

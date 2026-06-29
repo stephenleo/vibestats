@@ -1,74 +1,133 @@
 ---
 import Base from '../layouts/Base.astro';
 import 'cal-heatmap/cal-heatmap.css';
+const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 ---
-<Base title="vibestats">
+<Base title="VibeStats — show the world how you code">
   <main class="landing">
 
-    <!-- Hero -->
+    <!-- ── Hero ──────────────────────────────────────────────────── -->
     <section class="hero">
-      <div class="badge">
-        <span class="badge-dot"></span>
-        Now tracking Claude Code and Codex sessions
-      </div>
-      <h1>Show the world how you code with AI</h1>
-      <p class="hero-sub">
-        Every session. Every token. Every machine — tracked automatically.<br/>
-        One install gets you a GitHub-style heatmap and a full analytics dashboard.
-      </p>
-    </section>
-
-    <!-- Install -->
-    <section class="section">
-      <h2 class="section-label">Install on every machine you use AI coding tools</h2>
-      <div class="install-row">
-        <div class="install-box">
-          <span class="install-dollar">$</span>
-          <code id="install-cmd">curl -sSf https://vibestats.dev/install.sh | bash</code>
+      <div class="hero-copy">
+        <div class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          Now tracking Claude Code &amp; Codex
         </div>
-        <button id="copy-btn" type="button" aria-live="polite" class="copy-btn">Copy</button>
+        <h1>Show the world how you code!</h1>
+        <p class="hero-sub">
+          Every session, every token, every machine — tracked automatically.
+          One install gets you a GitHub-style heatmap and a full analytics
+          dashboard at <strong>vibestats.dev/username</strong>.
+        </p>
+
+        <!-- Terminal install card -->
+        <div class="terminal">
+          <div class="terminal-head">
+            <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+            <span class="terminal-label">install.sh</span>
+            <button id="copy-btn" type="button" aria-live="polite" class="copy-btn">Copy</button>
+          </div>
+          <div class="terminal-body">
+            <span class="prompt">$</span> <code id="install-cmd">{INSTALL_CMD}</code>
+          </div>
+        </div>
+
+        <div class="trust-row">
+          <span>✓ Zero config</span>
+          <span>✓ MIT-licensed</span>
+          <span>✓ Private by default</span>
+        </div>
       </div>
-      <script>
-        const btn = document.getElementById('copy-btn');
-        const cmdEl = document.getElementById('install-cmd');
-        if (btn instanceof HTMLButtonElement && cmdEl) {
-          let resetTimer: number | undefined;
-          btn.addEventListener('click', async () => {
-            const cmd = cmdEl.textContent ?? '';
-            try {
-              await navigator.clipboard.writeText(cmd);
-              btn.textContent = 'Copied!';
-            } catch {
-              btn.textContent = 'Failed';
-            }
-            if (resetTimer !== undefined) window.clearTimeout(resetTimer);
-            resetTimer = window.setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-          });
-        }
-      </script>
+
+      <!-- Browser-framed dashboard preview -->
+      <div class="browser">
+        <div class="browser-head">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="browser-url">vibestats.dev/username</span>
+        </div>
+        <div class="browser-body">
+          <div class="mini-kpis">
+            <div class="mini-kpi"><span class="mini-kpi-label">Tokens</span><span class="mini-kpi-value">24.8M</span></div>
+            <div class="mini-kpi"><span class="mini-kpi-label">Sessions</span><span class="mini-kpi-value">1,247</span></div>
+            <div class="mini-kpi"><span class="mini-kpi-label">Streak</span><span class="mini-kpi-value accent">14d</span></div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-section-head"><span>Contributions</span><span class="mini-faint">last 12 months</span></div>
+            <div id="hero-heatmap" class="mini-heatmap" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Demo Heatmap -->
-    <section class="section">
-      <h2 class="section-label">See it in action <span class="info-icon" role="img" aria-label="Interactive demo with randomized data. Your real dashboard uses live data from your AI coding sessions.">i<span class="info-tooltip">Interactive demo with randomized data. Your real dashboard uses live data from your AI coding sessions.</span></span></h2>
-      <div id="demo-tabs" class="demo-tabs">
-        <button class="demo-tab active" data-metric="sessions">Sessions</button>
-        <button class="demo-tab" data-metric="tokens">Tokens</button>
-        <button class="demo-tab" data-metric="active_minutes">Active Time</button>
-        <button class="demo-tab" data-metric="tool_uses">Tool Uses</button>
-        <button class="demo-tab" data-metric="github">GitHub</button>
+    <script>
+      // ── Copy button ──────────────────────────────────────────────
+      const btn = document.getElementById('copy-btn');
+      const cmdEl = document.getElementById('install-cmd');
+      if (btn instanceof HTMLButtonElement && cmdEl) {
+        let resetTimer: number | undefined;
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(cmdEl.textContent ?? '');
+            btn.textContent = 'Copied ✓';
+          } catch {
+            btn.textContent = 'Failed';
+          }
+          if (resetTimer !== undefined) window.clearTimeout(resetTimer);
+          resetTimer = window.setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+        });
+      }
+
+      // ── Hero contributions mini-heatmap (decorative GitHub-green grid) ──
+      const GH = ['var(--empty)', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+      function buildMiniHeatmap(el: HTMLElement, weeks: number, seed: number): void {
+        let s = seed;
+        const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        el.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
+        for (let i = 0; i < weeks * 7; i++) {
+          const cell = document.createElement('span');
+          const r = rnd();
+          const step = r < 0.45 ? 0 : r < 0.6 ? 1 : r < 0.8 ? 2 : r < 0.93 ? 3 : 4;
+          cell.style.background = GH[step];
+          el.appendChild(cell);
+        }
+      }
+      const heroHeat = document.getElementById('hero-heatmap');
+      if (heroHeat) buildMiniHeatmap(heroHeat, 24, 20260504);
+    </script>
+
+    <!-- ── Interactive demo ──────────────────────────────────────── -->
+    <section class="section center">
+      <p class="kicker">Live demo</p>
+      <h2 class="h2">See it in action</h2>
+      <p class="section-sub">Randomized sample data — switch metrics to explore.</p>
+
+      <div class="card demo-card">
+        <div id="demo-tabs" class="pill-tabs">
+          <button class="pill active" data-metric="sessions">Sessions</button>
+          <button class="pill" data-metric="tokens">Tokens</button>
+          <button class="pill" data-metric="active_minutes">Active Time</button>
+          <button class="pill" data-metric="tool_uses">Tool Uses</button>
+          <button class="pill" data-metric="github">GitHub</button>
+        </div>
+        <div class="demo-stat-row">
+          <div>
+            <div id="demo-number" class="big-number">0</div>
+            <div id="demo-caption" class="big-caption">tracked this year</div>
+          </div>
+          <div class="legend-scale">
+            <span>Less</span>
+            <span id="demo-legend" class="legend-swatches"></span>
+            <span>More</span>
+          </div>
+        </div>
+        <div id="demo-heatmap" class="demo-heatmap"></div>
       </div>
-      <div class="demo-card">
-        <div id="demo-heatmap"></div>
-      </div>
-      <p class="demo-caption">Try the tabs — your dashboard has the same view.</p>
     </section>
 
     <script>
       import CalHeatmap from 'cal-heatmap';
       import Tooltip from 'cal-heatmap/plugins/Tooltip';
 
-      // ── Realistic random demo data — one series per metric ──
       type Metric = 'sessions' | 'tokens' | 'active_minutes' | 'tool_uses' | 'github';
       const SCALES: Record<Metric, { weekday: number; weekend: number; floor: number }> = {
         sessions:       { weekday: 12,        weekend: 5,      floor: 1     },
@@ -77,7 +136,6 @@ import 'cal-heatmap/cal-heatmap.css';
         tool_uses:      { weekday: 80,        weekend: 15,     floor: 2     },
         github:         { weekday: 14,        weekend: 4,      floor: 1     },
       };
-      // Deterministic LCG so values are stable across paints.
       function lcg(seed: number): () => number {
         let s = seed;
         return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
@@ -85,8 +143,11 @@ import 'cal-heatmap/cal-heatmap.css';
       const dataByMetric: Record<Metric, { date: string; value: number }[]> = {
         sessions: [], tokens: [], active_minutes: [], tool_uses: [], github: [],
       };
+      const totals: Record<Metric, number> = {
+        sessions: 0, tokens: 0, active_minutes: 0, tool_uses: 0, github: 0,
+      };
       const now = new Date();
-      const baseRand = lcg(20260504); // any fixed seed — keeps the demo identical across reloads
+      const baseRand = lcg(20260504);
       for (let d = 364; d >= 0; d--) {
         const date = new Date(now);
         date.setDate(date.getDate() - d);
@@ -101,13 +162,11 @@ import 'cal-heatmap/cal-heatmap.css';
           const span = isWeekend ? scale.weekend : scale.weekday;
           const value = Math.floor(r * span) + scale.floor;
           dataByMetric[metric].push({ date: dateKey, value });
+          totals[metric] += value;
         }
       }
 
-      // Color thresholds per metric. tokens/active_minutes/tool_uses mirror
-      // site/src/pages/u.astro colorScale() exactly; sessions uses a tighter
-      // domain (and an extra-dark top step) because the demo's mock data caps
-      // at ~12 sessions/day, well below the real dashboard's 1/10/50/100.
+      // Color thresholds per metric (mirror u.astro). range = [empty, s2, s3, s4, s5].
       const SCALE_BY_METRIC: Record<Metric, { range: string[]; domain: number[] }> = {
         sessions:       { range: ['#ebedf0', '#fed7aa', '#fb923c', '#f97316', '#c2410c'], domain: [1, 3, 7, 12] },
         tokens:         { range: ['#ebedf0', '#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'], domain: [1, 50_000, 200_000, 500_000] },
@@ -122,762 +181,529 @@ import 'cal-heatmap/cal-heatmap.css';
         tool_uses:      (v) => `${v} tool use${v === 1 ? '' : 's'}`,
         github:         (v) => `${v} contribution${v === 1 ? '' : 's'}`,
       };
-      let currentMetric: Metric = 'sessions';
+      const CAPTION: Record<Metric, string> = {
+        sessions: 'sessions tracked this year',
+        tokens: 'tokens used this year',
+        active_minutes: 'minutes active this year',
+        tool_uses: 'tool uses this year',
+        github: 'contributions this year',
+      };
+      function fmtNum(metric: Metric, n: number): string {
+        if (metric === 'tokens') {
+          if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+          if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+        }
+        return n.toLocaleString();
+      }
 
+      let currentMetric: Metric = 'sessions';
       const isDark = () => document.documentElement.classList.contains('dark');
       const emptyColor = () => isDark() ? '#2a3346' : '#ebedf0';
 
-      const demoCardEl = document.querySelector<HTMLElement>('.demo-card');
-      function scrollDemoToEnd(): void {
-        if (!demoCardEl) return;
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => { demoCardEl.scrollLeft = demoCardEl.scrollWidth; });
-        });
+      const numberEl = document.getElementById('demo-number')!;
+      const captionEl = document.getElementById('demo-caption')!;
+      const legendEl = document.getElementById('demo-legend')!;
+      const demoTabsEl = document.getElementById('demo-tabs')!;
+
+      function updateChrome(metric: Metric): void {
+        const range = SCALE_BY_METRIC[metric].range;
+        const step4 = range[3];
+        numberEl.textContent = fmtNum(metric, totals[metric]);
+        numberEl.style.color = step4;
+        captionEl.textContent = CAPTION[metric];
+        // Legend swatches: empty + 4 active steps (theme-aware empty).
+        legendEl.replaceChildren();
+        for (const c of [emptyColor(), ...range.slice(1)]) {
+          const sw = document.createElement('span');
+          sw.className = 'swatch';
+          sw.style.background = c;
+          legendEl.appendChild(sw);
+        }
+        // Active pill takes the metric's step-4 color.
+        for (const t of demoTabsEl.querySelectorAll<HTMLElement>('.pill')) {
+          const active = t.dataset.metric === metric;
+          t.classList.toggle('active', active);
+          t.style.color = active ? step4 : '';
+          t.style.background = active ? `color-mix(in srgb, ${step4} 12%, transparent)` : '';
+        }
       }
 
+      const cal = new CalHeatmap();
       const start = new Date(now);
       start.setMonth(start.getMonth() - 11);
       start.setDate(1);
 
-      const cal = new CalHeatmap();
+      // Size the cells so the 52-week grid fills the card width (no dead space).
+      function demoCellSize(): number {
+        const host = document.getElementById('demo-heatmap');
+        const w = host?.clientWidth ?? 800;
+        return Math.max(10, Math.min(15, Math.round(w / 53) - 3));
+      }
 
       async function paintDemo(metric: Metric): Promise<void> {
         const scale = SCALE_BY_METRIC[metric];
-        // Override the "0" colour with the theme-aware empty colour.
         const range = [emptyColor(), ...scale.range.slice(1)];
+        const cell = demoCellSize();
         await cal.paint(
           {
             itemSelector: '#demo-heatmap',
             data: { source: dataByMetric[metric], x: 'date', y: 'value', defaultValue: 0 },
             date: { start },
             range: 12,
-            domain: {
-              type: 'month',
-              label: { text: 'MMM', textAlign: 'start', position: 'top' },
-              gutter: 4,
-            },
-            subDomain: { type: 'ghDay', width: 13, height: 13, radius: 2, gutter: 3 },
+            domain: { type: 'month', label: { text: 'MMM', textAlign: 'start', position: 'bottom' }, gutter: 4 },
+            subDomain: { type: 'ghDay', width: cell, height: cell, radius: 2, gutter: 3 },
             scale: { color: { type: 'threshold', range, domain: scale.domain } },
           },
-          [
-            [
-              Tooltip,
-              {
-                text: (_t: number, value: number | null, djs: { format: (f: string) => string }) => {
-                  const label = djs.format('MMM D, YYYY');
-                  return value ? `${TOOLTIP_LABEL[metric](value)} · ${label}` : `No activity · ${label}`;
-                },
-              },
-            ],
-          ]
+          [[Tooltip, {
+            text: (_t: number, value: number | null, djs: { format: (f: string) => string }) => {
+              const label = djs.format('MMM D, YYYY');
+              return value ? `${TOOLTIP_LABEL[metric](value)} · ${label}` : `No activity · ${label}`;
+            },
+          }]]
         );
-        scrollDemoToEnd();
+        updateChrome(metric);
+        // Line the Less/More legend up with the heatmap's right edge.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const svg = document.querySelector('#demo-heatmap svg');
+          const row = document.querySelector<HTMLElement>('.demo-stat-row');
+          if (!svg || !row) return;
+          row.style.paddingRight = '0px';
+          row.style.paddingRight = `${Math.max(0, Math.round(row.getBoundingClientRect().right - svg.getBoundingClientRect().right))}px`;
+        }));
       }
 
       void paintDemo(currentMetric);
 
-      // Tab switching — destroy + repaint with the new metric's series + scale.
-      const demoTabsEl = document.getElementById('demo-tabs');
-      demoTabsEl?.addEventListener('click', (e) => {
-        const btn = (e.target as HTMLElement).closest('.demo-tab') as HTMLButtonElement | null;
-        if (!btn) return;
-        const metric = btn.dataset.metric as Metric | undefined;
+      demoTabsEl.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest('.pill') as HTMLButtonElement | null;
+        if (!b) return;
+        const metric = b.dataset.metric as Metric | undefined;
         if (!metric || metric === currentMetric) return;
         currentMetric = metric;
-        for (const t of demoTabsEl.querySelectorAll('.demo-tab')) {
-          t.classList.toggle('active', t === btn);
-        }
         cal.destroy();
         void paintDemo(metric);
       });
 
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        requestAnimationFrame(() => { cal.destroy(); void paintDemo(currentMetric); });
+      });
+
+      // Re-fit the grid to the new width on resize.
       let demoResizeTimer = 0;
       window.addEventListener('resize', () => {
         window.clearTimeout(demoResizeTimer);
-        demoResizeTimer = window.setTimeout(scrollDemoToEnd, 100);
-      });
-
-      // Re-render heatmap on theme toggle so empty cell colors match.
-      document.getElementById('theme-toggle')?.addEventListener('click', () => {
-        requestAnimationFrame(() => {
-          cal.destroy();
-          void paintDemo(currentMetric);
-        });
+        demoResizeTimer = window.setTimeout(() => { cal.destroy(); void paintDemo(currentMetric); }, 150);
       });
     </script>
 
-    <!-- Dashboard Preview -->
+    <!-- ── Dashboard preview ─────────────────────────────────────── -->
     <section class="section">
-      <h2 class="section-label">Your analytics dashboard</h2>
-      <p class="section-desc">Every vibestats user gets a full analytics dashboard at <strong>vibestats.dev/username</strong>. Here's what you'll see:</p>
+      <h2 class="h2">Your analytics dashboard</h2>
+      <p class="section-sub">Six headline metrics, a weekly token breakdown, and efficiency metrics.</p>
 
-      <!-- Mock KPI row with info tooltips -->
+      <div class="kpis">
+        <div class="kpi"><span class="kpi-label">Total Tokens</span><span class="kpi-value">24.8M</span><span class="kpi-delta up">▲ 12%</span></div>
+        <div class="kpi"><span class="kpi-label">Sessions</span><span class="kpi-value">1,247</span><span class="kpi-delta up">▲ 8%</span></div>
+        <div class="kpi"><span class="kpi-label">Active Time</span><span class="kpi-value">312h</span><span class="kpi-delta up">▲ 15%</span></div>
+        <div class="kpi"><span class="kpi-label">Streak</span><span class="kpi-value accent">14d</span><span class="kpi-sub">current</span></div>
+        <div class="kpi"><span class="kpi-label">Top Harness</span><span class="kpi-value">98%</span><span class="kpi-sub">Claude</span></div>
+        <div class="kpi"><span class="kpi-label">Tool Uses</span><span class="kpi-value">4.4K</span><span class="kpi-sub">all time</span></div>
+      </div>
 
-      <!-- Mock KPI row -->
-      <div class="preview-kpis">
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Total Tokens</span><span class="info-icon" role="img" aria-label="Input + output tokens across all sessions and machines, all time.">i<span class="info-tooltip">Input + output tokens across all sessions and machines, all time.</span></span></div>
-          <span class="preview-kpi-value">24.8M</span>
-          <span class="preview-kpi-sub up">+12% vs last 30d</span>
+      <div class="preview-row">
+        <!-- Weekly token consumption (40%) -->
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Weekly Token Consumption</h3>
+            <span class="card-meta">last 12 weeks</span>
+          </div>
+          <div id="preview-token-bars" class="token-bars"></div>
+          <div class="bars-axis"><span>12 weeks ago</span><span>This week</span></div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#ea580c"></span>Output</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#fb923c"></span>Input</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#fed7aa"></span>Cache create</span>
+          </div>
         </div>
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Sessions</span><span class="info-icon" role="img" aria-label="Total Claude Code and Codex sessions across all machines, all time.">i<span class="info-tooltip">Total Claude Code and Codex sessions across all machines, all time.</span></span></div>
-          <span class="preview-kpi-value">1,247</span>
-          <span class="preview-kpi-sub up">+8% vs last 30d</span>
+        <!-- Efficiency (40%) -->
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Efficiency</h3>
+            <span class="card-meta">12-week avg</span>
+          </div>
+          <div id="preview-efficiency" class="eff-rows"></div>
         </div>
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Active Time</span><span class="info-icon" role="img" aria-label="Sum of all session durations across all machines, all time.">i<span class="info-tooltip">Sum of all session durations across all machines, all time.</span></span></div>
-          <span class="preview-kpi-value">312h</span>
-          <span class="preview-kpi-sub up">+15% vs last 30d</span>
-        </div>
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Current Streak</span><span class="info-icon" role="img" aria-label="Consecutive days with at least one session, ending today.">i<span class="info-tooltip">Consecutive days with at least one session, ending today.</span></span></div>
-          <span class="preview-kpi-value">14d</span>
-        </div>
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Top Harness</span><span class="info-icon" role="img" aria-label="Share of all-time tokens (input + output) on your most-used harness, across all machines.">i<span class="info-tooltip">Share of all-time tokens (input + output) on your most-used harness, across all machines.</span></span></div>
-          <span class="preview-kpi-value">98%</span>
-          <span class="preview-kpi-sub">Claude</span>
-        </div>
-        <div class="preview-kpi">
-          <div class="preview-kpi-header"><span class="preview-kpi-label">Tool Uses</span><span class="info-icon" role="img" aria-label="Total tool invocations (file edits, searches, commands, etc.) all time.">i<span class="info-tooltip">Total tool invocations (file edits, searches, commands, etc.) all time.</span></span></div>
-          <span class="preview-kpi-value">4.4K</span>
+        <!-- Model usage (20%) -->
+        <div class="card">
+          <h3 class="card-title">Model Usage</h3>
+          <div class="donut-mini"></div>
+          <div class="donut-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Sonnet 4.5 · 46%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:color-mix(in srgb, var(--accent) 70%, #fff)"></span>Opus 4 · 24%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:color-mix(in srgb, var(--accent) 46%, #fff)"></span>Sonnet 4 · 16%</div>
+          </div>
         </div>
       </div>
 
-      <!-- Mock charts grid -->
-      <div class="preview-grid">
-        <!-- Token chart -->
-        <div class="preview-card">
-          <h3 class="preview-card-title">Daily Token Consumption <span class="info-icon" role="img" aria-label="Daily input + output tokens over the last 30 days, all machines.">i<span class="info-tooltip">Daily input + output tokens over the last 30 days, all machines.</span></span></h3>
-          <div class="preview-bars" id="preview-token-bars"></div>
+      <!-- GitHub contributions -->
+      <div class="card gh-card">
+        <h3 class="card-title">GitHub Contributions</h3>
+        <p class="card-desc">The heatmap that renders on your GitHub profile — includes aggregated private contributions too.</p>
+        <div id="preview-gh-heatmap" class="gh-heatmap" aria-hidden="true"></div>
+        <div id="preview-gh-months" class="gh-months"></div>
+      </div>
+    </section>
+
+    <script>
+      // ── Weekly token bars (stacked output / input / cache, with grey cap) ──
+      const tokenBars = document.getElementById('preview-token-bars');
+      if (tokenBars) {
+        const rnd = (() => { let s = 7777; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
+        for (let i = 0; i < 12; i++) {
+          const col = document.createElement('div');
+          col.className = 'tbar';
+          const fill = 35 + rnd() * 60;
+          const out = 40 + Math.round(rnd() * 20);
+          const inp = out + Math.round(20 + rnd() * 15);
+          // Distinct steps: output (deep), input (mid), cache create (light).
+          col.innerHTML =
+            `<span class="tbar-fill" style="height:${fill}%;` +
+            `background:linear-gradient(to top, #ea580c ${out}%, #fb923c ${out}% ${inp}%, #fed7aa ${inp}%)"></span>`;
+          tokenBars.appendChild(col);
+        }
+      }
+
+      // ── Efficiency rows (value + sparkline) ──
+      const effEl = document.getElementById('preview-efficiency');
+      if (effEl) {
+        const rnd = (() => { let s = 313; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
+        const rows = [
+          { label: 'Tokens / min', value: '1,324' },
+          { label: 'Cache hit rate', value: '71%' },
+          { label: 'Avg session', value: '15.0m' },
+        ];
+        for (const r of rows) {
+          const row = document.createElement('div');
+          row.className = 'eff-row';
+          let spark = '';
+          for (let i = 0; i < 12; i++) {
+            spark += `<span style="height:${15 + rnd() * 85}%"></span>`;
+          }
+          row.innerHTML =
+            `<div class="eff-meta"><span class="eff-label">${r.label}</span><span class="eff-value">${r.value}</span></div>` +
+            `<div class="eff-spark">${spark}</div>`;
+          effEl.appendChild(row);
+        }
+      }
+
+      // ── GitHub contributions mock (green grid + month axis) ──
+      const ghHeat = document.getElementById('preview-gh-heatmap');
+      const ghMonths = document.getElementById('preview-gh-months');
+      if (ghHeat && ghMonths) {
+        const GH = ['var(--empty)', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+        let s = 4242;
+        const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        const weeks = 52;
+        ghHeat.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
+        for (let i = 0; i < weeks * 7; i++) {
+          const cell = document.createElement('span');
+          const r = rnd();
+          const step = r < 0.5 ? 0 : r < 0.65 ? 1 : r < 0.82 ? 2 : r < 0.93 ? 3 : 4;
+          cell.style.background = GH[step];
+          ghHeat.appendChild(cell);
+        }
+        const M = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+        for (const m of M) {
+          const sp = document.createElement('span');
+          sp.textContent = m;
+          ghMonths.appendChild(sp);
+        }
+      }
+    </script>
+
+    <!-- ── How it works ──────────────────────────────────────────── -->
+    <section class="section">
+      <h2 class="h2">How it works</h2>
+      <div class="how-grid">
+        <div class="card how-card">
+          <div class="how-label">01 · CLI</div>
+          <h3 class="how-title">Installed locally</h3>
+          <p>Hooks into Claude Code and Codex and records each session into your private <code>vibestats-data</code> repo.</p>
         </div>
-        <!-- Model donut -->
-        <div class="preview-card">
-          <h3 class="preview-card-title">Model Usage <span class="info-icon" role="img" aria-label="Share of output tokens by model, all time across all machines.">i<span class="info-tooltip">Share of output tokens by model, all time across all machines.</span></span></h3>
-          <div class="preview-donut-row">
-            <div class="preview-donut"></div>
-            <div class="preview-legend">
-              <div class="preview-legend-item" title="Sonnet 4.5: 45%"><span class="preview-dot" style="background:#f97316"></span>Sonnet 4.5</div>
-              <div class="preview-legend-item" title="Opus 4: 27%"><span class="preview-dot" style="background:#3b82f6"></span>Opus 4</div>
-              <div class="preview-legend-item" title="Sonnet 4: 16%"><span class="preview-dot" style="background:#a855f7"></span>Sonnet 4</div>
-              <div class="preview-legend-item" title="Haiku 4.5: 7%"><span class="preview-dot" style="background:#06b6d4"></span>Haiku 4.5</div>
-              <div class="preview-legend-item" title="Other: 5%"><span class="preview-dot" style="background:#64748b"></span>Other</div>
-            </div>
+        <div class="card how-card">
+          <div class="how-label">02 · ACTION</div>
+          <h3 class="how-title">Aggregates daily</h3>
+          <p>A GitHub Action runs daily, combines every machine's slice, and renders an SVG heatmap.</p>
+        </div>
+        <div class="card how-card">
+          <div class="how-label">03 · PROFILE</div>
+          <h3 class="how-title">Lives on your profile</h3>
+          <p>The heatmap embeds in your README between markers and links to your full dashboard.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Why VibeStats ─────────────────────────────────────────── -->
+    <section class="section">
+      <h2 class="h2">Why VibeStats</h2>
+      <div class="features">
+        <div class="card feature"><h3>⚡ Zero effort</h3><p>Hooks fire silently on every session. No manual commands.</p></div>
+        <div class="card feature"><h3>⏳ Long-term retention</h3><p>Claude Code clears transcripts after 30 days. VibeStats archives the stats — not the content — to your private repo.</p></div>
+        <div class="card feature"><h3>🔓 Open, free, private</h3><p>MIT-licensed Rust CLI. No paid tier, no third-party server, no account beyond GitHub.</p></div>
+        <div class="card feature"><h3>🤝 Claude Code + Codex</h3><p>Both AI coding tools tracked together — one heatmap, one dashboard.</p></div>
+        <div class="card feature"><h3>🖥️ Cross-machine</h3><p>All your machines, one repository. Data always in sync.</p></div>
+        <div class="card feature"><h3>🔥 Streaks &amp; trends</h3><p>Token trends, model breakdown, efficiency metrics, and streaks.</p></div>
+      </div>
+    </section>
+
+    <!-- ── Final CTA ─────────────────────────────────────────────── -->
+    <section class="section">
+      <div class="cta">
+        <h2 class="h2">Private by default</h2>
+        <p class="cta-sub">
+          Only small JSON aggregates ever leave your machine — and they go to
+          exactly one place: your own private GitHub repo. Never your prompts or code.
+        </p>
+        <div class="terminal cta-terminal">
+          <div class="terminal-head">
+            <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+            <span class="terminal-label">install.sh</span>
+            <button id="copy-btn-2" type="button" aria-live="polite" class="copy-btn">Copy</button>
           </div>
-        </div>
-        <!-- Sparklines -->
-        <div class="preview-card">
-          <h3 class="preview-card-title">Weekly Trends <span class="info-icon" role="img" aria-label="Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.">i<span class="info-tooltip">Last 12 weeks of activity. Each bar = one week's total. Value on right = most recent week.</span></span></h3>
-          <div class="preview-spark-rows" id="preview-sparklines"></div>
-        </div>
-        <!-- Efficiency -->
-        <div class="preview-card">
-          <h3 class="preview-card-title">Efficiency Metrics <span class="info-icon" role="img" aria-label="Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse.">i<span class="info-tooltip">Derived ratios over 12 weeks. Tokens/min = throughput. Cache hit % = prompt cache reuse.</span></span></h3>
-          <div class="preview-spark-rows" id="preview-efficiency"></div>
+          <div class="terminal-body">
+            <span class="prompt">$</span> <code id="install-cmd-2">{INSTALL_CMD}</code>
+          </div>
         </div>
       </div>
     </section>
 
     <script>
-      // ── Mock token bars ───────────────────────────────────────────
-      // Mirrors the dashboard's daily-token chart: a hard gradient stop
-      // at the output % so each bar shows the dark output band at the
-      // bottom and the lighter input band on top. ~15% of days are
-      // rendered as empty (a thin grey sliver) to mirror the no-activity
-      // days users see on their real dashboard and heatmap.
-      const tokenBars = document.getElementById('preview-token-bars')!;
-      for (let i = 0; i < 30; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'pbar';
-        const isEmpty = Math.random() < 0.15;
-        if (isEmpty) {
-          bar.classList.add('pbar-empty');
-          bar.style.height = '3%';
-        } else {
-          const isWeekend = i % 7 === 5 || i % 7 === 6;
-          const h = isWeekend ? 15 + Math.random() * 30 : 35 + Math.random() * 65;
-          const outputPct = 40 + Math.round(Math.random() * 20); // 40–60% output
-          bar.style.height = `${h}%`;
-          bar.style.background = `linear-gradient(to top, #f97316 ${outputPct}%, #fb923c ${outputPct}%)`;
-        }
-        tokenBars.appendChild(bar);
+      const btn2 = document.getElementById('copy-btn-2');
+      const cmd2 = document.getElementById('install-cmd-2');
+      if (btn2 instanceof HTMLButtonElement && cmd2) {
+        let t: number | undefined;
+        btn2.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(cmd2.textContent ?? ''); btn2.textContent = 'Copied ✓'; }
+          catch { btn2.textContent = 'Failed'; }
+          if (t !== undefined) window.clearTimeout(t);
+          t = window.setTimeout(() => { btn2.textContent = 'Copy'; }, 1600);
+        });
       }
-
-      // ── Mock sparklines ───────────────────────────────────────────
-      function makePreviewSpark(containerId: string, rows: Array<{label: string; value: string; color: string}>) {
-        const container = document.getElementById(containerId)!;
-        for (const row of rows) {
-          const rowEl = document.createElement('div');
-          rowEl.className = 'pspark-row';
-          const label = document.createElement('span');
-          label.className = 'pspark-label';
-          label.textContent = row.label;
-          const sparkline = document.createElement('div');
-          sparkline.className = 'pspark-line';
-          for (let i = 0; i < 12; i++) {
-            const bar = document.createElement('div');
-            bar.className = 'pspark-bar';
-            bar.style.height = `${8 + Math.random() * 92}%`;
-            bar.style.background = row.color;
-            bar.style.opacity = String(0.3 + (i / 12) * 0.7);
-            sparkline.appendChild(bar);
-          }
-          const val = document.createElement('span');
-          val.className = 'pspark-value';
-          val.textContent = row.value;
-          rowEl.appendChild(label);
-          rowEl.appendChild(sparkline);
-          rowEl.appendChild(val);
-          container.appendChild(rowEl);
-        }
-      }
-
-      makePreviewSpark('preview-sparklines', [
-        { label: 'Sessions', value: '42', color: '#f97316' },
-        { label: 'Tokens', value: '1.2M', color: '#3b82f6' },
-        { label: 'Active min', value: '487m', color: '#22c55e' },
-        { label: 'Messages', value: '1,842', color: '#a855f7' },
-      ]);
-
-      makePreviewSpark('preview-efficiency', [
-        { label: 'Tokens/min', value: '1.3K', color: '#06b6d4' },
-        { label: 'Msgs/session', value: '44', color: '#f97316' },
-        { label: 'Cache hit %', value: '72%', color: '#22c55e' },
-        { label: 'Tools/session', value: '6.7', color: '#eab308' },
-      ]);
     </script>
 
-    <!-- Features -->
-    <section class="section">
-      <h2 class="section-label">Why vibestats?</h2>
-      <div class="features">
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <h3>Zero effort</h3>
-          <p>Hooks fire silently on every session. No manual commands needed.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-          </div>
-          <h3>Long-term retention</h3>
-          <p>Claude Code clears local transcripts after 30 days. vibestats archives the stats — not the content — to your private GitHub repo so your history outlives the files.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <h3>Open, free, private</h3>
-          <p>MIT-licensed Rust CLI. No paid tier, no third-party server, no account beyond GitHub. Your data lives in your private repo and stays yours.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-          </div>
-          <h3>Claude Code + Codex</h3>
-          <p>Sessions from both AI coding tools tracked together — one heatmap, one dashboard, your full AI-coding footprint.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="2" y="3" rx="2"/><path d="M10 17v4M7 21h10M22 7v4"/></svg>
-          </div>
-          <h3>Cross-machine</h3>
-          <p>All your machines, one repository. Data is always in sync.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-          </div>
-          <h3>GitHub profile</h3>
-          <p>Heatmap embeds in your README and links to your dashboard.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-          </div>
-          <h3>Rich analytics</h3>
-          <p>Token trends, model breakdown, efficiency metrics, streaks, and more.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          </div>
-          <h3>Streak tracking</h3>
-          <p>Current and longest streaks. See your consistency at a glance.</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-          </div>
-          <h3>Dark mode</h3>
-          <p>Full dark mode support on the dashboard and GitHub profile SVGs.</p>
-        </div>
-      </div>
-    </section>
+    <p class="star-line">
+      ⭐ Found VibeStats useful?
+      <a href="https://github.com/stephenleo/vibestats" target="_blank" rel="noopener noreferrer">Star it on GitHub</a>
+      to help others discover it.
+    </p>
 
   </main>
 </Base>
 
 <style>
-  .landing {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 2rem 1rem 6rem;
-  }
+  .landing { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-  /* ── Hero ──────────────────────────────────────────────────────── */
+  /* ── Shared ──────────────────────────────────────────────────── */
+  .section { margin-top: 6rem; }
+  .section.center { text-align: center; }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent); margin-bottom: 0.6rem;
+  }
+  .h2 {
+    font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text); line-height: 1.1; margin-bottom: 0.75rem;
+  }
+  .section-sub { color: var(--muted); font-size: 1.05rem; margin-bottom: 2rem; }
+  .center .section-sub { margin-left: auto; margin-right: auto; max-width: 36rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 14px 38px rgba(20, 20, 55, 0.06);
+  }
+  :global(.dark) .card { box-shadow: 0 18px 46px rgba(0, 0, 0, 0.4); }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .card-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--text); }
+  .card-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); text-align: right; }
+  .card-desc { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0 1rem; }
+
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.9rem; font-size: 0.75rem; color: var(--muted); }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
   .hero {
-    text-align: center;
-    margin-bottom: 4rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
     padding-top: 3rem;
   }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 500;
+  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; gap: 2.5rem; } }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+    background: var(--accent-tint); border: 1px solid var(--accent-line); color: var(--accent);
     margin-bottom: 1.5rem;
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    color: #ea580c;
   }
-  :global(.dark) .badge {
-    background: rgba(249, 115, 22, 0.08);
-    border-color: rgba(249, 115, 22, 0.3);
-    color: #fb923c;
-  }
-  .badge-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #f97316;
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
+  .eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
   .hero h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-    margin-bottom: 1rem;
+    font-size: 3.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+    color: var(--text); margin-bottom: 1.25rem;
   }
-  .hero-sub {
-    font-size: 1.1rem;
-    color: #64748b;
-    max-width: 540px;
-    margin: 0 auto;
-    line-height: 1.6;
-  }
-  :global(.dark) .hero-sub { color: #94a3b8; }
+  @media (max-width: 880px) { .hero h1 { font-size: 2.75rem; } }
+  .hero-sub { font-size: 1.1rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.75rem; }
+  .hero-sub strong { color: var(--text); font-weight: 600; }
+  .trust-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; font-size: 0.82rem; color: var(--muted); }
 
-  /* ── Sections ──────────────────────────────────────────────────── */
-  .section {
-    margin-bottom: 4rem;
+  /* ── Terminal install card ───────────────────────────────────── */
+  .terminal { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: var(--code-bg); }
+  .terminal-head {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.6rem 0.85rem; background: color-mix(in srgb, var(--code-bg) 80%, #fff 6%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
-  .section-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #94a3b8;
-    margin-bottom: 1rem;
-  }
-  :global(.dark) .section-label { color: #64748b; }
-  .section-desc {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-  }
-  :global(.dark) .section-desc { color: #94a3b8; }
-  .section-desc strong { color: #f97316; font-weight: 600; }
-
-  /* ── Install ───────────────────────────────────────────────────── */
-  .install-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-  .install-box {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    background: #0f172a;
-    border: 1px solid #1e293b;
-  }
-  :global(.dark) .install-box {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  .install-dollar {
-    color: #475569;
-    user-select: none;
-  }
-  .install-box code {
-    font-size: 0.875rem;
-    color: #e2e8f0;
-    font-family: ui-monospace, monospace;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-r { background: #ff5f56; } .dot-y { background: #ffbd2e; } .dot-g { background: #27c93f; }
+  .terminal-label { font-family: var(--font-mono); font-size: 0.74rem; color: #9b9bb4; margin-left: 0.35rem; }
   .copy-btn {
-    flex-shrink: 0;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #374151;
-    font-family: inherit;
-    transition: all 0.15s;
+    margin-left: auto; padding: 0.25rem 0.7rem; border-radius: 7px; font-size: 0.74rem; font-weight: 600;
+    font-family: var(--font-mono); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08); color: #e8eaf2; transition: background 0.15s;
   }
-  :global(.dark) .copy-btn {
-    background: #1e293b;
-    border-color: #334155;
-    color: #e2e8f0;
-  }
-  .copy-btn:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-  }
-  :global(.dark) .copy-btn:hover {
-    background: #334155;
-  }
+  .copy-btn:hover { background: rgba(255, 255, 255, 0.16); }
+  .terminal-body { padding: 0.9rem 1rem; font-family: var(--font-mono); font-size: 0.86rem; overflow-x: auto; white-space: nowrap; }
+  .terminal-body .prompt { color: var(--accent); user-select: none; margin-right: 0.4rem; }
+  .terminal-body code { color: var(--code-text); }
 
-  /* ── Demo metric tabs ──────────────────────────────────────────── */
-  .demo-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  :global(.dark) .demo-tabs { border-bottom-color: #334155; }
-  .demo-tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.78rem;
-    color: #9ca3af;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    background: none;
-    font-family: inherit;
-    transition: color 0.15s;
-  }
-  :global(.dark) .demo-tab { color: #64748b; }
-  .demo-tab:hover { color: #111827; }
-  :global(.dark) .demo-tab:hover { color: #e2e8f0; }
-  .demo-tab.active {
-    color: #f97316;
-    border-bottom-color: #f97316;
-  }
-  .demo-caption {
-    text-align: center;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    color: #6b7280;
-  }
-  :global(.dark) .demo-caption { color: #94a3b8; }
+  /* ── Browser preview ─────────────────────────────────────────── */
+  .browser { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 24px 60px rgba(20, 20, 55, 0.12); }
+  :global(.dark) .browser { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+  .browser-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.7rem 0.9rem; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .browser-url { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); margin-left: 0.6rem; }
+  .browser-body { padding: 1.25rem; }
+  .mini-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 1.1rem; }
+  .mini-kpi { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .mini-kpi-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+  .mini-kpi-value { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .mini-kpi-value.accent { color: var(--accent); }
+  .mini-section-head { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .mini-faint { color: var(--faint); }
+  .mini-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); gap: 3px; }
 
-  /* ── Demo card ─────────────────────────────────────────────────── */
-  .demo-card {
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    padding: 1.5rem;
-    overflow-x: auto;
+  /* ── Demo ────────────────────────────────────────────────────── */
+  .demo-card { text-align: left; margin-top: 1rem; }
+  .pill-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-bottom: 1rem; border-bottom: 1px solid var(--hair); margin-bottom: 1.25rem; }
+  .pill {
+    padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 500;
+    color: var(--muted); border: none; background: none; cursor: pointer; font-family: inherit; transition: color 0.15s, background 0.15s;
   }
-  :global(.dark) .demo-card {
-    border-color: #1e293b;
-    background: #1e293b;
-  }
+  .pill:hover { color: var(--text); }
+  .demo-stat-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .big-number { font-family: var(--font-display); font-size: 3rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .big-caption { color: var(--muted); font-size: 0.9rem; margin-top: 0.35rem; }
+  .legend-scale { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--faint); }
+  .legend-swatches { display: inline-flex; gap: 3px; }
+  .legend-swatches .swatch { width: 13px; height: 13px; border-radius: 3px; }
+  .demo-heatmap { overflow-x: auto; scrollbar-width: none; }
+  .demo-heatmap::-webkit-scrollbar { display: none; }
 
-  /* ── Info tooltips ───────────────────────────────────────────────── */
-  .info-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1px solid #9ca3af;
-    font-size: 0.55rem;
-    font-weight: 700;
-    font-style: italic;
-    color: #9ca3af;
-    cursor: help;
-    position: relative;
-    vertical-align: middle;
-    margin-left: 4px;
-    flex-shrink: 0;
-  }
-  :global(.dark) .info-icon { border-color: #64748b; color: #64748b; }
-  .info-icon:hover { border-color: #f97316; color: #f97316; }
-  .info-tooltip {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #111827;
-    color: #fff;
-    font-size: 0.72rem;
-    font-weight: 400;
-    font-style: normal;
-    line-height: 1.4;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    width: max-content;
-    max-width: 240px;
-    z-index: 100;
-    pointer-events: none;
-    text-transform: none;
-    letter-spacing: normal;
-  }
-  :global(.dark) .info-tooltip { background: #e2e8f0; color: #0f172a; }
-  .info-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #111827;
-  }
-  :global(.dark) .info-tooltip::after { border-top-color: #e2e8f0; }
-  .info-icon:hover .info-tooltip { display: block; }
+  /* ── KPI tiles ───────────────────────────────────────────────── */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+  @media (max-width: 880px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .kpi-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+  .kpi-value { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-delta { font-size: 0.74rem; color: var(--accent); }
+  .kpi-delta.up { color: var(--accent); }
+  .kpi-sub { font-size: 0.74rem; color: var(--muted); }
 
-  /* ── Dashboard preview ─────────────────────────────────────────── */
-  .preview-kpis {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  .preview-kpi {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-  :global(.dark) .preview-kpi {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  .preview-kpi-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 2px;
-  }
-  .preview-kpi-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #9ca3af;
-    /* Reserve two lines so values align across tiles when some labels wrap
-       (e.g. "Total Tokens" wraps at narrow widths; "Sessions" doesn't). */
-    line-height: 1.25;
-    min-height: 2lh;
-  }
-  :global(.dark) .preview-kpi-label { color: #64748b; }
-  .preview-kpi-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #fb923c, #f97316);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .preview-kpi-sub {
-    font-size: 0.72rem;
-    color: #9ca3af;
-  }
-  .preview-kpi-sub.up { color: #22c55e; }
+  /* ── Preview 40/40/20 row ────────────────────────────────────── */
+  .preview-row { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
+  @media (max-width: 880px) { .preview-row { grid-template-columns: 1fr; } }
+  .preview-row .card { display: flex; flex-direction: column; }
 
-  .preview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-  @media (max-width: 640px) {
-    .preview-grid { grid-template-columns: 1fr; }
-  }
-  .preview-card {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-  }
-  :global(.dark) .preview-card {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  .preview-card-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #9ca3af;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-  }
-  :global(.dark) .preview-card-title { color: #64748b; }
+  .token-bars { flex: 1; min-height: 150px; display: flex; align-items: flex-end; gap: 5px; }
+  .tbar { flex: 1; height: 100%; display: flex; align-items: flex-end; background: var(--surface2); border-radius: 4px 4px 0 0; overflow: hidden; }
+  .tbar-fill { width: 100%; border-radius: 4px 4px 0 0; }
+  .bars-axis { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint); margin-top: 0.5rem; }
 
-  /* Mock bars */
-  .preview-bars {
-    flex: 1;
-    min-height: 100px;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-  }
+  .eff-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+  .eff-row { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--hair); }
+  .eff-row:last-child { border-bottom: none; }
+  .eff-meta { min-width: 0; flex: 1; }
+  .eff-label { display: block; font-size: 0.78rem; color: var(--muted); }
+  .eff-value { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
+  .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; opacity: 0.8; }
 
-  /* Mock donut */
-  .preview-donut-row {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-  }
-  .preview-donut {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  .donut-mini {
+    width: 130px; height: 130px; border-radius: 50%; margin: 0.5rem auto 1rem;
     background: conic-gradient(
-      #f97316 0% 45%,
-      #3b82f6 45% 72%,
-      #a855f7 72% 88%,
-      #06b6d4 88% 95%,
-      #64748b 95% 100%
+      var(--accent) 0% 46%,
+      color-mix(in srgb, var(--accent) 70%, #fff) 46% 70%,
+      color-mix(in srgb, var(--accent) 46%, #fff) 70% 86%,
+      color-mix(in srgb, var(--accent) 26%, #fff) 86% 95%,
+      var(--border) 95% 100%
     );
     position: relative;
   }
-  .preview-donut::after {
-    content: '';
-    position: absolute;
-    inset: 22%;
-    border-radius: 50%;
-    background: #f9fafb;
-  }
-  :global(.dark) .preview-donut::after { background: #1e293b; }
-  .preview-legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.4rem 0.9rem;
-  }
-  .preview-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.72rem;
-    color: #64748b;
-  }
-  :global(.dark) .preview-legend-item { color: #94a3b8; }
-  .preview-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .donut-mini::after { content: ''; position: absolute; inset: 26%; border-radius: 50%; background: var(--surface); }
+  .donut-legend { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
 
-  /* ── Features ──────────────────────────────────────────────────── */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+  /* ── GitHub card ─────────────────────────────────────────────── */
+  .gh-card { margin-top: 1rem; }
+  .gh-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); gap: 3px; }
+  .gh-months { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); margin-top: 0.5rem; }
+
+  /* ── How it works ────────────────────────────────────────────── */
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  @media (max-width: 720px) { .how-grid { grid-template-columns: 1fr; } }
+  .how-label {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--accent); margin-bottom: 1rem;
   }
-  .feature {
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #f8fafc;
-    padding: 1.25rem;
-  }
-  :global(.dark) .feature {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  .feature-icon {
-    color: #f97316;
-    margin-bottom: 0.75rem;
-  }
-  .feature h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.35rem;
-  }
-  .feature p {
-    font-size: 0.85rem;
-    color: #64748b;
-    line-height: 1.5;
-  }
-  :global(.dark) .feature p { color: #94a3b8; }
+  .how-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .how-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.55; }
+  .how-card code { font-family: var(--font-mono); font-size: 0.82em; background: var(--surface2); border: 1px solid var(--hair); border-radius: 5px; padding: 0.05rem 0.35rem; color: var(--text); }
+
+  /* ── Features ────────────────────────────────────────────────── */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  @media (max-width: 880px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+  .feature h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+  .feature p { color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
+
+  /* ── CTA ─────────────────────────────────────────────────────── */
+  .cta { background: var(--accent-tint); border: 1px solid var(--accent-line); border-radius: 20px; padding: 3rem; text-align: center; }
+  .cta-sub { color: var(--muted); max-width: 38rem; margin: 0 auto 1.75rem; line-height: 1.6; }
+  .cta-terminal { max-width: 34rem; margin: 0 auto; text-align: left; }
+
+  /* ── Star line ───────────────────────────────────────────────── */
+  .star-line { margin-top: 3rem; text-align: center; font-size: 0.95rem; color: var(--muted); }
+  .star-line a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .star-line a:hover { color: var(--accent-hover); }
 </style>
 
-<!-- Global: dynamically generated chart elements -->
+<!-- Global: rules for JS-created elements (scoped styles don't reach them) -->
 <style is:global>
-  .pbar {
-    flex: 1;
-    border-radius: 2px 2px 0 0;
-    min-width: 3px;
-  }
-  .pbar-empty { background: #e5e7eb; }
-  :global(.dark) .pbar-empty { background: #334155; }
-  .pspark-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  .dark .pspark-row { border-bottom-color: #334155; }
-  .pspark-row:last-child { border-bottom: none; }
-  .pspark-label {
-    width: 80px;
-    font-size: 0.72rem;
-    color: #64748b;
-  }
-  .dark .pspark-label { color: #94a3b8; }
-  .pspark-line {
-    flex: 1;
-    height: 22px;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-  }
-  .pspark-bar {
-    flex: 1;
-    border-radius: 1px;
-    min-height: 2px;
-  }
-  .pspark-value {
-    width: 50px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-align: right;
-    color: #111827;
-  }
-  .dark .pspark-value { color: #e2e8f0; }
+  .mini-heatmap span { aspect-ratio: 1; border-radius: 3px; }
+  .legend-swatches .swatch { width: 13px; height: 13px; border-radius: 3px; }
+  .gh-heatmap span { aspect-ratio: 1; border-radius: 3px; }
+
+  .tbar { flex: 1; height: 100%; display: flex; align-items: flex-end; background: var(--surface2); border-radius: 4px 4px 0 0; overflow: hidden; min-width: 6px; }
+  .tbar-fill { width: 100%; border-radius: 4px 4px 0 0; display: block; }
+
+  .eff-row { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--hair); }
+  .eff-row:last-child { border-bottom: none; }
+  .eff-meta { min-width: 0; flex: 1; }
+  .eff-label { display: block; font-size: 0.78rem; color: var(--muted); }
+  .eff-value { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
+  .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; opacity: 0.8; }
 </style>
