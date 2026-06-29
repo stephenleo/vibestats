@@ -87,7 +87,7 @@ import Base from '../layouts/Base.astro';
           <div id="token-chart" class="token-bars"></div>
           <div class="bars-axis"><span>12 weeks ago</span><span>This week</span></div>
           <div class="chart-legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Output</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#ea580c"></span>Output</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#fb923c"></span>Input</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#fed7aa"></span>Cache create</span>
           </div>
@@ -420,6 +420,10 @@ import Base from '../layouts/Base.astro';
     scale: { range: string[]; domain: number[] },
     tooltipText: (value: number | null, djs: { format: (f: string) => string }) => string,
   ): Promise<CalHeatmap> {
+    // Size cells so the 52-week grid fills the card width (no dead space).
+    const host = document.querySelector(selector) as HTMLElement | null;
+    const w = host?.clientWidth ?? 800;
+    const cell = Math.max(11, Math.min(26, Math.floor((w - 53 * 3) / 53)));
     const cal = new CalHeatmap();
     await cal.paint(
       {
@@ -428,7 +432,7 @@ import Base from '../layouts/Base.astro';
         date: { start: startDate },
         range: 12,
         domain: { type: 'month', label: { text: 'MMM', textAlign: 'start', position: 'bottom' }, gutter: 4 },
-        subDomain: { type: 'ghDay', radius: 2, width: 14, height: 14, gutter: 3 },
+        subDomain: { type: 'ghDay', radius: 2, width: cell, height: cell, gutter: 3 },
         scale: { color: { type: 'threshold', range: scale.range, domain: scale.domain } },
       },
       [[Tooltip, { text: (_ts: number, value: number | null, djs: { format: (f: string) => string }) => tooltipText(value, djs) }]]
@@ -533,9 +537,9 @@ import Base from '../layouts/Base.astro';
       fill.style.height = `${(total / maxVal) * 100}%`;
       if (total === 0) { fill.classList.add('empty'); fill.style.height = '2%'; }
       else {
-        // Bottom → top: output (darkest), input, cache create (lightest).
+        // Bottom → top: output (deep), input (mid), cache create (light).
         for (const [value, color] of [
-          [wk.output, 'var(--accent)'],
+          [wk.output, '#ea580c'],
           [wk.input, '#fb923c'],
           [wk.cacheCreate, '#fed7aa'],
         ] as Array<[number, string]>) {
@@ -762,7 +766,11 @@ import Base from '../layouts/Base.astro';
   let resizeTimer = 0;
   window.addEventListener('resize', () => {
     window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => { scrollToEnd('cal-heatmap'); scrollToEnd('gh-heatmap'); }, 100);
+    resizeTimer = window.setTimeout(() => {
+      if (!vibestatsData) return;
+      renderHeatmap(currentRange, currentMetric);
+      if (!githubCardEl.hidden) renderGithub(ghRange);
+    }, 150);
   });
 
   shareBtnEl.addEventListener('click', async () => {

@@ -233,9 +233,17 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
       start.setMonth(start.getMonth() - 11);
       start.setDate(1);
 
+      // Size the cells so the 52-week grid fills the card width (no dead space).
+      function demoCellSize(): number {
+        const host = document.getElementById('demo-heatmap');
+        const w = host?.clientWidth ?? 800;
+        return Math.max(11, Math.min(26, Math.floor((w - 53 * 3) / 53)));
+      }
+
       async function paintDemo(metric: Metric): Promise<void> {
         const scale = SCALE_BY_METRIC[metric];
         const range = [emptyColor(), ...scale.range.slice(1)];
+        const cell = demoCellSize();
         await cal.paint(
           {
             itemSelector: '#demo-heatmap',
@@ -243,7 +251,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
             date: { start },
             range: 12,
             domain: { type: 'month', label: { text: 'MMM', textAlign: 'start', position: 'bottom' }, gutter: 4 },
-            subDomain: { type: 'ghDay', width: 13, height: 13, radius: 2, gutter: 3 },
+            subDomain: { type: 'ghDay', width: cell, height: cell, radius: 2, gutter: 3 },
             scale: { color: { type: 'threshold', range, domain: scale.domain } },
           },
           [[Tooltip, {
@@ -271,13 +279,19 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
       document.getElementById('theme-toggle')?.addEventListener('click', () => {
         requestAnimationFrame(() => { cal.destroy(); void paintDemo(currentMetric); });
       });
+
+      // Re-fit the grid to the new width on resize.
+      let demoResizeTimer = 0;
+      window.addEventListener('resize', () => {
+        window.clearTimeout(demoResizeTimer);
+        demoResizeTimer = window.setTimeout(() => { cal.destroy(); void paintDemo(currentMetric); }, 150);
+      });
     </script>
 
     <!-- ── Dashboard preview ─────────────────────────────────────── -->
     <section class="section">
-      <p class="kicker">Your analytics dashboard</p>
-      <h2 class="h2">Everything, at a glance</h2>
-      <p class="section-sub">Six headline metrics, weekly token breakdown, and efficiency trends.</p>
+      <h2 class="h2">Your analytics dashboard</h2>
+      <p class="section-sub">Six headline metrics, a weekly token breakdown, and efficiency metrics.</p>
 
       <div class="kpis">
         <div class="kpi"><span class="kpi-label">Total Tokens</span><span class="kpi-value">24.8M</span><span class="kpi-delta up">▲ 12%</span></div>
@@ -298,7 +312,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
           <div id="preview-token-bars" class="token-bars"></div>
           <div class="bars-axis"><span>12 weeks ago</span><span>This week</span></div>
           <div class="chart-legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Output</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#ea580c"></span>Output</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#fb923c"></span>Input</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#fed7aa"></span>Cache create</span>
           </div>
@@ -343,9 +357,10 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
           const fill = 35 + rnd() * 60;
           const out = 40 + Math.round(rnd() * 20);
           const inp = out + Math.round(20 + rnd() * 15);
+          // Distinct steps: output (deep), input (mid), cache create (light).
           col.innerHTML =
             `<span class="tbar-fill" style="height:${fill}%;` +
-            `background:linear-gradient(to top, var(--accent) ${out}%, #fb923c ${out}% ${inp}%, #fed7aa ${inp}%)"></span>`;
+            `background:linear-gradient(to top, #ea580c ${out}%, #fb923c ${out}% ${inp}%, #fed7aa ${inp}%)"></span>`;
           tokenBars.appendChild(col);
         }
       }
@@ -399,32 +414,30 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
     </script>
 
     <!-- ── How it works ──────────────────────────────────────────── -->
-    <section class="section center">
-      <p class="kicker">How it works</p>
-      <h2 class="h2">Three moving parts</h2>
+    <section class="section">
+      <h2 class="h2">How it works</h2>
       <div class="how-grid">
         <div class="card how-card">
-          <div class="how-num">1</div>
-          <h3 class="how-title">CLI</h3>
-          <p>A Rust binary hooks into Claude Code &amp; Codex and records each session into your private repo.</p>
+          <div class="how-label">01 · CLI</div>
+          <h3 class="how-title">Installed locally</h3>
+          <p>Hooks into Claude Code and Codex and records each session into your private <code>vibestats-data</code> repo.</p>
         </div>
         <div class="card how-card">
-          <div class="how-num">2</div>
-          <h3 class="how-title">Action</h3>
-          <p>A daily GitHub Action aggregates across all your machines and renders an SVG heatmap.</p>
+          <div class="how-label">02 · ACTION</div>
+          <h3 class="how-title">Aggregates daily</h3>
+          <p>A GitHub Action runs daily, combines every machine's slice, and renders an SVG heatmap.</p>
         </div>
         <div class="card how-card">
-          <div class="how-num">3</div>
-          <h3 class="how-title">Profile</h3>
-          <p>The heatmap embeds in your profile README and links to your live dashboard.</p>
+          <div class="how-label">03 · PROFILE</div>
+          <h3 class="how-title">Lives on your profile</h3>
+          <p>The heatmap embeds in your README between markers and links to your full dashboard.</p>
         </div>
       </div>
     </section>
 
     <!-- ── Why VibeStats ─────────────────────────────────────────── -->
     <section class="section">
-      <p class="kicker">Why VibeStats</p>
-      <h2 class="h2">Built to be invisible</h2>
+      <h2 class="h2">Why VibeStats</h2>
       <div class="features">
         <div class="card feature"><h3>⚡ Zero effort</h3><p>Hooks fire silently on every session. No manual commands.</p></div>
         <div class="card feature"><h3>⏳ Long-term retention</h3><p>Claude Code clears transcripts after 30 days. VibeStats archives the stats — not the content — to your private repo.</p></div>
@@ -571,7 +584,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
   .mini-kpi-value.accent { color: var(--accent); }
   .mini-section-head { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--muted); margin-bottom: 0.5rem; }
   .mini-faint { color: var(--faint); }
-  .mini-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 10px); gap: 2px; }
+  .mini-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px); gap: 3px; }
 
   /* ── Demo ────────────────────────────────────────────────────── */
   .demo-card { text-align: left; margin-top: 1rem; }
@@ -637,22 +650,23 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 
   /* ── GitHub card ─────────────────────────────────────────────── */
   .gh-card { margin-top: 1rem; }
-  .gh-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 11px); gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .gh-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; overflow-x: auto; scrollbar-width: none; }
   .gh-heatmap::-webkit-scrollbar { display: none; }
   .gh-months { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); margin-top: 0.5rem; }
 
   /* ── How it works ────────────────────────────────────────────── */
-  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: left; }
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
   @media (max-width: 720px) { .how-grid { grid-template-columns: 1fr; } }
-  .how-num {
-    width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    background: var(--accent); color: var(--on-accent); font-family: var(--font-display); font-weight: 700; margin-bottom: 0.9rem;
+  .how-label {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--accent); margin-bottom: 1rem;
   }
-  .how-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+  .how-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
   .how-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.55; }
+  .how-card code { font-family: var(--font-mono); font-size: 0.82em; background: var(--surface2); border: 1px solid var(--hair); border-radius: 5px; padding: 0.05rem 0.35rem; color: var(--text); }
 
   /* ── Features ────────────────────────────────────────────────── */
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
   @media (max-width: 880px) { .features { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
   .feature h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
@@ -671,9 +685,9 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 
 <!-- Global: rules for JS-created elements (scoped styles don't reach them) -->
 <style is:global>
-  .mini-heatmap span { border-radius: 2px; }
+  .mini-heatmap span { border-radius: 3px; }
   .legend-swatches .swatch { width: 13px; height: 13px; border-radius: 3px; }
-  .gh-heatmap span { min-width: 9px; border-radius: 2px; }
+  .gh-heatmap span { min-width: 11px; border-radius: 3px; }
 
   .tbar { flex: 1; height: 100%; display: flex; align-items: flex-end; background: var(--surface2); border-radius: 4px 4px 0 0; overflow: hidden; min-width: 6px; }
   .tbar-fill { width: 100%; border-radius: 4px 4px 0 0; display: block; }
