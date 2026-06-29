@@ -584,7 +584,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
   .mini-kpi-value.accent { color: var(--accent); }
   .mini-section-head { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--muted); margin-bottom: 0.5rem; }
   .mini-faint { color: var(--faint); }
-  .mini-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px); gap: 3px; }
+  .mini-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); gap: 3px; }
 
   /* ── Demo ────────────────────────────────────────────────────── */
   .demo-card { text-align: left; margin-top: 1rem; }
@@ -650,8 +650,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 
   /* ── GitHub card ─────────────────────────────────────────────── */
   .gh-card { margin-top: 1rem; }
-  .gh-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; overflow-x: auto; scrollbar-width: none; }
-  .gh-heatmap::-webkit-scrollbar { display: none; }
+  .gh-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); gap: 3px; }
   .gh-months { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); margin-top: 0.5rem; }
 
   /* ── How it works ────────────────────────────────────────────── */
@@ -685,9 +684,9 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 
 <!-- Global: rules for JS-created elements (scoped styles don't reach them) -->
 <style is:global>
-  .mini-heatmap span { border-radius: 3px; }
+  .mini-heatmap span { aspect-ratio: 1; border-radius: 3px; }
   .legend-swatches .swatch { width: 13px; height: 13px; border-radius: 3px; }
-  .gh-heatmap span { min-width: 11px; border-radius: 3px; }
+  .gh-heatmap span { aspect-ratio: 1; border-radius: 3px; }
 
   .tbar { flex: 1; height: 100%; display: flex; align-items: flex-end; background: var(--surface2); border-radius: 4px 4px 0 0; overflow: hidden; min-width: 6px; }
   .tbar-fill { width: 100%; border-radius: 4px 4px 0 0; display: block; }
