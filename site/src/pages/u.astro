@@ -58,6 +58,7 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-submetric="prs">Pull Requests</button>
           <button class="tab" data-submetric="issues">Issues</button>
           <button class="tab" data-submetric="reviews">Reviews</button>
+          <button class="tab" data-submetric="private">Private</button>
         </div>
         <div class="heatmap-grid-row">
           <div class="heatmap-wrapper">
@@ -196,7 +197,18 @@ import Base from '../layouts/Base.astro';
   let currentRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
   // Which GitHub contribution type the heatmap shades when the GitHub tab is active.
-  let githubSubmetric: keyof GithubDay = 'total';
+  // 'private' is derived (total − the four typed counts): GitHub counts private
+  // contributions in the calendar total but doesn't break them down by type, so
+  // this surfaces them as their own bucket.
+  type GithubSubmetric = 'total' | 'commits' | 'prs' | 'issues' | 'reviews' | 'private';
+  let githubSubmetric: GithubSubmetric = 'total';
+
+  function githubValue(day: GithubDay, sub: GithubSubmetric): number {
+    if (sub === 'private') {
+      return Math.max(0, day.total - day.commits - day.prs - day.issues - day.reviews);
+    }
+    return day[sub] ?? 0;
+  }
 
   // ── Helpers ────────────────────────────────────────────────────────
   function showError(msg: string): void {
@@ -465,7 +477,7 @@ import Base from '../layouts/Base.astro';
     const calData = isGithub
       ? Object.entries(vibestatsData.github_contributions ?? {})
           .filter(([date]) => datePredicate(date))
-          .map(([date, v]) => ({ date, value: v[githubSubmetric] ?? 0 }))
+          .map(([date, v]) => ({ date, value: githubValue(v, githubSubmetric) }))
       : Object.entries(vibestatsData.days)
           .filter(([date]) => datePredicate(date))
           .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
@@ -509,8 +521,9 @@ import Base from '../layouts/Base.astro';
                 const gh = vibestatsData?.github_contributions?.[dateKey];
                 if (!gh || value === null || value === 0)
                   return `No contributions on ${djs.format('MMM D, YYYY')}`;
+                const priv = Math.max(0, gh.total - gh.commits - gh.prs - gh.issues - gh.reviews);
                 return `${djs.format('MMM D, YYYY')}: ${gh.total} contribution${gh.total === 1 ? '' : 's'} `
-                  + `(${gh.commits} commits, ${gh.prs} PRs, ${gh.issues} issues, ${gh.reviews} reviews)`;
+                  + `(${gh.commits} commits, ${gh.prs} PRs, ${gh.issues} issues, ${gh.reviews} reviews, ${priv} private)`;
               }
               const day = vibestatsData?.days[dateKey];
               if (!day || value === null || value === 0)
@@ -559,7 +572,7 @@ import Base from '../layouts/Base.astro';
   githubSubfiltersEl.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest('.tab') as HTMLButtonElement | null;
     if (!btn || !vibestatsData) return;
-    const sub = btn.dataset.submetric as keyof GithubDay;
+    const sub = btn.dataset.submetric as GithubSubmetric;
     if (sub === githubSubmetric) return;
     githubSubmetric = sub;
     for (const t of githubSubfiltersEl.querySelectorAll('.tab')) {
@@ -1023,7 +1036,13 @@ import Base from '../layouts/Base.astro';
       if (githubTab) githubTab.hidden = false;
     }
 
-    const years = [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
+    // Year pills span both AI-session history and GitHub contribution history,
+    // so years with only GitHub data (e.g. before vibestats was installed) are
+    // still selectable on the GitHub heatmap tab.
+    const years = [...new Set([
+      ...Object.keys(data.days),
+      ...Object.keys(data.github_contributions ?? {}),
+    ].map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
     if (years.length === 0) { showError(`No vibestats data found for @${username}`); return; }
 
     currentRange = 'L12M';
