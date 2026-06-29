@@ -15,6 +15,7 @@ Test IDs follow the story task list:
 """
 
 import pathlib
+import re
 from typing import Optional
 
 import yaml
@@ -108,18 +109,20 @@ def test_tc2_workflow_dispatch_trigger_present() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_tc3_step_uses_vibestats_v1_action() -> None:
-    """[P1] AC1: The job step must use 'stephenleo/vibestats@v1'. This resolves
-    to action.yml in the same repo via the Marketplace tag 'v1' (Story 8.3)."""
+def test_tc3_step_uses_vibestats_major_tag() -> None:
+    """[P1] AC1: The job step must use 'stephenleo/vibestats@v<MAJOR>'. This
+    resolves to action.yml in the same repo via the floating Marketplace major
+    tag (Story 8.3). (Originally pinned to @v1; relaxed to the floating major tag
+    so it survives major version bumps — e.g. @v2.)"""
     workflow = _load_workflow()
 
     step = _find_uses_step(workflow)
     assert step is not None, (
         "No 'uses:' step found in any job in aggregate.yml. "
-        "Expected a step that calls 'stephenleo/vibestats@v1'."
+        "Expected a step that calls 'stephenleo/vibestats@v<MAJOR>'."
     )
-    assert step["uses"] == "stephenleo/vibestats@v1", (
-        f"Step 'uses:' is '{step['uses']}', expected 'stephenleo/vibestats@v1' (AC1)."
+    assert re.fullmatch(r"stephenleo/vibestats@v\d+", step["uses"]), (
+        f"Step 'uses:' is '{step['uses']}', expected 'stephenleo/vibestats@v<MAJOR>' (AC1)."
     )
 
 
