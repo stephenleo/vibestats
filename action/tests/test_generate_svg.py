@@ -5,7 +5,7 @@ Status: GREEN — all 26 tests pass against the implemented generate_svg.py.
 
 Acceptance Criteria covered:
   AC1: Produces a valid SVG with 52-columns × 7-rows grid using xml.etree.ElementTree (stdlib only)
-  AC2: Activity intensity uses Claude orange shades (low: #fef3e8 → high: #f97316); zero days → #ebedf0
+  AC2: Activity intensity uses the website's `sessions` orange ramp (low: #fdba74 → high: #c2410c); zero days → #ebedf0
   AC3: No JavaScript, no <script>, no event handlers — static SVG compatible with GitHub DOMPurify
 
 Test framework: Python stdlib unittest (no pytest, no external dependencies).
@@ -51,14 +51,6 @@ _SAMPLE_DATA_EMPTY = {
     "days": {},
 }
 
-_SAMPLE_DATA_SINGLE_MAX = {
-    "generated_at": "2026-04-11T01:00:00Z",
-    "username": "stephenleo",
-    "days": {
-        "2026-04-10": {"sessions": 10, "active_minutes": 200},
-    },
-}
-
 # Low vs high sessions — used to verify low-intensity colour endpoint (AC2)
 _SAMPLE_DATA_LOW_AND_HIGH = {
     "generated_at": "2026-04-11T01:00:00Z",
@@ -69,13 +61,24 @@ _SAMPLE_DATA_LOW_AND_HIGH = {
     },
 }
 
-# Log-scale intensity fixture — max=8, low=1 → verifies bucket mapping (AC2 Dev Notes)
-_SAMPLE_DATA_LOG_SCALE = {
+# Quantile-threshold fixture — nine low (1-session) days + one high outlier.
+# Domain over nz=[1×9, 100] → [1, 2, 3, 100], so the outlier reaches intensity
+# 4 (#c2410c) and the 1-session days sit at intensity 1 (#fdba74). Mirrors the
+# website's per-profile quantile scale (AC2).
+_SAMPLE_DATA_QUANTILE = {
     "generated_at": "2026-04-11T01:00:00Z",
     "username": "stephenleo",
     "days": {
-        "2026-04-10": {"sessions": 8, "active_minutes": 100},  # max → intensity 4 → #f97316
-        "2026-04-09": {"sessions": 1, "active_minutes": 10},   # low → intensity 1 → #fef3e8
+        "2026-04-01": {"sessions": 1, "active_minutes": 10},
+        "2026-04-02": {"sessions": 1, "active_minutes": 10},
+        "2026-04-03": {"sessions": 1, "active_minutes": 10},
+        "2026-04-04": {"sessions": 1, "active_minutes": 10},
+        "2026-04-05": {"sessions": 1, "active_minutes": 10},
+        "2026-04-06": {"sessions": 1, "active_minutes": 10},
+        "2026-04-07": {"sessions": 1, "active_minutes": 10},
+        "2026-04-08": {"sessions": 1, "active_minutes": 10},
+        "2026-04-09": {"sessions": 1, "active_minutes": 10},
+        "2026-04-10": {"sessions": 100, "active_minutes": 300},  # outlier → intensity 4 → #c2410c
     },
 }
 
@@ -258,28 +261,28 @@ class TestSVGColourPalette(unittest.TestCase):
                 )
 
     def test_p1_max_activity_day_uses_high_orange(self):
-        """[P1] Day with maximum sessions must use high-intensity colour #f97316 (AC2 high endpoint)."""
+        """[P1] A day at the top intensity bucket must use high-intensity colour #c2410c (AC2 high endpoint)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            svg_content = _run_generate_svg(_SAMPLE_DATA_SINGLE_MAX, tmp_dir)
+            svg_content = _run_generate_svg(_SAMPLE_DATA_QUANTILE, tmp_dir)
         self.assertIn(
-            "#f97316",
+            "#c2410c",
             svg_content.lower(),
-            "Expected high-intensity orange #f97316 for day with maximum sessions",
+            "Expected high-intensity orange #c2410c for a day in the top quantile bucket",
         )
 
     def test_p1_low_activity_day_uses_low_orange(self):
-        """[P1] Day with low (but non-zero) sessions must use low-intensity colour #fef3e8 (AC2 low endpoint)."""
+        """[P1] Day with low (but non-zero) sessions must use low-intensity colour #fdba74 (AC2 low endpoint)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_LOW_AND_HIGH, tmp_dir)
         self.assertIn(
-            "#fef3e8",
+            "#fdba74",
             svg_content.lower(),
-            "Expected low-intensity orange #fef3e8 for day with low sessions",
+            "Expected low-intensity orange #fdba74 for day with low sessions",
         )
 
     def test_p1_colour_palette_does_not_include_unexpected_colours(self):
         """[P1] Only the five defined intensity colours should appear as fill values (AC2)."""
-        allowed_fills = {"#ebedf0", "#fef3e8", "#fed7aa", "#fb923c", "#f97316"}
+        allowed_fills = {"#ebedf0", "#fdba74", "#fb923c", "#f97316", "#c2410c"}
         with tempfile.TemporaryDirectory() as tmp_dir:
             svg_content = _run_generate_svg(_SAMPLE_DATA_ACTIVE, tmp_dir)
             rects = _get_rects(svg_content)
@@ -291,17 +294,19 @@ class TestSVGColourPalette(unittest.TestCase):
                     f"Unexpected fill colour '{fill}' — must be one of {allowed_fills}",
                 )
 
-    def test_p2_intensity_buckets_use_log_scale(self):
-        """[P2] Intensity bucketing follows log scale formula (AC2, Dev Notes).
+    def test_p2_intensity_buckets_use_quantile_thresholds(self):
+        """[P2] Intensity bucketing follows the website's quantile thresholds (AC2).
 
-        With max=8, low=1:
-          intensity(8) = min(4, int(log(9)/log(9)*4)) = 4 → #f97316
-          intensity(1) = min(4, int(log(2)/log(9)*4)) = 1 → #fef3e8 (clamped from 0 for non-zero)
+        With nz=[1×9, 100], thresholds = [1, 2, 3, 100]:
+          intensity(100) = 4 → #c2410c (>= all four thresholds)
+          intensity(1)   = 1 → #fdba74 (>= only the pinned threshold of 1)
         """
         with tempfile.TemporaryDirectory() as tmp_dir:
-            svg_content = _run_generate_svg(_SAMPLE_DATA_LOG_SCALE, tmp_dir)
-        # The day with max sessions must map to high-intensity orange
-        self.assertIn("#f97316", svg_content.lower())
+            svg_content = _run_generate_svg(_SAMPLE_DATA_QUANTILE, tmp_dir)
+        svg_lower = svg_content.lower()
+        # Outlier day → top bucket; 1-session days → lowest active bucket.
+        self.assertIn("#c2410c", svg_lower)
+        self.assertIn("#fdba74", svg_lower)
 
 
 # ---------------------------------------------------------------------------
@@ -538,7 +543,7 @@ class TestSVGInputValidation(unittest.TestCase):
             self.assertIn("sessions", result.stderr.lower())
 
     def test_p1_rejects_negative_sessions(self):
-        """[P1] Must reject negative session counts (would crash math.log otherwise)."""
+        """[P1] Must reject negative session counts at the validation boundary."""
         import subprocess  # noqa: PLC0415
 
         bad_data = {

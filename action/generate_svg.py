@@ -35,22 +35,24 @@ from datetime import date, timedelta
 # Constants
 # ---------------------------------------------------------------------------
 
-# Claude orange colour palettes — intensities 0–4
-# Intensity 0 and 4 are fixed by AC2; 1–3 are implementation-defined orange family.
+# Sessions colour ramp — intensities 0–4. The ramp (1–4) is the website's
+# `sessions` palette from site/src/pages/u.astro, verbatim, so the README
+# heatmap matches the vibestats.dev profile page (issue #116). Light and dark
+# share the active shades; only the empty-cell colour (0) differs by theme.
 COLOUR_PALETTES = {
     "light": {
         0: "#ebedf0",  # neutral/zero
-        1: "#fef3e8",  # low
-        2: "#fed7aa",  # orange-200
-        3: "#fb923c",  # orange-400
-        4: "#f97316",  # high
+        1: "#fdba74",  # orange-300
+        2: "#fb923c",  # orange-400
+        3: "#f97316",  # orange-500
+        4: "#c2410c",  # orange-700 (high)
     },
     "dark": {
         0: "#2a3346",  # neutral/zero — visible against dark bg
-        1: "#fef3e8",  # low
-        2: "#fed7aa",  # orange-200
-        3: "#fb923c",  # orange-400
-        4: "#f97316",  # high
+        1: "#fdba74",  # orange-300
+        2: "#fb923c",  # orange-400
+        3: "#f97316",  # orange-500
+        4: "#c2410c",  # orange-700 (high)
     },
 }
 
@@ -116,24 +118,87 @@ def _compute_grid_dates(last_date: date) -> list[list[date]]:
     return grid
 
 
-def _compute_intensity(sessions: int, max_sessions: int) -> int:
-    """Return intensity bucket 0–4 using log scale.
+def _quantile(sorted_asc: list[int], q: float) -> int:
+    """Return the q-quantile of an ascending-sorted, non-empty list.
 
-    intensity = min(4, int(log(1 + sessions) / log(1 + max_sessions) * 4))
-    where max_sessions is the max across all days with activity (>0).
-    If max_sessions == 0 or sessions <= 0, returns 0. Any non-zero sessions
-    always yields >= 1 to ensure visual distinction from zero-activity days.
+    Nearest-rank via floor(len * q), clamped to the last index — a direct port
+    of quantile() in site/src/pages/u.astro so buckets match the website.
 
-    Negative session counts are treated as zero activity rather than raising
-    (the aggregator should never emit them, but belt-and-braces keeps this
-    helper pure and crash-free on malformed upstream data).
+    Args:
+        sorted_asc (list[int]): Non-empty list of values sorted ascending.
+        q (float): Quantile in [0, 1].
+
+    Returns:
+        int: The value at the computed index.
     """
-    if max_sessions <= 0 or sessions <= 0:
+    idx = min(len(sorted_asc) - 1, int(len(sorted_asc) * q))
+    return sorted_asc[idx]
+
+
+def _nice_ceil(n: int) -> int:
+    """Round n up to a 'nice' number so thresholds aren't ugly (e.g. 47 → 50).
+
+    Port of niceCeil() in site/src/pages/u.astro: values <= 10 round to the
+    next integer; larger values round up to the next multiple of their
+    leading power of ten.
+
+    Args:
+        n (int): Positive value to round.
+
+    Returns:
+        int: n rounded up to a nice number (n itself when n <= 10).
+    """
+    if n <= 10:
+        return n
+    mag = 10 ** int(math.floor(math.log10(n)))
+    return int(math.ceil(n / mag) * mag)
+
+
+def _compute_domain(sessions_counts: list[int]) -> list[int]:
+    """Compute four strictly-increasing intensity thresholds for the dataset.
+
+    Port of colorScale() in site/src/pages/u.astro: thresholds are pinned at 1
+    then drawn from the 40th/70th/90th percentiles of the user's own non-zero
+    session counts (so shading adapts to each profile, identically to the
+    dashboard). With no activity, returns placeholder thresholds — every cell
+    is empty anyway.
+
+    Args:
+        sessions_counts (list[int]): Per-day session counts (zeros included).
+
+    Returns:
+        list[int]: Four strictly-increasing thresholds [d0, d1, d2, d3].
+    """
+    nz = sorted(c for c in sessions_counts if c > 0)
+    if not nz:
+        return [1, 2, 3, 4]
+    raw = [1, _nice_ceil(_quantile(nz, 0.4)), _nice_ceil(_quantile(nz, 0.7)), _nice_ceil(_quantile(nz, 0.9))]
+    # Enforce strictly-increasing order (collisions happen on uniform data).
+    domain: list[int] = []
+    for v in raw:
+        prev = domain[-1] if domain else None
+        domain.append(prev + 1 if prev is not None and v <= prev else v)
+    return domain
+
+
+def _compute_intensity(sessions: int, domain: list[int]) -> int:
+    """Return intensity bucket 0–4 for a day's session count.
+
+    Threshold scale matching the website: value < domain[i] → bucket i, so the
+    intensity is the count of thresholds the value meets or exceeds. domain[0]
+    is 1, so any non-zero day is at least intensity 1; zero (or negative,
+    treated as zero) days are intensity 0.
+
+    Args:
+        sessions (int): Session count for the day.
+        domain (list[int]): Four ascending thresholds from _compute_domain().
+
+    Returns:
+        int: Intensity bucket in [0, 4].
+    """
+    if sessions <= 0:
         return 0
-    raw = math.log(1 + sessions) / math.log(1 + max_sessions) * 4
-    # Clamp to [1, 4] for non-zero activity days so they are always visually
-    # distinct from zero-activity days (which are intensity 0 / #ebedf0).
-    return max(1, min(4, int(raw)))
+    return sum(1 for d in domain if sessions >= d)
 
 
 # ---------------------------------------------------------------------------
@@ -147,12 +212,10 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict], theme: str = "ligh
     days: mapping from "YYYY-MM-DD" → {"sessions": int, "active_minutes": int}
     theme: "light" or "dark" — controls palette and label colours.
     """
-    # Compute max_sessions across all activity days (validated to be ints
-    # upstream in generate(), so .get() default of 0 is purely defensive).
-    max_sessions = max(
-        (v.get("sessions", 0) for v in days.values() if v.get("sessions", 0) > 0),
-        default=0,
-    )
+    # Compute intensity thresholds from the user's own session distribution
+    # (validated to be ints upstream in generate(), so .get() default of 0 is
+    # purely defensive). Mirrors the website's per-profile quantile scale.
+    domain = _compute_domain([v.get("sessions", 0) for v in days.values()])
 
     # Use plain tag names (no namespace prefix) so ElementTree doesn't add
     # "ns0:" prefixes or duplicate xmlns declarations in the output.
@@ -208,7 +271,7 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict], theme: str = "ligh
             date_str = cell_date.strftime("%Y-%m-%d")
             day_data = days.get(date_str, {})
             sessions = day_data.get("sessions", 0)
-            intensity = _compute_intensity(sessions, max_sessions)
+            intensity = _compute_intensity(sessions, domain)
             fill = COLOUR_PALETTES[theme][intensity]
 
             rect = ET.SubElement(svg, "rect")
