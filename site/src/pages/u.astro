@@ -106,7 +106,6 @@ import Base from '../layouts/Base.astro';
       <div id="github-card" class="card gh-card" hidden>
         <h3 class="card-title">GitHub Contributions</h3>
         <p class="card-desc">The heatmap that renders on your GitHub profile — includes your aggregated private contributions too, updated daily.</p>
-        <button id="copy-md-btn" type="button" class="btn-mono">Copy markdown</button>
         <div class="gh-panel">
           <div class="gh-panel-head">
             <span id="gh-panel-label" class="gh-panel-label"></span>
@@ -176,7 +175,6 @@ import Base from '../layouts/Base.astro';
   const ghYearSelectEl = document.getElementById('gh-year-select') as HTMLSelectElement;
   const ghCountEl = document.getElementById('gh-count')!;
   const ghPanelLabelEl = document.getElementById('gh-panel-label')!;
-  const copyMdBtnEl = document.getElementById('copy-md-btn')!;
 
   // ── Username discovery ─────────────────────────────────────────────
   const GH_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/;
@@ -784,13 +782,6 @@ import Base from '../layouts/Base.astro';
     catch { shareBtnEl.textContent = 'Failed'; }
     window.setTimeout(() => { shareBtnEl.textContent = 'Share'; }, 1600);
   });
-  copyMdBtnEl.addEventListener('click', async () => {
-    const md = `[![VibeStats](https://raw.githubusercontent.com/${username}/${username}/main/vibestats/heatmap.svg)](https://vibestats.dev/${username})`;
-    try { await navigator.clipboard.writeText(md); copyMdBtnEl.textContent = 'Copied ✓'; }
-    catch { copyMdBtnEl.textContent = 'Failed'; }
-    window.setTimeout(() => { copyMdBtnEl.textContent = 'Copy markdown'; }, 1600);
-  });
-
   // ── Main init ──────────────────────────────────────────────────────
   async function init(): Promise<void> {
     if (!username) { showError(`No vibestats data found for @${rawSegment || 'unknown'}`); return; }
@@ -882,12 +873,6 @@ import Base from '../layouts/Base.astro';
   .btn-secondary:hover { background: var(--surface2); }
   .btn-primary { background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); }
   .btn-primary:hover { background: var(--accent-hover); }
-  .btn-mono {
-    font-family: var(--font-mono); font-size: 0.78rem; padding: 0.4rem 0.85rem; border-radius: 9px; cursor: pointer;
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text); margin-bottom: 1.1rem; transition: background 0.15s;
-  }
-  .btn-mono:hover { background: var(--surface); }
-
   .state-msg { text-align: center; padding: 3rem; color: var(--muted); }
   .state-msg.error { color: #dc2626; }
   .spinner {
