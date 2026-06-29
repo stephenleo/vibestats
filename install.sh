@@ -284,11 +284,24 @@ write_aggregate_workflow() {
   echo "Workflow content:"
   printf '%s\n' "$WORKFLOW_CONTENT"
 
-  _gh api "repos/${GITHUB_USER}/vibestats-data/contents/.github/workflows/aggregate.yml" \
-    --method PUT \
-    --field message="Add vibestats aggregate workflow" \
-    --field "content=${CONTENT}" \
-    || { echo "Error: Failed to write aggregate.yml to vibestats-data." >&2; exit 1; }
+  # Fetch the existing file SHA (if any) so the PUT UPDATES rather than failing
+  # with 422 on re-install. This keeps existing users' workflow template current
+  # — e.g. picking up github-token + contents:write for the contributions feature.
+  EXISTING_SHA=$(_gh api "repos/${GITHUB_USER}/vibestats-data/contents/.github/workflows/aggregate.yml" --jq '.sha' 2>/dev/null || true)
+  if [ -n "${EXISTING_SHA}" ]; then
+    _gh api "repos/${GITHUB_USER}/vibestats-data/contents/.github/workflows/aggregate.yml" \
+      --method PUT \
+      --field message="Update vibestats aggregate workflow" \
+      --field "content=${CONTENT}" \
+      --field "sha=${EXISTING_SHA}" \
+      || { echo "Error: Failed to update aggregate.yml in vibestats-data." >&2; exit 1; }
+  else
+    _gh api "repos/${GITHUB_USER}/vibestats-data/contents/.github/workflows/aggregate.yml" \
+      --method PUT \
+      --field message="Add vibestats aggregate workflow" \
+      --field "content=${CONTENT}" \
+      || { echo "Error: Failed to write aggregate.yml to vibestats-data." >&2; exit 1; }
+  fi
 
   echo "Workflow written: vibestats-data/.github/workflows/aggregate.yml"
 }
@@ -327,12 +340,27 @@ setup_vibestats_token() {
       || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
     echo "VIBESTATS_TOKEN secret set via fallback."
   fi
+}
 
-  # VIBESTATS_GH_TOKEN — used by the daily Action to fetch your GitHub
-  # contribution counts (including private ones) via GraphQL. The fine-grained
-  # VIBESTATS_TOKEN above can't query viewer.contributionsCollection, so we use
-  # the gh OAuth token (its `repo` scope returns your own private counts).
-  # Optional: the contributions heatmap is simply skipped if this fails.
+# ---------------------------------------------------------------------------
+# Set VIBESTATS_GH_TOKEN — used by the daily Action to fetch your GitHub
+# contribution counts (including private ones) via GraphQL
+# viewer.contributionsCollection. The fine-grained VIBESTATS_TOKEN can't query
+# that endpoint, so we use the gh OAuth token (its `repo` scope + your SSO
+# authorization return your own private counts).
+#
+# Idempotent and run on EVERY install path (first-install AND multi-machine) so
+# existing users picking up the contributions feature get the secret on re-run.
+# Optional: the heatmap is simply skipped if this fails.
+# Requires: GITHUB_USER exported by detect_install_mode.
+# ---------------------------------------------------------------------------
+setup_github_contributions_token() {
+  if [ -z "${GITHUB_USER:-}" ]; then
+    USER_JSON=$(_gh api /user)
+    GITHUB_USER=$(echo "$USER_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['login'])")
+    export GITHUB_USER
+  fi
+
   echo "Setting up VIBESTATS_GH_TOKEN Actions secret (GitHub contributions heatmap)..."
   if _gh auth token \
       | _gh secret set VIBESTATS_GH_TOKEN --repo "${GITHUB_USER}/vibestats-data"; then
@@ -459,7 +487,6 @@ EOF
 # ---------------------------------------------------------------------------
 first_install_path() {
   create_vibestats_data_repo
-  write_aggregate_workflow
   setup_vibestats_token
   register_machine
 }
@@ -767,6 +794,14 @@ main() {
       first_install_path
       ;;
   esac
+
+  # Ensure the aggregate workflow template and the contributions token are current
+  # on EVERY run (first-install AND multi-machine). write_aggregate_workflow is
+  # update-capable (SHA-aware), so existing users picking up new features — like
+  # the GitHub contributions heatmap — get the refreshed template + secret on
+  # re-install, not just on the very first install.
+  write_aggregate_workflow
+  setup_github_contributions_token
 
   # Steps 12–15: shared final steps (always run)
   configure_hooks
