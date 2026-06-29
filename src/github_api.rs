@@ -243,19 +243,6 @@ impl GithubApi {
     pub fn get_user(&self) -> Result<String, GithubApiError> {
         with_retry(|| get_user_inner(&self.token))
     }
-
-    /// Execute a GraphQL query against `https://api.github.com/graphql`.
-    ///
-    /// Returns the full parsed JSON response `Value` (including any top-level
-    /// `data` and `errors` keys). GraphQL-level errors (HTTP 200 with an
-    /// `errors` field) are NOT treated as transport failures here — the caller
-    /// inspects `data` and handles a null/missing result. This avoids wasting
-    /// the retry budget on permanent errors (e.g. insufficient token scope).
-    ///
-    /// Only transport errors and 429 / 5xx are retried via `with_retry`.
-    pub fn graphql_query(&self, query: &str) -> Result<serde_json::Value, GithubApiError> {
-        with_retry(|| graphql_query_inner(&self.token, query))
-    }
 }
 
 // ─── Internal HTTP helpers ────────────────────────────────────────────────────
@@ -525,39 +512,6 @@ fn get_user_inner(token: &str) -> Result<String, ureq::Error> {
                     "github_api: missing login field in /user response",
                 ))),
             }
-        }
-        Err(e) => Err(e),
-    }
-}
-
-/// Inner POST helper for the GitHub GraphQL endpoint.
-///
-/// Returns the full parsed JSON response (`data` and/or `errors`). Returns
-/// `ureq::Error` directly (not boxed) so `with_retry` can classify the error for
-/// retriability before boxing. GraphQL-level errors arrive as HTTP 200 with an
-/// `errors` field and are surfaced to the caller via the returned `Value` — not
-/// retried — so a permanent error (e.g. insufficient scope) doesn't burn retries.
-#[allow(clippy::result_large_err)]
-fn graphql_query_inner(token: &str, query: &str) -> Result<serde_json::Value, ureq::Error> {
-    let url = "https://api.github.com/graphql";
-    let body = serde_json::json!({ "query": query }).to_string();
-
-    let response = ureq::post(url)
-        .set("Authorization", &format!("Bearer {}", token))
-        .set("User-Agent", "vibestats")
-        .set("Accept", "application/vnd.github+json")
-        .set("Content-Type", "application/json")
-        .send_string(&body);
-
-    match response {
-        Ok(r) => {
-            let body = r.into_string().map_err(ureq::Error::from)?;
-            serde_json::from_str(&body).map_err(|e| {
-                ureq::Error::from(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("github_api: malformed JSON from graphql: {}", e),
-                ))
-            })
         }
         Err(e) => Err(e),
     }

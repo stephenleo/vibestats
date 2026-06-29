@@ -54,7 +54,7 @@ pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool)
     };
 
     if !backfill {
-        crate::sync::run_harnesses(&today, &today, false, harnesses);
+        crate::sync::run_harnesses(&today, &today, harnesses);
         if !quiet {
             println!("vibestats: sync complete");
         }
@@ -70,18 +70,19 @@ pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool)
             }
         }
 
-        // GitHub contributions backfill is independent of local AI history (it
-        // walks from the GitHub account creation date), so run it even when no
-        // local session data exists. The harness loop is then a no-op.
+        if activities.is_empty() {
+            if !quiet {
+                println!("vibestats: backfill complete — no local data found");
+            }
+            return;
+        }
+
         let mut dates: Vec<&String> = activities.keys().collect();
         dates.sort();
-        let earliest = dates
-            .first()
-            .map(|d| d.to_string())
-            .unwrap_or_else(|| today.clone());
+        let earliest = dates[0].clone();
         let count = dates.len();
 
-        crate::sync::run_harnesses(&earliest, &today, true, harnesses);
+        crate::sync::run_harnesses(&earliest, &today, harnesses);
         if !quiet {
             println!("vibestats: backfill complete — processed {} date(s)", count);
         }

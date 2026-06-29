@@ -31,7 +31,7 @@ fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
 
 /// Computes SHA256 of data and returns lowercase hex string (64 chars).
 /// Implemented std-only — no external crate.
-pub(crate) fn sha256_hex(data: &[u8]) -> String {
+fn sha256_hex(data: &[u8]) -> String {
     // SHA256 initial hash values (first 32 bits of fractional parts of square roots of primes 2..19)
     let mut h: [u32; 8] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
@@ -119,13 +119,12 @@ pub(crate) fn sha256_hex(data: &[u8]) -> String {
 /// dates via `github_api`, and updates the checkpoint. Always saves checkpoint and
 /// returns `()` — never calls `std::process::exit`.
 pub fn run(start_date: &str, end_date: &str) {
-    run_harnesses(start_date, end_date, false, crate::harnesses::all());
+    run_harnesses(start_date, end_date, crate::harnesses::all());
 }
 
 pub fn run_harnesses(
     start_date: &str,
     end_date: &str,
-    backfill: bool,
     harnesses: &[&'static dyn crate::harnesses::Harness],
 ) {
     let config = Config::load_or_exit();
@@ -181,11 +180,6 @@ pub fn run_harnesses(
             }
         }
     }
-
-    // Snapshot GitHub contribution counts (incl. private) into vibestats-data.
-    // Non-fatal and idempotent; reuses the same api + checkpoint. On backfill,
-    // walks from account creation respecting the GraphQL rate budget (#117).
-    crate::github_contributions::sync(&api, &mut checkpoint, start_date, end_date, backfill);
 
     // Always save checkpoint after processing all dates (AC #6)
     if let Some(ref path) = cp_path {

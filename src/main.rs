@@ -2,7 +2,6 @@ mod checkpoint;
 mod commands;
 mod config;
 mod github_api;
-mod github_contributions;
 mod harnesses;
 mod hooks;
 mod logger;
