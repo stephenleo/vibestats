@@ -237,7 +237,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
       function demoCellSize(): number {
         const host = document.getElementById('demo-heatmap');
         const w = host?.clientWidth ?? 800;
-        return Math.max(11, Math.min(26, Math.floor((w - 53 * 3) / 53)));
+        return Math.max(10, Math.min(15, Math.round(w / 53) - 3));
       }
 
       async function paintDemo(metric: Metric): Promise<void> {
@@ -493,7 +493,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
 </Base>
 
 <style>
-  .landing { max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .landing { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
   /* ── Shared ──────────────────────────────────────────────────── */
   .section { margin-top: 6rem; }
