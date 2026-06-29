@@ -638,5 +638,45 @@ class TestSVGSnapshot(unittest.TestCase):
         )
 
 
+class TestGithubContributionsMetric(unittest.TestCase):
+    """Issue #117: --metric github_contributions renders the green palette from
+    the top-level github_contributions map, shaded by the daily `total`."""
+
+    def _render_github(self, data: dict, tmp_dir: str) -> str:
+        import generate_svg  # noqa: PLC0415
+
+        input_path = _write_data_json(tmp_dir, data)
+        output_path = os.path.join(tmp_dir, "github.svg")
+        generate_svg.generate(input_path, output_path, metric="github_contributions")
+        with open(output_path, "r", encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_renders_github_green_for_active_days(self):
+        """A day with a non-zero `total` must be shaded with a GitHub-green token,
+        not the orange sessions palette."""
+        data = {
+            "generated_at": "2026-06-29T01:00:00Z",
+            "username": "u",
+            "days": {},
+            "github_contributions": {
+                "2026-06-28": {"total": 12, "commits": 5, "prs": 2, "issues": 1, "reviews": 4},
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            svg = self._render_github(data, tmp_dir)
+        green_tokens = {"#9be9a8", "#40c463", "#30a14e", "#216e39"}
+        fills = {r.get("fill") for r in _get_rects(svg)}
+        self.assertTrue(green_tokens & fills, f"expected a GitHub-green fill, got {fills}")
+        self.assertNotIn("#f97316", fills, "must not use the orange sessions palette")
+
+    def test_missing_contributions_key_is_graceful(self):
+        """data.json without github_contributions (pre-#117) renders a blank
+        green heatmap instead of erroring."""
+        data = {"generated_at": "2026-06-29T01:00:00Z", "username": "u", "days": {}}
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            svg = self._render_github(data, tmp_dir)
+        self.assertEqual(len(_get_rects(svg)), 364, "still a full 52×7 grid")
+
+
 if __name__ == "__main__":
     unittest.main()

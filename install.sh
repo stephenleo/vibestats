@@ -253,10 +253,13 @@ on:
 jobs:
   aggregate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # lets the action commit the GitHub contributions snapshot back to vibestats-data
     steps:
       - uses: stephenleo/vibestats@v2
         with:
           token: ${{ secrets.VIBESTATS_TOKEN }}
+          github-token: ${{ secrets.VIBESTATS_GH_TOKEN }}
           profile-repo: ${{ github.repository_owner }}/${{ github.repository_owner }}
 WORKFLOW
 }
@@ -323,6 +326,19 @@ setup_vibestats_token() {
       | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data" \
       || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
     echo "VIBESTATS_TOKEN secret set via fallback."
+  fi
+
+  # VIBESTATS_GH_TOKEN — used by the daily Action to fetch your GitHub
+  # contribution counts (including private ones) via GraphQL. The fine-grained
+  # VIBESTATS_TOKEN above can't query viewer.contributionsCollection, so we use
+  # the gh OAuth token (its `repo` scope returns your own private counts).
+  # Optional: the contributions heatmap is simply skipped if this fails.
+  echo "Setting up VIBESTATS_GH_TOKEN Actions secret (GitHub contributions heatmap)..."
+  if _gh auth token \
+      | _gh secret set VIBESTATS_GH_TOKEN --repo "${GITHUB_USER}/vibestats-data"; then
+    echo "VIBESTATS_GH_TOKEN secret set successfully."
+  else
+    echo "Warning: Could not set VIBESTATS_GH_TOKEN — GitHub contributions heatmap will be skipped." >&2
   fi
 }
 

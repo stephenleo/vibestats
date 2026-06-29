@@ -141,12 +141,16 @@ class TestAggregatePurgedMachineSkipped(unittest.TestCase):
 class TestAggregateOutputSchema(unittest.TestCase):
     """5.1-UNIT-003: Output schema conforms to public spec — no machine IDs/paths/hostnames (P0, R-002)."""
 
-    def test_output_has_exactly_three_top_level_keys(self):
-        """data.json must have exactly: generated_at, username, days. No extras."""
+    def test_output_has_exactly_expected_top_level_keys(self):
+        """data.json must have exactly: generated_at, username, days,
+        github_contributions. No extras (no machine IDs/paths/hostnames)."""
         agg = _import_aggregate()
         result = agg.aggregate(FIXTURES_ROOT, "testuser")
 
-        self.assertEqual(set(result.keys()), {"generated_at", "username", "days"})
+        self.assertEqual(
+            set(result.keys()),
+            {"generated_at", "username", "days", "github_contributions"},
+        )
 
     def test_days_values_have_only_expected_fields(self):
         """Each days entry must have exactly the expected fields.
@@ -520,6 +524,51 @@ class TestAggregateHarnessBreakdown(unittest.TestCase):
         self.assertEqual(day["harnesses"]["claude"]["input_tokens"], 6000)
         self.assertEqual(day["harnesses"]["claude"]["output_tokens"], 2500)
         self.assertEqual(day["harnesses"]["claude"]["cache_creation_tokens"], 600)
+
+
+class TestGithubContributions(unittest.TestCase):
+    """GitHub contributions (issue #117) folded into data.json as a top-level key."""
+
+    def test_missing_file_yields_empty_dict(self):
+        """Fixtures have no github/contributions.json → key present but empty.
+        The Action must never fail when the feature is unused."""
+        agg = _import_aggregate()
+        result = agg.aggregate(FIXTURES_ROOT, "testuser")
+        self.assertEqual(result["github_contributions"], {})
+
+    def test_loads_only_days_and_drops_internal_fields(self):
+        """github_contributions carries only the per-day counts — internal
+        bookkeeping (last_updated, backfilled_to_year) must not leak through."""
+        agg = _import_aggregate()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = pathlib.Path(tmpdir)
+            (root / "github").mkdir()
+            (root / "github" / "contributions.json").write_text(
+                json.dumps({
+                    "last_updated": "2026-06-29",
+                    "backfilled_to_year": 2019,
+                    "days": {"2026-06-28": {"total": 12, "commits": 5, "prs": 2,
+                                            "issues": 1, "reviews": 4}},
+                }),
+                encoding="utf-8",
+            )
+            result = agg.aggregate(root, "testuser")
+
+        gc = result["github_contributions"]
+        self.assertEqual(gc, {"2026-06-28": {"total": 12, "commits": 5, "prs": 2,
+                                             "issues": 1, "reviews": 4}})
+        self.assertNotIn("last_updated", gc)
+        self.assertNotIn("backfilled_to_year", gc)
+
+    def test_malformed_file_is_not_fatal(self):
+        """A corrupt contributions.json degrades to {} rather than crashing."""
+        agg = _import_aggregate()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = pathlib.Path(tmpdir)
+            (root / "github").mkdir()
+            (root / "github" / "contributions.json").write_text("{ not json", encoding="utf-8")
+            result = agg.aggregate(root, "testuser")
+        self.assertEqual(result["github_contributions"], {})
 
 
 if __name__ == "__main__":

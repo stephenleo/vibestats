@@ -56,6 +56,38 @@ COLOUR_PALETTES = {
     },
 }
 
+# GitHub-contributions colour ramp — intensities 0–4. Uses GitHub's canonical
+# green tokens for shades 1–4 so the contributions heatmap (issue #117) reads as
+# "GitHub" at a glance to hiring managers. Empty-cell (0) matches the sessions
+# palette per theme so both heatmaps sit consistently in the README/profile.
+GITHUB_PALETTES = {
+    "light": {
+        0: "#ebedf0",
+        1: "#9be9a8",
+        2: "#40c463",
+        3: "#30a14e",
+        4: "#216e39",
+    },
+    "dark": {
+        0: "#2a3346",
+        1: "#0e4429",
+        2: "#006d32",
+        3: "#26a641",
+        4: "#39d353",
+    },
+}
+
+# Per-metric rendering spec: which top-level data.json map to read, which field
+# inside each day entry holds the count, and which palette to shade with.
+METRICS = {
+    "sessions": {"source": "days", "field": "sessions", "palettes": COLOUR_PALETTES},
+    "github_contributions": {
+        "source": "github_contributions",
+        "field": "total",
+        "palettes": GITHUB_PALETTES,
+    },
+}
+
 # Theme-aware text/label colours
 TEXT_COLOURS = {
     "light": "#586069",
@@ -205,17 +237,26 @@ def _compute_intensity(sessions: int, domain: list[int]) -> int:
 # SVG rendering
 # ---------------------------------------------------------------------------
 
-def _build_svg(grid: list[list[date]], days: dict[str, dict], theme: str = "light") -> ET.Element:
+def _build_svg(
+    grid: list[list[date]],
+    days: dict[str, dict],
+    theme: str = "light",
+    palettes: dict[str, dict[int, str]] = COLOUR_PALETTES,
+    value_field: str = "sessions",
+) -> ET.Element:
     """Build and return the SVG ElementTree root element.
 
     grid: list of 52 columns, each a list of 7 dates.
-    days: mapping from "YYYY-MM-DD" → {"sessions": int, "active_minutes": int}
+    days: mapping from "YYYY-MM-DD" → day entry dict (shape depends on metric).
     theme: "light" or "dark" — controls palette and label colours.
+    palettes: intensity→colour map keyed by theme (sessions orange / GitHub green).
+    value_field: the field inside each day entry to shade by (e.g. "sessions",
+        "total").
     """
-    # Compute intensity thresholds from the user's own session distribution
+    # Compute intensity thresholds from the user's own value distribution
     # (validated to be ints upstream in generate(), so .get() default of 0 is
     # purely defensive). Mirrors the website's per-profile quantile scale.
-    domain = _compute_domain([v.get("sessions", 0) for v in days.values()])
+    domain = _compute_domain([v.get(value_field, 0) for v in days.values()])
 
     # Use plain tag names (no namespace prefix) so ElementTree doesn't add
     # "ns0:" prefixes or duplicate xmlns declarations in the output.
@@ -270,9 +311,9 @@ def _build_svg(grid: list[list[date]], days: dict[str, dict], theme: str = "ligh
 
             date_str = cell_date.strftime("%Y-%m-%d")
             day_data = days.get(date_str, {})
-            sessions = day_data.get("sessions", 0)
-            intensity = _compute_intensity(sessions, domain)
-            fill = COLOUR_PALETTES[theme][intensity]
+            value = day_data.get(value_field, 0)
+            intensity = _compute_intensity(value, domain)
+            fill = palettes[theme][intensity]
 
             rect = ET.SubElement(svg, "rect")
             rect.set("x", str(x))
@@ -297,12 +338,15 @@ def _svg_to_string(svg_root: ET.Element) -> str:
 # Main public API
 # ---------------------------------------------------------------------------
 
-def generate(input_path: str, output_path: str, theme: str = "light") -> None:
+def generate(input_path: str, output_path: str, theme: str = "light", metric: str = "sessions") -> None:
     """Read data.json at input_path, write heatmap.svg to output_path.
 
     theme: "light" or "dark" — controls palette and label colours.
+    metric: "sessions" (AI activity, orange) or "github_contributions" (GitHub
+        green, shaded by the authoritative daily `total`).
     Raises SystemExit with non-zero code on any error.
     """
+    spec = METRICS[metric]
     # Load and parse input
     try:
         with open(input_path, "r", encoding="utf-8") as fh:
@@ -331,23 +375,31 @@ def generate(input_path: str, output_path: str, theme: str = "light") -> None:
         print("ERROR: data.json 'days' field must be a JSON object", file=sys.stderr)
         sys.exit(1)
 
-    days: dict[str, dict] = data["days"]
+    # Select the metric's source map. github_contributions may be absent in
+    # data.json produced before issue #117 — treat that as empty (blank heatmap)
+    # rather than failing.
+    value_field = spec["field"]
+    source_name = spec["source"]
+    days: dict[str, dict] = data.get(source_name, {})
+    if not isinstance(days, dict):
+        print(f"ERROR: data.json '{source_name}' field must be a JSON object", file=sys.stderr)
+        sys.exit(1)
 
-    # Validate each day entry — sessions must be a non-negative int.  Booleans
-    # are an int subclass in Python, so we reject them explicitly.
+    # Validate each day entry — the metric's value must be a non-negative int.
+    # Booleans are an int subclass in Python, so we reject them explicitly.
     for date_str, entry in days.items():
         if not isinstance(entry, dict):
             print(
-                f"ERROR: data.json days['{date_str}'] must be an object, got "
+                f"ERROR: data.json {source_name}['{date_str}'] must be an object, got "
                 f"{type(entry).__name__}",
                 file=sys.stderr,
             )
             sys.exit(1)
-        sessions = entry.get("sessions", 0)
-        if isinstance(sessions, bool) or not isinstance(sessions, int) or sessions < 0:
+        value = entry.get(value_field, 0)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             print(
-                f"ERROR: data.json days['{date_str}'].sessions must be a "
-                f"non-negative integer, got {sessions!r}",
+                f"ERROR: data.json {source_name}['{date_str}'].{value_field} must be a "
+                f"non-negative integer, got {value!r}",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -383,7 +435,7 @@ def generate(input_path: str, output_path: str, theme: str = "light") -> None:
 
     # Build grid and SVG
     grid = _compute_grid_dates(last_date)
-    svg_root = _build_svg(grid, days, theme=theme)
+    svg_root = _build_svg(grid, days, theme=theme, palettes=spec["palettes"], value_field=value_field)
     svg_content = _svg_to_string(svg_root)
 
     # Write output
@@ -420,9 +472,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="light",
         help="Colour theme: 'light' or 'dark' (default: light)",
     )
+    parser.add_argument(
+        "--metric",
+        choices=sorted(METRICS.keys()),
+        default="sessions",
+        help="Which metric to render: 'sessions' (orange) or "
+        "'github_contributions' (GitHub green) (default: sessions)",
+    )
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    generate(args.input, args.output, theme=args.theme)
+    generate(args.input, args.output, theme=args.theme, metric=args.metric)

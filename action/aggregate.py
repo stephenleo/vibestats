@@ -70,6 +70,25 @@ def _extract_harness_from_path(path: pathlib.Path):
     return None
 
 
+def load_github_contributions(root: pathlib.Path) -> dict:
+    """Return per-day GitHub contribution counts from github/contributions.json.
+
+    Reads only the `days` map (date -> {total, commits, prs, issues, reviews}),
+    dropping internal bookkeeping fields. Returns an empty dict if the file is
+    absent or malformed, so the Action never fails when the feature is unused.
+    """
+    path = root / "github" / "contributions.json"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    days = data.get("days", {})
+    return days if isinstance(days, dict) else {}
+
+
 def aggregate(root: pathlib.Path, username: str) -> dict:
     """Aggregate all Hive partition files under root/machines/. Returns public data.json dict."""
     purged_machines = load_purged_machines(root)
@@ -132,6 +151,7 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
         "generated_at": generated_at,
         "username": username,
         "days": dict(days),
+        "github_contributions": load_github_contributions(root),
     }
 
 

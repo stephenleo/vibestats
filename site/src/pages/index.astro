@@ -56,6 +56,7 @@ import 'cal-heatmap/cal-heatmap.css';
         <button class="demo-tab" data-metric="tokens">Tokens</button>
         <button class="demo-tab" data-metric="active_minutes">Active Time</button>
         <button class="demo-tab" data-metric="tool_uses">Tool Uses</button>
+        <button class="demo-tab" data-metric="github">GitHub</button>
       </div>
       <div class="demo-card">
         <div id="demo-heatmap"></div>
@@ -68,12 +69,13 @@ import 'cal-heatmap/cal-heatmap.css';
       import Tooltip from 'cal-heatmap/plugins/Tooltip';
 
       // ── Realistic random demo data — one series per metric ──
-      type Metric = 'sessions' | 'tokens' | 'active_minutes' | 'tool_uses';
+      type Metric = 'sessions' | 'tokens' | 'active_minutes' | 'tool_uses' | 'github';
       const SCALES: Record<Metric, { weekday: number; weekend: number; floor: number }> = {
         sessions:       { weekday: 12,        weekend: 5,      floor: 1     },
         tokens:         { weekday: 450_000,   weekend: 80_000, floor: 5_000 },
         active_minutes: { weekday: 240,       weekend: 60,     floor: 5     },
         tool_uses:      { weekday: 80,        weekend: 15,     floor: 2     },
+        github:         { weekday: 14,        weekend: 4,      floor: 1     },
       };
       // Deterministic LCG so values are stable across paints.
       function lcg(seed: number): () => number {
@@ -81,7 +83,7 @@ import 'cal-heatmap/cal-heatmap.css';
         return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
       }
       const dataByMetric: Record<Metric, { date: string; value: number }[]> = {
-        sessions: [], tokens: [], active_minutes: [], tool_uses: [],
+        sessions: [], tokens: [], active_minutes: [], tool_uses: [], github: [],
       };
       const now = new Date();
       const baseRand = lcg(20260504); // any fixed seed — keeps the demo identical across reloads
@@ -111,12 +113,14 @@ import 'cal-heatmap/cal-heatmap.css';
         tokens:         { range: ['#ebedf0', '#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'], domain: [1, 50_000, 200_000, 500_000] },
         active_minutes: { range: ['#ebedf0', '#d1fae5', '#6ee7b7', '#10b981', '#047857'], domain: [1, 30, 120, 300] },
         tool_uses:      { range: ['#ebedf0', '#ede9fe', '#c4b5fd', '#8b5cf6', '#6d28d9'], domain: [1, 20, 100, 300] },
+        github:         { range: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'], domain: [1, 4, 8, 12] },
       };
       const TOOLTIP_LABEL: Record<Metric, (v: number) => string> = {
         sessions:       (v) => `${v} session${v === 1 ? '' : 's'}`,
         tokens:         (v) => `${v.toLocaleString()} tokens`,
         active_minutes: (v) => `${v} min`,
         tool_uses:      (v) => `${v} tool use${v === 1 ? '' : 's'}`,
+        github:         (v) => `${v} contribution${v === 1 ? '' : 's'}`,
       };
       let currentMetric: Metric = 'sessions';
 

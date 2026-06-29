@@ -374,19 +374,20 @@ def test_tc4_release_yml_references_sha256_checksums() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_tc5_cargo_toml_version_is_0_1_0() -> None:
-    """[P1] 9.6-UNIT-050: Cargo.toml package version must be 0.1.0.
+def test_tc5_cargo_toml_version_is_valid_semver() -> None:
+    """[P1] 9.6-UNIT-050: Cargo.toml package version must be valid semver.
 
-    The tag pushed in Task 2 is v0.1.0. The Cargo.toml version must match
-    to ensure the compiled binary reports the correct version via `vibestats --version`.
+    The release tag is derived from this value and `vibestats --version` reports
+    it, so it must be a MAJOR.MINOR.PATCH string. (Originally pinned to 0.1.0;
+    relaxed to the durable invariant so it survives version bumps.)
     """
     # Accept both [package] version and workspace.package.version
     assert re.search(
-        r'version\s*=\s*["\']0\.1\.0["\']',
+        r'version\s*=\s*["\']\d+\.\d+\.\d+["\']',
         _CARGO_TOML_TEXT,
     ), (
-        "Cargo.toml package version must be '0.1.0' to match the v0.1.0 tag being pushed. "
-        "The binary version string (`vibestats --version`) is derived from this value (Task 2)."
+        "Cargo.toml package version must be a valid MAJOR.MINOR.PATCH semver string. "
+        "The binary version string (`vibestats --version`) is derived from this value."
     )
 
 
