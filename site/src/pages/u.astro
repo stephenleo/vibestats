@@ -52,14 +52,6 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-metric="tool_uses">Tool Uses</button>
           <button class="tab" data-metric="github" id="github-tab" hidden>GitHub</button>
         </div>
-        <div id="github-subfilters" class="tabs subfilters" hidden>
-          <button class="tab active" data-submetric="total">All</button>
-          <button class="tab" data-submetric="commits">Commits</button>
-          <button class="tab" data-submetric="prs">Pull Requests</button>
-          <button class="tab" data-submetric="issues">Issues</button>
-          <button class="tab" data-submetric="reviews">Reviews</button>
-          <button class="tab" data-submetric="private">Private</button>
-        </div>
         <div class="heatmap-grid-row">
           <div class="heatmap-wrapper">
             <div class="day-labels" aria-hidden="true">
@@ -199,19 +191,6 @@ import Base from '../layouts/Base.astro';
   let vibestatsData: VibestatsData | null = null;
   let currentRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
-  // Which GitHub contribution type the heatmap shades when the GitHub tab is active.
-  // 'private' is derived (total − the four typed counts): GitHub counts private
-  // contributions in the calendar total but doesn't break them down by type, so
-  // this surfaces them as their own bucket.
-  type GithubSubmetric = 'total' | 'commits' | 'prs' | 'issues' | 'reviews' | 'private';
-  let githubSubmetric: GithubSubmetric = 'total';
-
-  function githubValue(day: GithubDay, sub: GithubSubmetric): number {
-    if (sub === 'private') {
-      return Math.max(0, day.total - day.commits - day.prs - day.issues - day.reviews);
-    }
-    return day[sub] ?? 0;
-  }
 
   // ── Helpers ────────────────────────────────────────────────────────
   function showError(msg: string): void {
@@ -480,7 +459,7 @@ import Base from '../layouts/Base.astro';
     const calData = isGithub
       ? Object.entries(vibestatsData.github_contributions ?? {})
           .filter(([date]) => datePredicate(date))
-          .map(([date, v]) => ({ date, value: githubValue(v, githubSubmetric) }))
+          .map(([date, v]) => ({ date, value: v.total ?? 0 }))
       : Object.entries(vibestatsData.days)
           .filter(([date]) => datePredicate(date))
           .map(([date, v]) => ({ date, value: metricValue(v, metric) }));
@@ -555,8 +534,6 @@ import Base from '../layouts/Base.astro';
   });
 
   // ── Heatmap tabs ───────────────────────────────────────────────────
-  const githubSubfiltersEl = document.getElementById('github-subfilters')!;
-
   heatmapTabsEl.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest('.tab') as HTMLButtonElement | null;
     if (!btn || !vibestatsData) return;
@@ -566,22 +543,7 @@ import Base from '../layouts/Base.astro';
     for (const t of heatmapTabsEl.querySelectorAll('.tab')) {
       t.classList.toggle('active', t === btn);
     }
-    // The contribution-type sub-filters only apply to the GitHub heatmap.
-    githubSubfiltersEl.hidden = metric !== 'github';
     renderHeatmap(currentRange, metric);
-  });
-
-  // ── GitHub contribution-type sub-filters ───────────────────────────
-  githubSubfiltersEl.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('.tab') as HTMLButtonElement | null;
-    if (!btn || !vibestatsData) return;
-    const sub = btn.dataset.submetric as GithubSubmetric;
-    if (sub === githubSubmetric) return;
-    githubSubmetric = sub;
-    for (const t of githubSubfiltersEl.querySelectorAll('.tab')) {
-      t.classList.toggle('active', t === btn);
-    }
-    renderHeatmap(currentRange, 'github');
   });
 
   // ── Re-render heatmap on theme change ───────────────────────────────
@@ -1172,17 +1134,6 @@ import Base from '../layouts/Base.astro';
   .tab.active {
     color: var(--color-brand);
     border-bottom-color: var(--color-brand);
-  }
-  /* Secondary contribution-type filters under the GitHub tab — lighter, and
-     tinted GitHub-green when active to match the heatmap. */
-  .subfilters {
-    margin-top: -0.5rem;
-    border-bottom: none;
-  }
-  .subfilters .tab { font-size: 0.72rem; padding: 0.35rem 0.75rem; }
-  .subfilters .tab.active {
-    color: #2f9e44;
-    border-bottom-color: #2f9e44;
   }
   .heatmap-grid-row {
     display: flex;
