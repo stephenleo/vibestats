@@ -119,6 +119,12 @@ import Base from '../layouts/Base.astro';
       </div>
 
     </section>
+
+    <p class="star-line">
+      ⭐ Found VibeStats useful?
+      <a href="https://github.com/stephenleo/vibestats" target="_blank" rel="noopener noreferrer">Star it on GitHub</a>
+      to help others discover it.
+    </p>
   </main>
 </Base>
 
@@ -926,6 +932,10 @@ import Base from '../layouts/Base.astro';
   .gh-panel-label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
   .gh-panel-right { display: flex; align-items: center; gap: 0.9rem; }
   .gh-count { font-family: var(--font-mono); font-size: 0.74rem; color: var(--faint); }
+
+  .star-line { margin-top: 3rem; text-align: center; font-size: 0.95rem; color: var(--muted); }
+  .star-line a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .star-line a:hover { color: var(--accent-hover); }
 </style>
 
 <!-- Global: tokens already in global.css; only dynamically-created elements here -->
