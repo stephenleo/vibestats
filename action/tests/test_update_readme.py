@@ -141,6 +141,11 @@ def test_tc4_identical_content_no_op(tmp_path: Path) -> None:
         f'  <source media="(prefers-color-scheme: light)" srcset="{base}/heatmap.svg" />\n'
         f'  <img src="{base}/heatmap.svg" alt="vibestats heatmap" />\n'
         "</picture>\n\n"
+        "<picture>\n"
+        f'  <source media="(prefers-color-scheme: dark)" srcset="{base}/github-contributions-dark.svg" />\n'
+        f'  <source media="(prefers-color-scheme: light)" srcset="{base}/github-contributions.svg" />\n'
+        f'  <img src="{base}/github-contributions.svg" alt="GitHub contributions heatmap including private contributions" />\n'
+        "</picture>\n\n"
         f"[View interactive dashboard →](https://vibestats.dev/{USERNAME})\n"
         "<!-- vibestats-end -->\n\n"
         "Some other content.\n"

@@ -33,6 +33,11 @@ def build_block(username: str) -> str:
         f'  <source media="(prefers-color-scheme: light)" srcset="{base}/heatmap.svg" />\n'
         f'  <img src="{base}/heatmap.svg" alt="vibestats heatmap" />\n'
         f"</picture>\n\n"
+        f"<picture>\n"
+        f'  <source media="(prefers-color-scheme: dark)" srcset="{base}/github-contributions-dark.svg" />\n'
+        f'  <source media="(prefers-color-scheme: light)" srcset="{base}/github-contributions.svg" />\n'
+        f'  <img src="{base}/github-contributions.svg" alt="GitHub contributions heatmap including private contributions" />\n'
+        f"</picture>\n\n"
         f"[View interactive dashboard →](https://vibestats.dev/{username})\n"
         f"<!-- vibestats-end -->"
     )
