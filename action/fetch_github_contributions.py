@@ -29,6 +29,9 @@ GRAPHQL_URL = "https://api.github.com/graphql"
 CONTRIB_PATH = "github/contributions.json"
 RATE_LIMIT_SAFETY = 200
 TIMEOUT_SECONDS = 30
+# Re-fetch this many most-recent calendar years on every run (current + prior),
+# so recent visibility changes self-heal without a manual re-backfill.
+REFRESH_YEARS = 2
 
 # Typed contribution streams: (GraphQL field, snapshot key). The contribution
 # calendar gives the authoritative daily `total`; these give the per-type split.
@@ -311,6 +314,17 @@ def sync(graphql_fn, root: str) -> bool:
     # Always refresh the current year. A failure here propagates so we never
     # overwrite an existing snapshot with nothing.
     fetch_year(graphql_fn, current_year, fetched)
+
+    # Also refresh the prior years in the rolling window (best-effort) so newly-
+    # visible private contributions — e.g. after an SSO re-auth — and GitHub's
+    # own retroactive edits self-heal without a manual re-backfill.
+    for year in range(current_year - 1, current_year - REFRESH_YEARS, -1):
+        try:
+            fetch_year(graphql_fn, year, fetched)
+        except Exception as exc:  # noqa: BLE001 (rolling refresh is best-effort)
+            print(f"fetch_github_contributions: rolling refresh of {year} failed: {exc}",
+                  file=sys.stderr)
+            break
 
     # Progressive backfill, newest-first, paced against the GraphQL budget.
     created_year = None
