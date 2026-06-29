@@ -1216,7 +1216,9 @@ import Base from '../layouts/Base.astro';
     display: flex;
     align-items: flex-start;
     overflow-x: auto;
+    scrollbar-width: none;          /* Firefox: hide scrollbar, keep scroll */
   }
+  .heatmap-wrapper::-webkit-scrollbar { display: none; }  /* WebKit/Blink */
   .day-labels {
     display: flex;
     flex-direction: column;
@@ -1587,5 +1589,6 @@ import Base from '../layouts/Base.astro';
   }
 
   /* ── Cal-heatmap container ──────────────────────────────────────── */
-  #cal-heatmap { overflow-x: auto; }
+  #cal-heatmap { overflow-x: auto; scrollbar-width: none; }  /* hide scrollbar, keep scroll */
+  #cal-heatmap::-webkit-scrollbar { display: none; }
 </style>
