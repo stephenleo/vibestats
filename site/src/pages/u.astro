@@ -60,16 +60,16 @@ import Base from '../layouts/Base.astro';
           <button class="tab" data-submetric="reviews">Reviews</button>
           <button class="tab" data-submetric="private">Private</button>
         </div>
-        <div class="heatmap-range-row">
-          <label class="range-label" for="year-select">Range</label>
-          <select id="year-select" class="range-select" aria-label="Select range"></select>
-        </div>
         <div class="heatmap-grid-row">
           <div class="heatmap-wrapper">
             <div class="day-labels" aria-hidden="true">
               <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
             </div>
             <div id="cal-heatmap"></div>
+          </div>
+          <div class="heatmap-range-control">
+            <label class="range-label" for="year-select">Range</label>
+            <select id="year-select" class="range-select" aria-label="Select range"></select>
           </div>
         </div>
       </div>
@@ -1189,15 +1189,17 @@ import Base from '../layouts/Base.astro';
     align-items: flex-start;
     gap: 0.75rem;
   }
-  .heatmap-range-row {
+  .heatmap-range-control {
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    padding-top: 22px; /* align with cal-heatmap month labels */
   }
   .range-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--color-text-muted);
   }
   .range-select {
