@@ -43,7 +43,7 @@ A live heatmap on your GitHub profile (the embed above), and a full analytics da
     <td>
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-heatmap-dark.png">
-        <img src="docs/images/dashboard-heatmap-light.png" alt="Activity heatmap with metric tabs and L12M / per-year range pills">
+        <img src="docs/images/dashboard-heatmap-light.png" alt="Activity heatmap with Sessions / Tokens / Active Time / Tool Uses metric tabs and a range dropdown">
       </picture>
     </td>
     <td>
@@ -57,7 +57,7 @@ A live heatmap on your GitHub profile (the embed above), and a full analytics da
     <td colspan="2">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-charts-dark.png">
-        <img src="docs/images/dashboard-charts-light.png" alt="Daily token consumption chart and model usage donut">
+        <img src="docs/images/dashboard-charts-light.png" alt="Weekly token consumption bars, efficiency stats, and a model-usage donut">
       </picture>
     </td>
   </tr>

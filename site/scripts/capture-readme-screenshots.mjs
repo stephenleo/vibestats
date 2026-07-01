@@ -44,11 +44,11 @@ async function captureRegion(page, selector, outPath) {
 
 // Hero shot: header + KPIs + heatmap + first chart row. The 800px viewport
 // isn't tall enough to fit that, so we render fullPage and clip to the bottom
-// of the first .grid-2 (the Daily Tokens / Model Usage row).
+// of the .three-col row (Weekly Tokens / Efficiency / Model Usage).
 async function captureHero(page, outPath) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(300);
-  const firstGrid = page.locator('main.dashboard .grid-2').first();
+  const firstGrid = page.locator('main.dashboard .three-col').first();
   await firstGrid.waitFor({ state: 'visible', timeout: 10_000 });
   const box = await firstGrid.boundingBox();
   if (!box) throw new Error('Could not measure first .grid-2 for hero shot');
@@ -128,9 +128,9 @@ async function main() {
       await page.waitForTimeout(800);
 
       await captureHero(page, join(OUT_DIR, `dashboard-hero-${theme}.png`));
-      await captureRegion(page, '.card.full-width', join(OUT_DIR, `dashboard-heatmap-${theme}.png`));
+      await captureRegion(page, '.card:has(#cal-heatmap)', join(OUT_DIR, `dashboard-heatmap-${theme}.png`));
       await captureRegion(page, '#kpi-row', join(OUT_DIR, `dashboard-kpis-${theme}.png`));
-      await captureRegion(page, '.grid-2', join(OUT_DIR, `dashboard-charts-${theme}.png`));
+      await captureRegion(page, '.three-col', join(OUT_DIR, `dashboard-charts-${theme}.png`));
 
       await context.close();
     }
