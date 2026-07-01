@@ -12,6 +12,16 @@ const TODAY = '2026-07-01'; // matches the capture machine's clock; edit if re-r
 const iso = (d) => d.toISOString().slice(0, 10);
 const addDays = (dateStr, n) => { const d = new Date(dateStr); d.setUTCDate(d.getUTCDate() + n); return d; };
 
+// Seeded PRNG (mulberry32) — reproducible re-runs, but irregular enough that
+// the gaps and intensities don't fall into a visible weekly grid.
+let _seed = 0x1a2b3c4d;
+const rand = () => {
+  _seed = (_seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
 const scale = (day, f) => {
   for (const k of ['sessions', 'active_minutes', 'input_tokens', 'output_tokens',
     'cache_read_tokens', 'cache_creation_tokens', 'message_count', 'tool_uses', 'longest_session_minutes']) {
@@ -34,23 +44,24 @@ for (const k of keys) days[iso(addDays(k, delta))] = doc.days[k];
 // A static fixture must not show future days, so drop anything past today.
 for (const k of Object.keys(days)) if (k > TODAY) delete days[k];
 
-// 2) densify the trailing window with REALISTIC sparsity: nobody codes every
-//    day. Sundays off, most Saturdays off, ~20% of weekdays off too. Days that
-//    survive get boosted (heavier on the last two weeks). Today always stays so
-//    the edge of the heatmap and the streak aren't empty.
-const hash = (s) => [...s].reduce((a, c) => a + c.charCodeAt(0), 0);
-const active = (key) => {
-  const dow = new Date(key).getUTCDay();
-  if (dow === 0) return false;                 // Sundays: off
-  if (dow === 6 && hash(key) % 3 !== 0) return false; // Saturdays: mostly off
-  return hash(key) % 10 >= 2;                   // ~20% of weekdays: off too
-};
+// Jitter every surviving day's intensity so the heatmap has real day-to-day
+// colour variation instead of flat bands.
+for (const k of Object.keys(days)) scale(days[k], 0.75 + rand() * 0.6);
+
+// 2) densify the trailing window with REALISTIC, irregular sparsity: nobody
+//    codes every day. Activity is drawn per-day against a weekday-weighted
+//    probability (weekends far less likely), so gaps land unevenly rather than
+//    on a clean weekly grid. Surviving days get a boost with a wide random
+//    multiplier (heavier on the last two weeks). Today always stays so the edge
+//    of the heatmap and the streak aren't empty.
+const activeProb = [0.12, 0.9, 0.82, 0.88, 0.82, 0.78, 0.35]; // Sun..Sat
 const templates = Object.values(days).map((d) => JSON.parse(JSON.stringify(d)));
 for (let i = 0; i <= 34; i++) { // i = days before today
   const key = iso(addDays(TODAY, -i));
-  if (i > 0 && !active(key)) { delete days[key]; continue; }
-  if (!days[key]) days[key] = JSON.parse(JSON.stringify(templates[i * 5 % templates.length]));
-  scale(days[key], i < 14 ? 1.5 : 1.25); // heavier on the last two weeks
+  const on = rand() < activeProb[new Date(key).getUTCDay()];
+  if (i > 0 && !on) { delete days[key]; continue; }
+  if (!days[key]) days[key] = JSON.parse(JSON.stringify(templates[Math.floor(rand() * templates.length)]));
+  scale(days[key], (i < 14 ? 1.5 : 1.2) * (0.55 + rand())); // 0.55–1.55× spread
 }
 
 doc.days = days;
