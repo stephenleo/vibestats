@@ -901,7 +901,9 @@ import Base from '../layouts/Base.astro';
 
   .three-col { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
   @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
-  .three-col .card { display: flex; flex-direction: column; }
+  /* cancel the global `.card + .card` top margin that leaks onto the 2nd/3rd
+     grid cells and shrinks their stretched height */
+  .three-col .card { display: flex; flex-direction: column; margin-top: 0; }
 
   /* Pill tabs + range select */
   .pill-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
