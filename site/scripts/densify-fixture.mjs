@@ -31,12 +31,26 @@ const delta = Math.round((new Date(TODAY) - new Date(keys[keys.length - 1])) / 8
 const days = {};
 for (const k of keys) days[iso(addDays(k, delta))] = doc.days[k];
 
-// 2) densify the trailing window: every day present, recent days heavier.
+// A static fixture must not show future days, so drop anything past today.
+for (const k of Object.keys(days)) if (k > TODAY) delete days[k];
+
+// 2) densify the trailing window with REALISTIC sparsity: nobody codes every
+//    day. Sundays off, most Saturdays off, ~20% of weekdays off too. Days that
+//    survive get boosted (heavier on the last two weeks). Today always stays so
+//    the edge of the heatmap and the streak aren't empty.
+const hash = (s) => [...s].reduce((a, c) => a + c.charCodeAt(0), 0);
+const active = (key) => {
+  const dow = new Date(key).getUTCDay();
+  if (dow === 0) return false;                 // Sundays: off
+  if (dow === 6 && hash(key) % 3 !== 0) return false; // Saturdays: mostly off
+  return hash(key) % 10 >= 2;                   // ~20% of weekdays: off too
+};
 const templates = Object.values(days).map((d) => JSON.parse(JSON.stringify(d)));
-for (let i = -3; i <= 29; i++) { // i = days-before-today (negative = small future buffer for streak)
+for (let i = 0; i <= 34; i++) { // i = days before today
   const key = iso(addDays(TODAY, -i));
-  if (!days[key]) days[key] = JSON.parse(JSON.stringify(templates[(i + 3) * 5 % templates.length]));
-  scale(days[key], i < 14 ? 1.55 : 1.3); // heavier on the last two weeks
+  if (i > 0 && !active(key)) { delete days[key]; continue; }
+  if (!days[key]) days[key] = JSON.parse(JSON.stringify(templates[i * 5 % templates.length]));
+  scale(days[key], i < 14 ? 1.5 : 1.25); // heavier on the last two weeks
 }
 
 doc.days = days;
