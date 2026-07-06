@@ -672,7 +672,7 @@ import Base from '../layouts/Base.astro';
 
     const legend = document.createElement('div');
     legend.className = 'donut-legend';
-    for (const s of slices.slice(0, 3)) {
+    for (const s of slices) {
       const item = document.createElement('div');
       item.className = 'legend-item';
       item.title = `${formatModelLabel(s.name)}: ${s.pct}%`;
