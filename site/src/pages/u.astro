@@ -300,6 +300,22 @@ import Base from '../layouts/Base.astro';
     }
     return entries;
   }
+  // 12 Sunday-aligned calendar weeks (oldest→newest) so the bars line up with
+  // the heatmap's columns (cal-heatmap's ghDay starts weeks on Sunday).
+  function weekBuckets(): Array<{ start: Date; end: Date }> {
+    const now = new Date();
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay());
+    const buckets: Array<{ start: Date; end: Date }> = [];
+    for (let w = 11; w >= 0; w--) {
+      const start = new Date(sunday);
+      start.setDate(sunday.getDate() - w * 7);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      buckets.push({ start, end });
+    }
+    return buckets;
+  }
   function sumField(entries: DayEntry[], fn: (e: DayEntry) => number): number {
     return entries.reduce((s, e) => s + fn(e), 0);
   }
@@ -522,20 +538,14 @@ import Base from '../layouts/Base.astro';
 
   // ── Weekly token consumption (12 weeks, stacked) ───────────────────
   function renderTokenChart(data: VibestatsData): void {
-    const now = new Date();
-    const weeks: Array<{ input: number; output: number; cacheCreate: number }> = [];
-    for (let w = 11; w >= 0; w--) {
-      const weekEnd = new Date(now);
-      weekEnd.setDate(weekEnd.getDate() - w * 7);
-      const weekStart = new Date(weekEnd);
-      weekStart.setDate(weekStart.getDate() - 6);
-      const entries = daysInRange(data, weekStart, weekEnd);
-      weeks.push({
+    const weeks = weekBuckets().map(({ start, end }) => {
+      const entries = daysInRange(data, start, end);
+      return {
         input: sumField(entries, e => e.input_tokens ?? 0),
         output: sumField(entries, e => e.output_tokens ?? 0),
         cacheCreate: sumField(entries, e => e.cache_creation_tokens ?? 0),
-      });
-    }
+      };
+    });
     const maxVal = Math.max(1, ...weeks.map(w => w.input + w.output + w.cacheCreate));
     clearEl(tokenChartEl);
     for (const wk of weeks) {
@@ -694,14 +704,9 @@ import Base from '../layouts/Base.astro';
     const cacheHitPct = cacheDenom > 0 ? Math.round((totalCacheRead / cacheDenom) * 100) : 0;
     const avgSession = totalSessions > 0 ? (totalMinutes / totalSessions) : 0;
 
-    const now = new Date();
     const wTokPerMin: number[] = [], wCacheHit: number[] = [], wAvgSession: number[] = [];
-    for (let w = 11; w >= 0; w--) {
-      const weekEnd = new Date(now);
-      weekEnd.setDate(weekEnd.getDate() - w * 7);
-      const weekStart = new Date(weekEnd);
-      weekStart.setDate(weekStart.getDate() - 6);
-      const entries = daysInRange(data, weekStart, weekEnd);
+    for (const { start, end } of weekBuckets()) {
+      const entries = daysInRange(data, start, end);
       const wTok = sumField(entries, tokensTotal);
       const wMin = sumField(entries, e => e.active_minutes);
       const wSes = sumField(entries, e => e.sessions);
