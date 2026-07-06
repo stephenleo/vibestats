@@ -620,12 +620,12 @@ import Base from '../layouts/Base.astro';
       'var(--border)',
     ];
     const formatModelLabel = (m: string): string =>
-      m === 'Other' ? m : m.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
+      m === 'Others' ? m : m.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
     const TOP_N = 3;
     const top: Array<[string, number]> = sorted.slice(0, TOP_N);
     const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
-    if (otherTotal > 0) top.push(['Other', otherTotal]);
+    if (otherTotal > 0) top.push(['Others', otherTotal]);
 
     const slices: Array<{ name: string; pct: number; color: string; startPct: number; endPct: number }> = [];
     let cumPct = 0;
