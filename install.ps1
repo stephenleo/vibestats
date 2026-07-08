@@ -1,13 +1,17 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Installs vibestats on Windows.
+    Install vibestats on Windows.
 
 .DESCRIPTION
-    Downloads the latest native Windows vibestats release artifact, verifies the
-    SHA256 checksum, installs vibestats.exe to the current user's local Programs
-    folder, optionally installs/authenticates GitHub CLI, adds vibestats to the
-    user PATH, and runs `vibestats auth`.
+    Downloads the native Windows vibestats release artifact from GitHub Releases,
+    verifies its SHA256 checksum, installs vibestats.exe to the current user's
+    local Programs folder, ensures GitHub CLI is available/authenticated, adds
+    vibestats to the user PATH, runs vibestats auth, and configures Claude Code
+    and Codex hooks when their settings directories already exist.
+
+.PARAMETER Yes
+    Non-interactive mode: accept installer defaults automatically where possible.
 
 .PARAMETER Repo
     GitHub repository that owns the vibestats release artifacts.
@@ -22,25 +26,29 @@
     Do not attempt to install GitHub CLI if gh.exe is missing.
 
 .PARAMETER SkipGhAuth
-    Do not run `gh auth status` / `gh auth login`.
+    Do not run gh auth status / gh auth login.
 
 .PARAMETER SkipPathUpdate
     Do not add the install directory to the current user's PATH.
 
 .PARAMETER SkipVibestatsAuth
-    Do not run `vibestats auth` after installing the binary.
+    Do not run vibestats auth after installing the binary.
 
-.EXAMPLE
-    irm https://vibestats.dev/install.ps1 | iex
+.PARAMETER SkipHookConfiguration
+    Do not configure Claude Code or Codex hooks.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\install.ps1 -Version v2.4.1
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\install.ps1 -Yes
 #>
 [CmdletBinding()]
 param(
+    [switch]$Yes,
     [string]$Repo = "stephenleo/vibestats",
     [string]$Version = "latest",
     [string]$InstallDir = $(Join-Path $env:LOCALAPPDATA "Programs\vibestats"),
@@ -48,12 +56,14 @@ param(
     [switch]$SkipGhAuth,
     [switch]$SkipPathUpdate,
     [switch]$SkipVibestatsAuth,
+    [switch]$SkipHookConfiguration,
     [switch]$Help
 )
 
-Set-StrictMode -Version 2.0
+Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 
 function Write-Step {
     param([string]$Message)
@@ -89,6 +99,7 @@ Usage:
   powershell -ExecutionPolicy Bypass -File .\install.ps1 [options]
 
 Options:
+  -Yes                     Non-interactive mode; accept defaults where possible
   -Repo <owner/repo>       Release repository. Default: stephenleo/vibestats
   -Version <tag|latest>    Release tag to install. Default: latest
   -InstallDir <path>       Install directory. Default: %LOCALAPPDATA%\Programs\vibestats
@@ -96,12 +107,33 @@ Options:
   -SkipGhAuth              Do not run gh auth checks/login
   -SkipPathUpdate          Do not add InstallDir to user PATH
   -SkipVibestatsAuth       Do not run vibestats auth after install
+  -SkipHookConfiguration   Do not configure Claude Code or Codex hooks
   -Help                    Show this help
 
 Examples:
   powershell -ExecutionPolicy Bypass -File .\install.ps1
   powershell -ExecutionPolicy Bypass -File .\install.ps1 -Version v2.4.1
+  powershell -ExecutionPolicy Bypass -File .\install.ps1 -Yes
 "@
+}
+
+function Test-Interactive {
+    return ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected)
+}
+
+function Get-NativeTarget {
+    $arch = $env:PROCESSOR_ARCHITECTURE
+
+    # WOW64: 32-bit PowerShell on 64-bit Windows reports x86.
+    if ($arch -eq "x86" -and $env:PROCESSOR_ARCHITEW6432) {
+        $arch = $env:PROCESSOR_ARCHITEW6432
+    }
+
+    if ($arch -eq "AMD64" -or $arch -eq "x86_64") {
+        return "x86_64-pc-windows-msvc"
+    }
+
+    Fail "Unsupported Windows architecture: $arch. This installer currently supports x64 Windows only."
 }
 
 function Get-GhPath {
@@ -110,12 +142,20 @@ function Get-GhPath {
         return $cmd.Source
     }
 
-    $knownPaths = @(
-        (Join-Path $env:ProgramFiles "GitHub CLI\gh.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "GitHub CLI\gh.exe"),
-        (Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe"),
-        (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\gh.exe")
-    )
+    $knownPaths = @()
+
+    if ($env:ProgramFiles) {
+        $knownPaths += (Join-Path $env:ProgramFiles "GitHub CLI\gh.exe")
+    }
+
+    if (${env:ProgramFiles(x86)}) {
+        $knownPaths += (Join-Path ${env:ProgramFiles(x86)} "GitHub CLI\gh.exe")
+    }
+
+    if ($env:LOCALAPPDATA) {
+        $knownPaths += (Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe")
+        $knownPaths += (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\gh.exe")
+    }
 
     foreach ($path in $knownPaths) {
         if ($path -and (Test-Path -LiteralPath $path)) {
@@ -174,9 +214,9 @@ function Assert-GhVersion {
         return
     }
 
-    $version = [version]$match.Value
-    if ($version.Major -lt 2) {
-        Fail "GitHub CLI 2.0 or newer is required. Found: $version"
+    $versionValue = [version]$match.Value
+    if ($versionValue.Major -lt 2) {
+        Fail "GitHub CLI 2.0 or newer is required. Found: $versionValue"
     }
 }
 
@@ -194,6 +234,10 @@ function Ensure-GhAuth {
         return
     }
 
+    if (-not (Test-Interactive)) {
+        Fail "GitHub CLI is not authenticated and this shell is non-interactive. Run 'gh auth login' first, or rerun with -SkipGhAuth."
+    }
+
     Write-Info "GitHub CLI is not authenticated. Starting gh auth login..."
     & $GhPath auth login
     if ($LASTEXITCODE -ne 0) {
@@ -208,26 +252,33 @@ function Ensure-GhAuth {
     Write-Success "GitHub CLI authentication complete."
 }
 
-function Get-WindowsTarget {
-    $arch = $env:PROCESSOR_ARCHITECTURE
-    if ($arch -eq "AMD64" -or $arch -eq "x86_64") {
-        return "x86_64-pc-windows-msvc"
-    }
-
-    Fail "Unsupported Windows architecture: $arch. This installer currently supports x64 Windows only."
-}
-
-function Get-ReleaseBaseUrl {
+function Get-ReleaseAsset {
     param(
         [string]$RepoName,
-        [string]$ReleaseVersion
+        [string]$ReleaseVersion,
+        [string]$AssetName
     )
 
     if ($ReleaseVersion -eq "latest") {
-        return "https://github.com/$RepoName/releases/latest/download"
+        $releaseUrl = "https://api.github.com/repos/$RepoName/releases/latest"
+        Write-Info "Fetching latest release metadata..."
+    } else {
+        $releaseUrl = "https://api.github.com/repos/$RepoName/releases/tags/$ReleaseVersion"
+        Write-Info "Fetching release metadata for $ReleaseVersion..."
     }
 
-    return "https://github.com/$RepoName/releases/download/$ReleaseVersion"
+    $release = Invoke-RestMethod -UseBasicParsing -Uri $releaseUrl
+    $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
+
+    if (-not $asset) {
+        $available = ($release.assets | ForEach-Object { $_.name }) -join [Environment]::NewLine
+        Fail "Asset '$AssetName' was not found in release $($release.tag_name). Available assets:$([Environment]::NewLine)$available"
+    }
+
+    return @{
+        Tag = $release.tag_name
+        Url = $asset.browser_download_url
+    }
 }
 
 function Download-File {
@@ -318,31 +369,328 @@ function Add-UserPathEntry {
     }
 }
 
+function ConvertTo-Hashtable {
+    param([AllowNull()]$InputObject)
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    if ($InputObject -is [System.Collections.IDictionary]) {
+        $hash = @{}
+        foreach ($key in $InputObject.Keys) {
+            $hash[$key] = ConvertTo-Hashtable $InputObject[$key]
+        }
+        return $hash
+    }
+
+    if ($InputObject -is [System.Management.Automation.PSCustomObject]) {
+        $hash = @{}
+        foreach ($property in $InputObject.PSObject.Properties) {
+            $hash[$property.Name] = ConvertTo-Hashtable $property.Value
+        }
+        return $hash
+    }
+
+    if (($InputObject -is [System.Collections.IEnumerable]) -and -not ($InputObject -is [string])) {
+        $items = @()
+        foreach ($item in $InputObject) {
+            $items += ,(ConvertTo-Hashtable $item)
+        }
+        return ,$items
+    }
+
+    return $InputObject
+}
+
+function Read-JsonHashtable {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return @{}
+    }
+
+    try {
+        $raw = Get-Content -LiteralPath $Path -Raw
+        if (-not $raw.Trim()) {
+            return @{}
+        }
+
+        $parsed = $raw | ConvertFrom-Json
+        $converted = ConvertTo-Hashtable $parsed
+        if ($converted -is [hashtable]) {
+            return $converted
+        }
+
+        Write-Warn "Ignoring non-object JSON document: $Path"
+        return @{}
+    }
+    catch {
+        Write-Warn "Could not parse $Path. Replacing it with a fresh JSON object."
+        return @{}
+    }
+}
+
+function Write-JsonHashtable {
+    param(
+        [string]$Path,
+        [hashtable]$Data
+    )
+
+    $parent = Split-Path -Parent $Path
+    if ($parent) {
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    }
+
+    $json = $Data | ConvertTo-Json -Depth 100
+    [System.IO.File]::WriteAllText($Path, ($json + [Environment]::NewLine), $Utf8NoBom)
+}
+
+function New-VibestatsHookCommand {
+    param(
+        [string]$ExePath,
+        [string]$Arguments
+    )
+
+    $quotedExe = '"' + $ExePath.Replace('"', '\"') + '"'
+    if ($Arguments.Trim()) {
+        return "$quotedExe $Arguments"
+    }
+
+    return $quotedExe
+}
+
+function Test-LegacyVibestatsHookCommand {
+    param([AllowNull()]$Command)
+
+    if (-not ($Command -is [string])) {
+        return $false
+    }
+
+    $trimmed = $Command.Trim()
+    return ($trimmed -eq "vibestats" -or $trimmed.StartsWith("vibestats "))
+}
+
+function Ensure-HookCommand {
+    param(
+        [hashtable]$Hooks,
+        [string]$HookName,
+        [string]$Command,
+        [bool]$Async
+    )
+
+    $groups = @()
+    if ($Hooks.ContainsKey($HookName) -and $Hooks[$HookName]) {
+        $groups = @($Hooks[$HookName])
+    }
+
+    $present = $false
+
+    for ($groupIndex = 0; $groupIndex -lt $groups.Count; $groupIndex++) {
+        $group = $groups[$groupIndex]
+        if (-not ($group -is [hashtable])) {
+            continue
+        }
+
+        if (-not $group.ContainsKey("hooks") -or -not $group["hooks"]) {
+            $group["hooks"] = @()
+        }
+
+        $innerHooks = @($group["hooks"])
+        for ($hookIndex = 0; $hookIndex -lt $innerHooks.Count; $hookIndex++) {
+            $hook = $innerHooks[$hookIndex]
+            if (-not ($hook -is [hashtable])) {
+                continue
+            }
+
+            $oldCommand = $hook["command"]
+            if ($oldCommand -eq $Command) {
+                $present = $true
+            } elseif (Test-LegacyVibestatsHookCommand -Command $oldCommand) {
+                $hook["command"] = $Command
+                $present = $true
+            }
+        }
+
+        $group["hooks"] = @($innerHooks)
+    }
+
+    if (-not $present) {
+        $hookEntry = @{
+            type = "command"
+            command = $Command
+        }
+
+        if ($Async) {
+            $hookEntry["async"] = $true
+        }
+
+        $groups += @{
+            hooks = @($hookEntry)
+        }
+    }
+
+    $Hooks[$HookName] = @($groups)
+}
+
+function Configure-ClaudeHooks {
+    param([string]$ExePath)
+
+    $claudeDir = Join-Path $env:USERPROFILE ".claude"
+    $settingsPath = Join-Path $claudeDir "settings.json"
+
+    if (-not (Test-Path -LiteralPath $claudeDir)) {
+        Write-Warn "Claude Code settings directory not found at $claudeDir; skipping Claude hook configuration."
+        Write-Warn "Run Claude Code once, then rerun this installer to configure hooks."
+        return
+    }
+
+    $settings = Read-JsonHashtable -Path $settingsPath
+    if (-not $settings.ContainsKey("hooks") -or -not ($settings["hooks"] -is [hashtable])) {
+        $settings["hooks"] = @{}
+    }
+
+    $syncCommand = New-VibestatsHookCommand -ExePath $ExePath -Arguments "sync"
+
+    Ensure-HookCommand -Hooks $settings["hooks"] -HookName "Stop" -Command $syncCommand -Async $true
+    Ensure-HookCommand -Hooks $settings["hooks"] -HookName "SessionStart" -Command $syncCommand -Async $false
+
+    Write-JsonHashtable -Path $settingsPath -Data $settings
+    Write-Success "Claude Code hooks configured: $settingsPath"
+}
+
+function Enable-CodexHooksFeature {
+    param([string]$ConfigPath)
+
+    $parent = Split-Path -Parent $ConfigPath
+    if ($parent) {
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    }
+
+    $lines = @()
+    if (Test-Path -LiteralPath $ConfigPath) {
+        $lines = @(Get-Content -LiteralPath $ConfigPath)
+    }
+
+    $featuresIndex = -1
+    $codexHooksIndex = -1
+
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $trimmed = $lines[$i].Trim()
+        if ($trimmed -eq "[features]") {
+            $featuresIndex = $i
+        } elseif ($trimmed.StartsWith("codex_hooks")) {
+            $codexHooksIndex = $i
+        }
+    }
+
+    if ($codexHooksIndex -ge 0) {
+        $lines[$codexHooksIndex] = "codex_hooks = true"
+    } elseif ($featuresIndex -ge 0) {
+        $insertAt = $featuresIndex + 1
+        while ($insertAt -lt $lines.Count -and -not $lines[$insertAt].TrimStart().StartsWith("[")) {
+            $insertAt++
+        }
+
+        $before = @()
+        $after = @()
+
+        if ($insertAt -gt 0) {
+            $before = @($lines[0..($insertAt - 1)])
+        }
+
+        if ($insertAt -lt $lines.Count) {
+            $after = @($lines[$insertAt..($lines.Count - 1)])
+        }
+
+        $lines = @($before + "codex_hooks = true" + $after)
+    } else {
+        if ($lines.Count -gt 0 -and $lines[-1].Trim()) {
+            $lines += ""
+        }
+
+        $lines += "[features]"
+        $lines += "codex_hooks = true"
+    }
+
+    [System.IO.File]::WriteAllText($ConfigPath, (($lines -join [Environment]::NewLine) + [Environment]::NewLine), $Utf8NoBom)
+}
+
+function Configure-CodexHooks {
+    param([string]$ExePath)
+
+    $codexDir = Join-Path $env:USERPROFILE ".codex"
+    if (-not (Test-Path -LiteralPath $codexDir)) {
+        Write-Info "Codex directory not found at $codexDir; skipping Codex hook configuration."
+        return
+    }
+
+    $hooksPath = Join-Path $codexDir "hooks.json"
+    $configPath = Join-Path $codexDir "config.toml"
+    $hooksDoc = Read-JsonHashtable -Path $hooksPath
+
+    if (-not $hooksDoc.ContainsKey("hooks") -or -not ($hooksDoc["hooks"] -is [hashtable])) {
+        $hooksDoc["hooks"] = @{}
+    }
+
+    $quietSyncCommand = New-VibestatsHookCommand -ExePath $ExePath -Arguments "sync --quiet"
+
+    Ensure-HookCommand -Hooks $hooksDoc["hooks"] -HookName "Stop" -Command $quietSyncCommand -Async $false
+    Ensure-HookCommand -Hooks $hooksDoc["hooks"] -HookName "SessionStart" -Command $quietSyncCommand -Async $false
+
+    Write-JsonHashtable -Path $hooksPath -Data $hooksDoc
+    Enable-CodexHooksFeature -ConfigPath $configPath
+
+    Write-Success "Codex hooks configured: $hooksPath"
+}
+
+function Configure-LocalHooks {
+    param([string]$ExePath)
+
+    if ($SkipHookConfiguration) {
+        Write-Warn "Skipping Claude/Codex hook configuration."
+        return
+    }
+
+    Configure-ClaudeHooks -ExePath $ExePath
+    Configure-CodexHooks -ExePath $ExePath
+}
+
 function Install-Vibestats {
     if (-not $env:LOCALAPPDATA) {
         Fail "LOCALAPPDATA is not set. This installer needs a normal user profile."
     }
 
-    $target = Get-WindowsTarget
-    $baseUrl = Get-ReleaseBaseUrl -RepoName $Repo -ReleaseVersion $Version
-    $archive = "vibestats-$target.zip"
-    $checksum = "$archive.sha256"
+    $target = Get-NativeTarget
+    $archiveName = "vibestats-$target.zip"
+    $checksumName = "$archiveName.sha256"
+
+    Write-Step "Resolve release assets"
+    $archiveAsset = Get-ReleaseAsset -RepoName $Repo -ReleaseVersion $Version -AssetName $archiveName
+    $checksumAsset = Get-ReleaseAsset -RepoName $Repo -ReleaseVersion $Version -AssetName $checksumName
+
+    if ($archiveAsset.Tag -ne $checksumAsset.Tag) {
+        Fail "Release metadata mismatch between archive and checksum assets."
+    }
+
+    Write-Info "Selected release: $($archiveAsset.Tag)"
 
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("vibestats-install-" + [guid]::NewGuid().ToString("N"))
     $extractDir = Join-Path $tempDir "extract"
     New-Item -ItemType Directory -Force -Path $tempDir, $extractDir | Out-Null
 
     try {
-        $zipPath = Join-Path $tempDir $archive
-        $checksumPath = Join-Path $tempDir $checksum
+        $zipPath = Join-Path $tempDir $archiveName
+        $checksumPath = Join-Path $tempDir $checksumName
 
-        Download-File -Uri "$baseUrl/$archive" -OutFile $zipPath
-        Download-File -Uri "$baseUrl/$checksum" -OutFile $checksumPath
+        Write-Step "Download"
+        Download-File -Uri $archiveAsset.Url -OutFile $zipPath
+        Download-File -Uri $checksumAsset.Url -OutFile $checksumPath
 
         Write-Step "Verify checksum"
         Assert-Checksum -FilePath $zipPath -ChecksumPath $checksumPath
 
-        Write-Step "Extract archive"
+        Write-Step "Extract"
         Expand-Archive -LiteralPath $zipPath -DestinationPath $extractDir -Force
 
         $exe = Get-ChildItem -LiteralPath $extractDir -Filter "vibestats.exe" -Recurse | Select-Object -First 1
@@ -350,7 +698,7 @@ function Install-Vibestats {
             Fail "Archive did not contain vibestats.exe."
         }
 
-        Write-Step "Install vibestats.exe"
+        Write-Step "Install binary"
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
         $dest = Join-Path $InstallDir "vibestats.exe"
         Copy-Item -LiteralPath $exe.FullName -Destination $dest -Force
@@ -373,13 +721,16 @@ function Install-Vibestats {
             Write-Warn "Skipping vibestats auth."
         }
 
+        Write-Step "Configure local hooks"
+        Configure-LocalHooks -ExePath $dest
+
         Write-Success "vibestats installed successfully: $dest"
         Write-Host ""
         Write-Host "Open a new terminal, then run:" -ForegroundColor Cyan
         Write-Host "  vibestats --help"
         Write-Host "  vibestats status"
         Write-Host ""
-        Write-Warn "Note: this Windows installer installs the native binary and runs auth. Full first-install setup parity with install.sh is still being ported."
+        Write-Warn "Note: repository/bootstrap setup parity with install.sh is still being ported."
     }
     finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
