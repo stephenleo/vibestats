@@ -7,8 +7,9 @@
     Downloads the native Windows vibestats release artifact from GitHub Releases,
     verifies its SHA256 checksum, installs vibestats.exe to the current user's
     local Programs folder, ensures GitHub CLI is available/authenticated, adds
-    vibestats to the user PATH, runs vibestats auth, and configures Claude Code
-    and Codex hooks when their settings directories already exist.
+    vibestats to the user PATH, bootstraps the vibestats-data repository and
+    local config, runs vibestats auth, and configures Claude Code and Codex hooks
+    when their settings directories already exist.
 
 .PARAMETER Yes
     Non-interactive mode: accept installer defaults automatically where possible.
@@ -250,6 +251,315 @@ function Ensure-GhAuth {
     }
 
     Write-Success "GitHub CLI authentication complete."
+}
+
+function Invoke-GhJson {
+    param(
+        [string]$GhPath,
+        [string[]]$Arguments
+    )
+
+    $output = & $GhPath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        Fail "gh $($Arguments -join ' ') failed with exit code $LASTEXITCODE."
+    }
+
+    $jsonText = ($output | Out-String).Trim()
+    if (-not $jsonText) {
+        return $null
+    }
+
+    return $jsonText | ConvertFrom-Json
+}
+
+function Get-GithubLogin {
+    param([string]$GhPath)
+
+    $user = Invoke-GhJson -GhPath $GhPath -Arguments @("api", "/user")
+    if (-not $user.login) {
+        Fail "Could not determine GitHub username from gh api /user."
+    }
+
+    return [string]$user.login
+}
+
+function Test-GithubRepoExists {
+    param(
+        [string]$GhPath,
+        [string]$RepoName
+    )
+
+    & $GhPath repo view $RepoName --json name *> $null
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Ensure-VibestatsDataRepo {
+    param(
+        [string]$GhPath,
+        [string]$GitHubUser
+    )
+
+    $repoName = "$GitHubUser/vibestats-data"
+
+    if (Test-GithubRepoExists -GhPath $GhPath -RepoName $repoName) {
+        Write-Success "Existing repository detected: $repoName"
+        return $repoName
+    }
+
+    Write-Info "Creating private repository: $repoName"
+    & $GhPath repo create $repoName --private --description "Private VibeStats data repository"
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Failed to create repository: $repoName"
+    }
+
+    Write-Success "Repository created: $repoName"
+    return $repoName
+}
+
+function ConvertTo-Slug {
+    param([string]$Value)
+
+    $slug = ($Value.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
+    if (-not $slug) {
+        $slug = "machine"
+    }
+
+    if ($slug.Length -gt 20) {
+        $slug = $slug.Substring(0, 20).Trim('-')
+    }
+
+    if (-not $slug) {
+        $slug = "machine"
+    }
+
+    return $slug
+}
+
+function Get-MachineSuffix {
+    try {
+        $machineGuid = (Get-ItemProperty -LiteralPath "HKLM:\SOFTWARE\Microsoft\Cryptography" -Name MachineGuid -ErrorAction Stop).MachineGuid
+        $clean = ($machineGuid -replace '[^a-fA-F0-9]', '').ToLowerInvariant()
+        if ($clean.Length -ge 6) {
+            return $clean.Substring(0, 6)
+        }
+    }
+    catch {
+        # Best effort; fall through to generated suffix.
+    }
+
+    return ([guid]::NewGuid().ToString("N").Substring(0, 6)).ToLowerInvariant()
+}
+
+function New-VibestatsMachineId {
+    $hostName = [System.Net.Dns]::GetHostName()
+    $slug = ConvertTo-Slug -Value $hostName
+    $suffix = Get-MachineSuffix
+
+    return "$slug-$suffix"
+}
+
+function Get-IsoUtcNow {
+    return [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+}
+
+function Get-VibestatsConfigPath {
+    if (-not $env:APPDATA) {
+        Fail "APPDATA is not set. Cannot write vibestats config.toml."
+    }
+
+    return (Join-Path $env:APPDATA "vibestats\config.toml")
+}
+
+function Write-VibestatsConfig {
+    param(
+        [string]$GhPath,
+        [string]$MachineId,
+        [string]$RepoName
+    )
+
+    $tokenOutput = & $GhPath auth token
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Could not read GitHub token from gh auth token."
+    }
+
+    $token = (($tokenOutput | Out-String).Trim())
+    if (-not $token) {
+        Fail "gh auth token returned an empty token."
+    }
+
+    $configPath = Get-VibestatsConfigPath
+    $configDir = Split-Path -Parent $configPath
+    New-Item -ItemType Directory -Force -Path $configDir | Out-Null
+
+    $config = @"
+oauth_token = "$token"
+machine_id = "$MachineId"
+vibestats_data_repo = "$RepoName"
+"@
+
+    [System.IO.File]::WriteAllText($configPath, $config, $Utf8NoBom)
+    Write-Success "Wrote config: $configPath"
+
+    return $configPath
+}
+
+function Decode-GitHubContent {
+    param([string]$EncodedContent)
+
+    $normalized = $EncodedContent -replace '\s', ''
+    $bytes = [Convert]::FromBase64String($normalized)
+    return [System.Text.Encoding]::UTF8.GetString($bytes)
+}
+
+function Encode-GitHubContent {
+    param([string]$Content)
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Content)
+    return [Convert]::ToBase64String($bytes)
+}
+
+function Get-RegistryDocument {
+    param(
+        [string]$GhPath,
+        [string]$RepoName
+    )
+
+    $responseText = & $GhPath api "repos/$RepoName/contents/registry.json" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return @{
+            Sha = ""
+            Document = @{
+                machines = @()
+            }
+        }
+    }
+
+    $response = (($responseText | Out-String).Trim()) | ConvertFrom-Json
+    $content = Decode-GitHubContent -EncodedContent $response.content
+
+    try {
+        $document = ConvertTo-Hashtable ($content | ConvertFrom-Json)
+    }
+    catch {
+        Write-Warn "registry.json exists but could not be parsed. Replacing it with a fresh registry."
+        $document = @{
+            machines = @()
+        }
+    }
+
+    if (-not ($document -is [hashtable])) {
+        $document = @{
+            machines = @()
+        }
+    }
+
+    if (-not $document.ContainsKey("machines") -or -not $document["machines"]) {
+        $document["machines"] = @()
+    }
+
+    return @{
+        Sha = [string]$response.sha
+        Document = $document
+    }
+}
+
+function Save-RegistryDocument {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$Sha,
+        [hashtable]$Document,
+        [string]$Message
+    )
+
+    $json = $Document | ConvertTo-Json -Depth 100
+    $encoded = Encode-GitHubContent -Content ($json + [Environment]::NewLine)
+
+    $args = @(
+        "api",
+        "repos/$RepoName/contents/registry.json",
+        "--method",
+        "PUT",
+        "--field",
+        "message=$Message",
+        "--field",
+        "content=$encoded"
+    )
+
+    if ($Sha) {
+        $args += @("--field", "sha=$Sha")
+    }
+
+    & $GhPath @args *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Failed to update registry.json in $RepoName."
+    }
+}
+
+function Register-VibestatsMachine {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$MachineId
+    )
+
+    Write-Info "Registering machine in $RepoName/registry.json..."
+
+    $registry = Get-RegistryDocument -GhPath $GhPath -RepoName $RepoName
+    $document = $registry.Document
+    $machines = @($document["machines"])
+    $hostName = [System.Net.Dns]::GetHostName()
+    $timestamp = Get-IsoUtcNow
+
+    $found = $false
+    for ($i = 0; $i -lt $machines.Count; $i++) {
+        $machine = ConvertTo-Hashtable $machines[$i]
+        if ($machine["machine_id"] -eq $MachineId) {
+            $machine["hostname"] = $hostName
+            $machine["status"] = "active"
+            $machine["last_seen"] = $timestamp
+            $machines[$i] = $machine
+            $found = $true
+            break
+        }
+    }
+
+    if (-not $found) {
+        $machines += @{
+            machine_id = $MachineId
+            hostname = $hostName
+            status = "active"
+            last_seen = $timestamp
+        }
+    }
+
+    $document["machines"] = @($machines)
+
+    Save-RegistryDocument `
+        -GhPath $GhPath `
+        -RepoName $RepoName `
+        -Sha $registry.Sha `
+        -Document $document `
+        -Message "chore: register machine $MachineId"
+
+    Write-Success "Machine registered: $MachineId"
+}
+
+function Initialize-VibestatsConfig {
+    param([string]$GhPath)
+
+    $gitHubUser = Get-GithubLogin -GhPath $GhPath
+    $repoName = Ensure-VibestatsDataRepo -GhPath $GhPath -GitHubUser $gitHubUser
+    $machineId = New-VibestatsMachineId
+
+    Register-VibestatsMachine -GhPath $GhPath -RepoName $repoName -MachineId $machineId
+    Write-VibestatsConfig -GhPath $GhPath -MachineId $machineId -RepoName $repoName | Out-Null
+
+    return @{
+        GitHubUser = $gitHubUser
+        RepoName = $repoName
+        MachineId = $machineId
+    }
 }
 
 function Get-ReleaseAsset {
@@ -657,6 +967,8 @@ function Configure-LocalHooks {
 }
 
 function Install-Vibestats {
+    param([string]$GhPath)
+
     if (-not $env:LOCALAPPDATA) {
         Fail "LOCALAPPDATA is not set. This installer needs a normal user profile."
     }
@@ -711,6 +1023,9 @@ function Install-Vibestats {
 
         Add-UserPathEntry -Directory $InstallDir
 
+        Write-Step "Bootstrap vibestats config"
+        Initialize-VibestatsConfig -GhPath $GhPath | Out-Null
+
         if (-not $SkipVibestatsAuth) {
             Write-Step "Run vibestats auth"
             & $dest auth
@@ -756,7 +1071,7 @@ Assert-GhVersion -GhPath $ghPath
 Ensure-GhAuth -GhPath $ghPath
 
 Write-Step "Install vibestats"
-Install-Vibestats
+Install-Vibestats -GhPath $ghPath
 
 Write-Step "Complete"
 Write-Success "Installation complete."
