@@ -9,8 +9,9 @@
     local Programs folder, ensures GitHub CLI is available/authenticated, adds
     vibestats to the user PATH, bootstraps the vibestats-data repository and
     local config, installs the aggregate workflow and repository secrets, runs
-    vibestats auth, and configures Claude Code and Codex hooks when their
-    settings directories already exist.
+    vibestats auth, configures Claude Code and Codex hooks when their settings
+    directories already exist, injects profile README markers, runs an initial
+    backfill, and dispatches the aggregate workflow.
 
 .PARAMETER Yes
     Non-interactive mode: accept installer defaults automatically where possible.
@@ -39,6 +40,15 @@
 .PARAMETER SkipHookConfiguration
     Do not configure Claude Code or Codex hooks.
 
+.PARAMETER SkipReadmeMarkers
+    Do not add vibestats markers to the GitHub profile README.
+
+.PARAMETER SkipBackfill
+    Do not run vibestats sync --backfill after installing.
+
+.PARAMETER SkipInitialWorkflowDispatch
+    Do not dispatch the aggregate workflow after installing.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\install.ps1
 
@@ -59,6 +69,9 @@ param(
     [switch]$SkipPathUpdate,
     [switch]$SkipVibestatsAuth,
     [switch]$SkipHookConfiguration,
+    [switch]$SkipReadmeMarkers,
+    [switch]$SkipBackfill,
+    [switch]$SkipInitialWorkflowDispatch,
     [switch]$Help
 )
 
@@ -110,6 +123,10 @@ Options:
   -SkipPathUpdate          Do not add InstallDir to user PATH
   -SkipVibestatsAuth       Do not run vibestats auth after install
   -SkipHookConfiguration   Do not configure Claude Code or Codex hooks
+  -SkipReadmeMarkers       Do not add profile README markers
+  -SkipBackfill            Do not run vibestats sync --backfill
+  -SkipInitialWorkflowDispatch
+                           Do not dispatch the aggregate workflow
   -Help                    Show this help
 
 Examples:
@@ -786,6 +803,157 @@ function Configure-VibestatsDataRepository {
     Set-GithubContributionsTokenSecret -GhPath $GhPath -RepoName $repoName
 }
 
+function Get-GithubFileContent {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$Path
+    )
+
+    $responseText = & $GhPath api "repos/$RepoName/contents/$Path" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return $null
+    }
+
+    try {
+        $response = (($responseText | Out-String).Trim()) | ConvertFrom-Json
+        return @{
+            Sha = [string]$response.sha
+            Content = Decode-GitHubContent -EncodedContent ([string]$response.content)
+        }
+    }
+    catch {
+        return $null
+    }
+}
+
+function Add-ProfileReadmeMarkers {
+    param(
+        [string]$GhPath,
+        [string]$GitHubUser
+    )
+
+    if ($SkipReadmeMarkers) {
+        Write-Warn "Skipping profile README marker injection."
+        return
+    }
+
+    $profileRepo = "$GitHubUser/$GitHubUser"
+    $readme = Get-GithubFileContent -GhPath $GhPath -RepoName $profileRepo -Path "README.md"
+
+    if (-not $readme) {
+        Write-Warn "Could not access $profileRepo/README.md. Add vibestats markers manually if desired."
+        Write-Warn "See: https://vibestats.dev/docs/quickstart"
+        return
+    }
+
+    $content = [string]$readme["Content"]
+    if ($content -match "<!-- vibestats-start -->") {
+        Write-Success "vibestats README markers already present; skipping."
+        return
+    }
+
+    $markerBlock = @"
+<!-- vibestats-start -->
+[![vibestats](https://raw.githubusercontent.com/$GitHubUser/$GitHubUser/main/vibestats/heatmap.svg)](https://vibestats.dev/$GitHubUser)
+
+[View interactive dashboard ->](https://vibestats.dev/$GitHubUser)
+<!-- vibestats-end -->
+"@
+
+    $updatedContent = $content.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $markerBlock + [Environment]::NewLine
+    $encoded = Encode-GitHubContent -Content $updatedContent
+
+    $ghArgs = @(
+        "api",
+        "repos/$profileRepo/contents/README.md",
+        "--method",
+        "PUT",
+        "--field",
+        "message=Add vibestats heatmap markers",
+        "--field",
+        "content=$encoded",
+        "--field",
+        "sha=$($readme["Sha"])"
+    )
+
+    & $GhPath @ghArgs *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Could not update $profileRepo/README.md. Add vibestats markers manually if desired."
+        return
+    }
+
+    Write-Success "vibestats markers added to $profileRepo/README.md"
+}
+
+function Run-PostInstallBackfill {
+    param([string]$ExePath)
+
+    if ($SkipBackfill) {
+        Write-Warn "Skipping post-install backfill."
+        return
+    }
+
+    Write-Info "Running post-install backfill..."
+    & $ExePath sync --backfill
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Backfill completed with errors. Retry later with: vibestats sync --backfill"
+        return
+    }
+
+    Write-Success "Backfill complete."
+}
+
+function Invoke-InitialAggregateWorkflow {
+    param(
+        [string]$GhPath,
+        [string]$RepoName
+    )
+
+    if ($SkipInitialWorkflowDispatch) {
+        Write-Warn "Skipping initial aggregate workflow dispatch."
+        return
+    }
+
+    Write-Info "Triggering initial aggregate workflow run..."
+
+    for ($i = 1; $i -le 5; $i++) {
+        & $GhPath api "repos/$RepoName/actions/workflows/aggregate.yml/dispatches" `
+            --method POST `
+            --field "ref=main" *> $null
+
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "Aggregate workflow triggered. Your heatmap will be ready in a few minutes."
+            return
+        }
+
+        Write-Info "Workflow not ready yet, retrying in ${i}s..."
+        Start-Sleep -Seconds $i
+    }
+
+    Write-Warn "Could not trigger aggregate workflow automatically."
+    Write-Warn "Run it manually at: https://github.com/$RepoName/actions/workflows/aggregate.yml"
+}
+
+function Complete-VibestatsAccountSetup {
+    param(
+        [string]$GhPath,
+        [string]$ExePath,
+        [hashtable]$SetupInfo
+    )
+
+    $repoName = [string]$SetupInfo["RepoName"]
+    $gitHubUser = [string]$SetupInfo["GitHubUser"]
+
+    if (-not $repoName -or -not $gitHubUser) {
+        Fail "Setup info did not include RepoName/GitHubUser."
+    }
+
+    Add-ProfileReadmeMarkers -GhPath $GhPath -GitHubUser $gitHubUser
+    Run-PostInstallBackfill -ExePath $ExePath
+    Invoke-InitialAggregateWorkflow -GhPath $GhPath -RepoName $repoName
+}
+
 function Get-ReleaseAsset {
     param(
         [string]$RepoName,
@@ -1266,13 +1434,16 @@ function Install-Vibestats {
         Write-Step "Configure local hooks"
         Configure-LocalHooks -ExePath $dest
 
+        Write-Step "Complete account setup"
+        Complete-VibestatsAccountSetup -GhPath $GhPath -ExePath $dest -SetupInfo $setupInfo
+
         Write-Success "vibestats installed successfully: $dest"
         Write-Host ""
         Write-Host "Open a new terminal, then run:" -ForegroundColor Cyan
         Write-Host "  vibestats --help"
         Write-Host "  vibestats status"
         Write-Host ""
-        Write-Warn "Note: README marker injection, backfill, and initial workflow dispatch parity with install.sh are still being ported."
+        Write-Success "Windows installer setup complete."
     }
     finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
