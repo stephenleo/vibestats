@@ -16,11 +16,27 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
 fn log_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    PathBuf::from(home)
-        .join(".config")
-        .join("vibestats")
-        .join("vibestats.log")
+    #[cfg(windows)]
+    {
+        let base = std::env::var("LOCALAPPDATA")
+            .or_else(|_| std::env::var("TEMP"))
+            .unwrap_or_else(|_| ".".to_string());
+
+        PathBuf::from(base)
+            .join("vibestats")
+            .join("logs")
+            .join("vibestats.log")
+    }
+
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+
+        PathBuf::from(home)
+            .join(".config")
+            .join("vibestats")
+            .join("vibestats.log")
+    }
 }
 
 // ─── Timestamp (stdlib only, no chrono) ───────────────────────────────────────

@@ -21,12 +21,22 @@ use std::path::PathBuf;
 
 /// Returns the path to the checkpoint file, or None if HOME is not set.
 fn checkpoint_path() -> Option<PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        PathBuf::from(h)
-            .join(".config")
-            .join("vibestats")
-            .join("checkpoint.toml")
-    })
+    #[cfg(windows)]
+    {
+        std::env::var("APPDATA")
+            .ok()
+            .map(|h| PathBuf::from(h).join("vibestats").join("checkpoint.toml"))
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(|h| {
+            PathBuf::from(h)
+                .join(".config")
+                .join("vibestats")
+                .join("checkpoint.toml")
+        })
+    }
 }
 
 /// Returns yesterday's date as `"YYYY-MM-DD"` (UTC).

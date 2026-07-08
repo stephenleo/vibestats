@@ -17,12 +17,22 @@ use std::path::PathBuf;
 /// Returns the path to the checkpoint file, or None if HOME is not set.
 /// Defined privately here — mirrors the pattern in `session_start.rs`.
 fn checkpoint_path() -> Option<PathBuf> {
-    std::env::var("HOME").ok().map(|home| {
-        PathBuf::from(home)
-            .join(".config")
-            .join("vibestats")
-            .join("checkpoint.toml")
-    })
+    #[cfg(windows)]
+    {
+        std::env::var("APPDATA")
+            .ok()
+            .map(|h| PathBuf::from(h).join("vibestats").join("checkpoint.toml"))
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(|h| {
+            PathBuf::from(h)
+                .join(".config")
+                .join("vibestats")
+                .join("checkpoint.toml")
+        })
+    }
 }
 
 /// List all registered machines from `registry.json`.

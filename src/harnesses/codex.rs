@@ -78,9 +78,19 @@ struct CodexSessionDay {
 // ── Private helpers — bodies moved verbatim from src/codex_parser.rs ────────
 
 fn codex_sessions_dir() -> Option<PathBuf> {
-    std::env::var("HOME")
-        .ok()
-        .map(|h| PathBuf::from(h).join(".codex").join("sessions"))
+    #[cfg(windows)]
+    {
+        std::env::var("USERPROFILE")
+            .ok()
+            .map(|h| PathBuf::from(h).join(".codex").join("sessions"))
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME")
+            .ok()
+            .map(|h| PathBuf::from(h).join(".codex").join("sessions"))
+    }
 }
 
 fn collect_jsonl_files(dir: &Path, acc: &mut Vec<PathBuf>) {

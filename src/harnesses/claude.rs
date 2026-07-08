@@ -79,9 +79,19 @@ struct ClaudeEntry {
 // ── Private helpers — bodies moved verbatim from src/jsonl_parser.rs ────────
 
 fn claude_projects_dir() -> Option<PathBuf> {
-    std::env::var("HOME")
-        .ok()
-        .map(|h| PathBuf::from(h).join(".claude").join("projects"))
+    #[cfg(windows)]
+    {
+        std::env::var("USERPROFILE")
+            .ok()
+            .map(|h| PathBuf::from(h).join(".claude").join("projects"))
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME")
+            .ok()
+            .map(|h| PathBuf::from(h).join(".claude").join("projects"))
+    }
 }
 
 fn collect_jsonl_files(dir: &Path, acc: &mut Vec<PathBuf>) {
