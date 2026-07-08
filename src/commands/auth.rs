@@ -1,11 +1,26 @@
-/// Returns the path to `~/.config/vibestats/checkpoint.toml`, or `None` if `HOME` is not set.
+/// Returns the path to the vibestats checkpoint file for the current platform.
+///
+/// Unix: `$HOME/.config/vibestats/checkpoint.toml`
+/// Windows: `%APPDATA%\\vibestats\\checkpoint.toml`
 fn checkpoint_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".config")
-            .join("vibestats")
-            .join("checkpoint.toml")
-    })
+    #[cfg(windows)]
+    {
+        std::env::var("APPDATA").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join("vibestats")
+                .join("checkpoint.toml")
+        })
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join(".config")
+                .join("vibestats")
+                .join("checkpoint.toml")
+        })
+    }
 }
 
 /// Entry point called from `main.rs` for the `vibestats auth` command.
@@ -136,43 +151,109 @@ mod tests {
     use super::*;
 
     #[test]
+
     fn checkpoint_path_returns_some_when_home_is_set() {
-        // HOME should be set in a normal test environment
-        let result = checkpoint_path();
-        assert!(
-            result.is_some(),
-            "checkpoint_path() should return Some when HOME is set"
-        );
-        let path = result.unwrap();
-        let path_str = path.to_string_lossy();
-        assert!(
-            path_str.ends_with(".config/vibestats/checkpoint.toml"),
-            "path should end with .config/vibestats/checkpoint.toml, got: {path_str}"
-        );
+        #[cfg(windows)]
+        {
+            let saved = std::env::var("APPDATA").ok();
+            unsafe {
+                std::env::set_var("APPDATA", r"C:\Users\Test\AppData\Roaming");
+            }
+
+            let result = checkpoint_path();
+            assert!(
+                result.is_some(),
+                "checkpoint_path() should return Some when APPDATA is set"
+            );
+
+            let path = result.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("checkpoint.toml"))
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("vibestats"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("APPDATA", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("APPDATA");
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            let saved = std::env::var("HOME").ok();
+            unsafe {
+                std::env::set_var("HOME", "/tmp/vibestats-test-home");
+            }
+
+            let result = checkpoint_path();
+            assert!(
+                result.is_some(),
+                "checkpoint_path() should return Some when HOME is set"
+            );
+
+            let path = result.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("checkpoint.toml"))
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("vibestats"))
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".config"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("HOME");
+                }
+            }
+        }
     }
 
     #[test]
-    fn checkpoint_path_returns_none_when_home_unset() {
-        // Temporarily unset HOME, capture result, then restore
-        let original_home = std::env::var("HOME").ok();
 
-        // SAFETY: modifying environment in tests; this test must run in isolation
-        // (single-threaded or with env var manipulation not racing)
+    fn checkpoint_path_returns_none_when_home_unset() {
+        #[cfg(windows)]
+        const ENV_NAME: &str = "APPDATA";
+
+        #[cfg(not(windows))]
+        const ENV_NAME: &str = "HOME";
+
+        let saved = std::env::var(ENV_NAME).ok();
+
         unsafe {
-            std::env::remove_var("HOME");
+            std::env::remove_var(ENV_NAME);
         }
+
         let result = checkpoint_path();
 
-        // Restore HOME
-        if let Some(home) = original_home {
+        if let Some(value) = saved {
             unsafe {
-                std::env::set_var("HOME", home);
+                std::env::set_var(ENV_NAME, value);
             }
         }
 
         assert!(
             result.is_none(),
-            "checkpoint_path() should return None when HOME is unset"
+            "checkpoint_path() should return None when {ENV_NAME} is unset"
         );
     }
 

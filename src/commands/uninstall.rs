@@ -1,30 +1,48 @@
-/// Returns the path to ~/.claude/settings.json, or None if HOME is not set.
+fn user_profile_dir() -> Option<std::path::PathBuf> {
+    #[cfg(windows)]
+    {
+        std::env::var("USERPROFILE")
+            .ok()
+            .map(std::path::PathBuf::from)
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(std::path::PathBuf::from)
+    }
+}
+
+/// Returns the path to the Claude settings file for the current platform.
 fn settings_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".claude")
-            .join("settings.json")
-    })
+    user_profile_dir().map(|h| h.join(".claude").join("settings.json"))
 }
 
-/// Returns the path to ~/.codex/hooks.json, or None if HOME is not set.
+/// Returns the path to the Codex hooks file for the current platform.
 fn codex_hooks_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".codex")
-            .join("hooks.json")
-    })
+    user_profile_dir().map(|h| h.join(".codex").join("hooks.json"))
 }
 
-/// Returns the path to the installed vibestats binary at ~/.local/bin/vibestats,
-/// or None if HOME is not set.
+/// Returns the path to the installed vibestats binary for the current platform.
 fn binary_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".local")
-            .join("bin")
-            .join("vibestats")
-    })
+    #[cfg(windows)]
+    {
+        std::env::var("LOCALAPPDATA").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join("Programs")
+                .join("vibestats")
+                .join("vibestats.exe")
+        })
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join(".local")
+                .join("bin")
+                .join("vibestats")
+        })
+    }
 }
 
 /// True if a hook object's "command" field identifies a vibestats command.
@@ -292,45 +310,120 @@ mod tests {
     /// Mutating env vars is process-global, so both branches are exercised
     /// serially inside one test to avoid races with parallel test execution.
     #[test]
-    fn settings_path_reflects_home_state() {
-        let saved = std::env::var("HOME").ok();
 
-        // Case 1: HOME set
-        std::env::set_var("HOME", "/tmp/vibestats-test-home");
-        let path = settings_path().expect("must return Some when HOME is set");
-        assert!(
-            path.to_string_lossy().ends_with(".claude/settings.json"),
-            "path must end with .claude/settings.json, got: {}",
-            path.display()
+    fn settings_path_reflects_home_state() {
+        #[cfg(windows)]
+        const ENV_NAME: &str = "USERPROFILE";
+
+        #[cfg(not(windows))]
+        const ENV_NAME: &str = "HOME";
+
+        let saved = std::env::var(ENV_NAME).ok();
+
+        #[cfg(windows)]
+        unsafe {
+            std::env::set_var(ENV_NAME, r"C:\Users\Test");
+        }
+
+        #[cfg(not(windows))]
+        unsafe {
+            std::env::set_var(ENV_NAME, "/tmp/vibestats-test-home");
+        }
+
+        let path = settings_path().expect("must return Some when profile env var is set");
+        assert_eq!(
+            path.file_name(),
+            Some(std::ffi::OsStr::new("settings.json"))
+        );
+        assert_eq!(
+            path.parent().and_then(|p| p.file_name()),
+            Some(std::ffi::OsStr::new(".claude"))
         );
 
-        // Case 2: HOME unset
-        std::env::remove_var("HOME");
+        unsafe {
+            std::env::remove_var(ENV_NAME);
+        }
+
         assert!(
             settings_path().is_none(),
-            "settings_path must return None when HOME is unset"
+            "settings_path must return None when {ENV_NAME} is unset"
         );
 
-        // Restore HOME
-        if let Some(h) = saved {
-            std::env::set_var("HOME", h);
+        if let Some(value) = saved {
+            unsafe {
+                std::env::set_var(ENV_NAME, value);
+            }
         }
     }
 
     #[test]
+
     fn binary_path_builds_local_bin_path() {
-        let saved = std::env::var("HOME").ok();
-        std::env::set_var("HOME", "/tmp/vibestats-test-home");
-        let path = binary_path().expect("must return Some when HOME is set");
-        assert!(
-            path.to_string_lossy().ends_with(".local/bin/vibestats"),
-            "binary path must end with .local/bin/vibestats, got: {}",
-            path.display()
-        );
-        if let Some(h) = saved {
-            std::env::set_var("HOME", h);
-        } else {
-            std::env::remove_var("HOME");
+        #[cfg(windows)]
+        {
+            let saved = std::env::var("LOCALAPPDATA").ok();
+
+            unsafe {
+                std::env::set_var("LOCALAPPDATA", r"C:\Users\Test\AppData\Local");
+            }
+
+            let path = binary_path().expect("must return Some when LOCALAPPDATA is set");
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.exe"))
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("vibestats"))
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("Programs"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("LOCALAPPDATA", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("LOCALAPPDATA");
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            let saved = std::env::var("HOME").ok();
+
+            unsafe {
+                std::env::set_var("HOME", "/tmp/vibestats-test-home");
+            }
+
+            let path = binary_path().expect("must return Some when HOME is set");
+            assert_eq!(path.file_name(), Some(std::ffi::OsStr::new("vibestats")));
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("bin"))
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".local"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("HOME");
+                }
+            }
         }
     }
 
