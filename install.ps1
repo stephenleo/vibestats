@@ -8,8 +8,9 @@
     verifies its SHA256 checksum, installs vibestats.exe to the current user's
     local Programs folder, ensures GitHub CLI is available/authenticated, adds
     vibestats to the user PATH, bootstraps the vibestats-data repository and
-    local config, runs vibestats auth, and configures Claude Code and Codex hooks
-    when their settings directories already exist.
+    local config, installs the aggregate workflow and repository secrets, runs
+    vibestats auth, and configures Claude Code and Codex hooks when their
+    settings directories already exist.
 
 .PARAMETER Yes
     Non-interactive mode: accept installer defaults automatically where possible.
@@ -562,6 +563,229 @@ function Initialize-VibestatsConfig {
     }
 }
 
+function Get-AggregateWorkflowContent {
+    return @'
+# aggregate.yml - Copy this file to your vibestats-data/.github/workflows/ directory.
+# It runs the vibestats community action daily to aggregate your AI coding session data
+# and update your GitHub profile heatmap automatically.
+name: Aggregate vibestats data
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Daily at 02:00 UTC
+  workflow_dispatch:        # Allow manual runs
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # lets the action commit the GitHub contributions snapshot back to vibestats-data
+    steps:
+      - uses: stephenleo/vibestats@v2
+        with:
+          token: ${{ secrets.VIBESTATS_TOKEN }}
+          github-token: ${{ secrets.VIBESTATS_GH_TOKEN }}
+          profile-repo: ${{ github.repository_owner }}/${{ github.repository_owner }}
+'@
+}
+
+function Get-GithubFileSha {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$Path
+    )
+
+    $responseText = & $GhPath api "repos/$RepoName/contents/$Path" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return ""
+    }
+
+    try {
+        $response = (($responseText | Out-String).Trim()) | ConvertFrom-Json
+        if ($response.sha) {
+            return [string]$response.sha
+        }
+    }
+    catch {
+        return ""
+    }
+
+    return ""
+}
+
+function Write-GithubFile {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$Path,
+        [string]$Content,
+        [string]$AddMessage,
+        [string]$UpdateMessage
+    )
+
+    $sha = Get-GithubFileSha -GhPath $GhPath -RepoName $RepoName -Path $Path
+    $encoded = Encode-GitHubContent -Content $Content
+
+    $message = if ($sha) { $UpdateMessage } else { $AddMessage }
+
+    $ghArgs = @(
+        "api",
+        "repos/$RepoName/contents/$Path",
+        "--method",
+        "PUT",
+        "--field",
+        "message=$message",
+        "--field",
+        "content=$encoded"
+    )
+
+    if ($sha) {
+        $ghArgs += @("--field", "sha=$sha")
+    }
+
+    & $GhPath @ghArgs *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Failed to write $Path in $RepoName."
+    }
+}
+
+function Write-AggregateWorkflow {
+    param(
+        [string]$GhPath,
+        [string]$RepoName
+    )
+
+    Write-Info "Writing aggregate workflow to $RepoName..."
+    $workflowContent = Get-AggregateWorkflowContent
+
+    Write-GithubFile `
+        -GhPath $GhPath `
+        -RepoName $RepoName `
+        -Path ".github/workflows/aggregate.yml" `
+        -Content ($workflowContent + [Environment]::NewLine) `
+        -AddMessage "Add vibestats aggregate workflow" `
+        -UpdateMessage "Update vibestats aggregate workflow"
+
+    Write-Success "Workflow written: $RepoName/.github/workflows/aggregate.yml"
+}
+
+function Set-GhSecretValue {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$SecretName,
+        [string]$SecretValue,
+        [switch]$NonFatal
+    )
+
+    if (-not $SecretValue) {
+        if ($NonFatal) {
+            Write-Warn "$SecretName was empty; skipping."
+            return $false
+        }
+
+        Fail "$SecretName was empty."
+    }
+
+    $SecretValue | & $GhPath secret set $SecretName --repo $RepoName --body-file - *> $null
+    if ($LASTEXITCODE -ne 0) {
+        if ($NonFatal) {
+            Write-Warn "Could not set $SecretName."
+            return $false
+        }
+
+        Fail "Failed to set $SecretName."
+    }
+
+    Write-Success "$SecretName secret set successfully."
+    return $true
+}
+
+function Get-GhAuthToken {
+    param([string]$GhPath)
+
+    $tokenOutput = & $GhPath auth token
+    if ($LASTEXITCODE -ne 0) {
+        return ""
+    }
+
+    return (($tokenOutput | Out-String).Trim())
+}
+
+function New-FineGrainedVibestatsToken {
+    param(
+        [string]$GhPath,
+        [string]$GitHubUser
+    )
+
+    $year = [DateTime]::UtcNow.Year
+
+    $tokenOutput = & $GhPath api /user/personal_access_tokens `
+        --method POST `
+        --field "name=vibestats-$year" `
+        --field "expiration=never" `
+        --field "repositories=[`"$GitHubUser`"]" `
+        --field 'permissions={"contents":"write"}' `
+        --jq ".token" 2>$null
+
+    if ($LASTEXITCODE -ne 0) {
+        return ""
+    }
+
+    return (($tokenOutput | Out-String).Trim())
+}
+
+function Set-VibestatsTokenSecret {
+    param(
+        [string]$GhPath,
+        [string]$RepoName,
+        [string]$GitHubUser
+    )
+
+    Write-Info "Setting VIBESTATS_TOKEN Actions secret..."
+
+    $fineGrainedToken = New-FineGrainedVibestatsToken -GhPath $GhPath -GitHubUser $GitHubUser
+    if ($fineGrainedToken) {
+        if (Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_TOKEN" -SecretValue $fineGrainedToken -NonFatal) {
+            return
+        }
+    }
+
+    Write-Warn "Fine-grained PAT creation failed or was blocked. Falling back to gh auth token."
+    $fallbackToken = Get-GhAuthToken -GhPath $GhPath
+    Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_TOKEN" -SecretValue $fallbackToken | Out-Null
+}
+
+function Set-GithubContributionsTokenSecret {
+    param(
+        [string]$GhPath,
+        [string]$RepoName
+    )
+
+    Write-Info "Setting VIBESTATS_GH_TOKEN Actions secret..."
+    $token = Get-GhAuthToken -GhPath $GhPath
+    Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_GH_TOKEN" -SecretValue $token -NonFatal | Out-Null
+}
+
+function Configure-VibestatsDataRepository {
+    param(
+        [string]$GhPath,
+        [hashtable]$SetupInfo
+    )
+
+    $repoName = [string]$SetupInfo["RepoName"]
+    $gitHubUser = [string]$SetupInfo["GitHubUser"]
+
+    if (-not $repoName -or -not $gitHubUser) {
+        Fail "Setup info did not include RepoName/GitHubUser."
+    }
+
+    Write-AggregateWorkflow -GhPath $GhPath -RepoName $repoName
+    Set-VibestatsTokenSecret -GhPath $GhPath -RepoName $repoName -GitHubUser $gitHubUser
+    Set-GithubContributionsTokenSecret -GhPath $GhPath -RepoName $repoName
+}
+
 function Get-ReleaseAsset {
     param(
         [string]$RepoName,
@@ -1024,7 +1248,7 @@ function Install-Vibestats {
         Add-UserPathEntry -Directory $InstallDir
 
         Write-Step "Bootstrap vibestats config"
-        Initialize-VibestatsConfig -GhPath $GhPath | Out-Null
+        $setupInfo = Initialize-VibestatsConfig -GhPath $GhPath
 
         if (-not $SkipVibestatsAuth) {
             Write-Step "Run vibestats auth"
@@ -1036,6 +1260,9 @@ function Install-Vibestats {
             Write-Warn "Skipping vibestats auth."
         }
 
+        Write-Step "Configure vibestats-data"
+        Configure-VibestatsDataRepository -GhPath $GhPath -SetupInfo $setupInfo
+
         Write-Step "Configure local hooks"
         Configure-LocalHooks -ExePath $dest
 
@@ -1045,7 +1272,7 @@ function Install-Vibestats {
         Write-Host "  vibestats --help"
         Write-Host "  vibestats status"
         Write-Host ""
-        Write-Warn "Note: repository/bootstrap setup parity with install.sh is still being ported."
+        Write-Warn "Note: README marker injection, backfill, and initial workflow dispatch parity with install.sh are still being ported."
     }
     finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
