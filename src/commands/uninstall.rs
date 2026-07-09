@@ -45,14 +45,91 @@ fn binary_path() -> Option<std::path::PathBuf> {
     }
 }
 
-/// True if a hook object's "command" field identifies a vibestats command.
-/// Matches exactly `"vibestats"` or anything starting with `"vibestats "` (with space).
-/// Narrow on purpose: avoids false positives like `"my-tool --flag vibestats-backup"`.
+fn profile_env_name() -> &'static str {
+    #[cfg(windows)]
+    {
+        "USERPROFILE"
+    }
+
+    #[cfg(not(windows))]
+    {
+        "HOME"
+    }
+}
+
+fn binary_env_name() -> &'static str {
+    #[cfg(windows)]
+    {
+        "LOCALAPPDATA"
+    }
+
+    #[cfg(not(windows))]
+    {
+        "HOME"
+    }
+}
+
+fn config_cleanup_instruction() -> &'static str {
+    #[cfg(windows)]
+    {
+        r#"Remove-Item -Recurse -Force "$env:APPDATA\vibestats""#
+    }
+
+    #[cfg(not(windows))]
+    {
+        "rm -rf ~/.config/vibestats"
+    }
+}
+
+fn print_manual_binary_delete_instruction(path: &std::path::Path) {
+    #[cfg(windows)]
+    {
+        println!(
+            "Delete it manually: Remove-Item -Force \"{}\"",
+            path.display()
+        );
+    }
+
+    #[cfg(not(windows))]
+    {
+        println!("Delete it manually: rm \"{}\"", path.display());
+    }
+}
+
+fn first_command_token(command: &str) -> Option<&str> {
+    let trimmed = command.trim_start();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix('"') {
+        let end_quote = rest.find('"')?;
+        return Some(&rest[..end_quote]);
+    }
+
+    trimmed.split_whitespace().next()
+}
+
+fn command_executable_basename(command: &str) -> Option<&str> {
+    let token = first_command_token(command)?;
+    token.rsplit(['/', '\\']).next()
+}
+
+/// True if a hook object's "command" field invokes the vibestats binary.
+///
+/// Supports both legacy PATH-based hooks such as `vibestats sync` and
+/// full-path hooks written by the Windows installer such as
+/// `"C:\\Users\\...\\vibestats.exe" sync`.
+/// Narrow on purpose: only inspects the first executable token, avoiding false
+/// positives like `"my-tool --flag vibestats-backup"`.
 fn is_vibestats_hook(hook_obj: &serde_json::Value) -> bool {
     hook_obj
         .get("command")
         .and_then(|c| c.as_str())
-        .map(|cmd| cmd == "vibestats" || cmd.starts_with("vibestats "))
+        .and_then(command_executable_basename)
+        .map(|name| {
+            name.eq_ignore_ascii_case("vibestats") || name.eq_ignore_ascii_case("vibestats.exe")
+        })
         .unwrap_or(false)
 }
 
@@ -148,7 +225,10 @@ pub fn run() {
     // Step 1: Remove vibestats hooks from ~/.claude/settings.json
     match settings_path() {
         None => {
-            println!("vibestats: HOME not set — skipping hook removal");
+            println!(
+                "vibestats: {} not set — skipping hook removal",
+                profile_env_name()
+            );
         }
         Some(path) => {
             if !path.exists() {
@@ -268,7 +348,10 @@ pub fn run() {
     // so a developer running `cargo run -- uninstall` does not nuke their dev build.
     match binary_path() {
         None => {
-            println!("vibestats: HOME not set — skipping binary deletion");
+            println!(
+                "vibestats: {} not set — skipping binary deletion",
+                binary_env_name()
+            );
         }
         Some(path) => match std::fs::remove_file(&path) {
             Ok(()) => println!("vibestats: deleted binary at {}", path.display()),
@@ -283,7 +366,7 @@ pub fn run() {
                     "vibestats: could not delete binary at {}: {e}",
                     path.display()
                 );
-                println!("Delete it manually: rm \"{}\"", path.display());
+                print_manual_binary_delete_instruction(&path);
             }
         },
     }
@@ -298,7 +381,7 @@ pub fn run() {
     println!("  2. Remove the heatmap markers from your profile README:");
     println!("       Delete the lines between <!-- vibestats-start --> and <!-- vibestats-end -->");
     println!("  3. Remove vibestats config and logs:");
-    println!("       rm -rf ~/.config/vibestats");
+    println!("       {}", config_cleanup_instruction());
 }
 
 #[cfg(test)]
@@ -428,12 +511,23 @@ mod tests {
     }
 
     #[test]
-    fn is_vibestats_hook_matches_only_exact_and_prefixed_commands() {
+    fn is_vibestats_hook_matches_legacy_and_full_path_commands() {
         assert!(is_vibestats_hook(&json!({ "command": "vibestats" })));
         assert!(is_vibestats_hook(&json!({ "command": "vibestats sync" })));
         assert!(is_vibestats_hook(
             &json!({ "command": "vibestats session-start" })
         ));
+
+        assert!(is_vibestats_hook(
+            &json!({ "command": r#""C:\Users\Test\AppData\Local\Programs\vibestats\vibestats.exe" sync"# })
+        ));
+        assert!(is_vibestats_hook(
+            &json!({ "command": r#""C:\Users\Test\AppData\Local\Programs\vibestats\VIBESTATS.EXE" sync --quiet"# })
+        ));
+        assert!(is_vibestats_hook(
+            &json!({ "command": "/home/test/.local/bin/vibestats sync" })
+        ));
+
         // False positives the old `.contains()` implementation would have matched:
         assert!(!is_vibestats_hook(
             &json!({ "command": "my-tool --arg vibestats-fake" })
@@ -441,7 +535,14 @@ mod tests {
         assert!(!is_vibestats_hook(
             &json!({ "command": "vibestats-killer" })
         ));
+        assert!(!is_vibestats_hook(
+            &json!({ "command": r#""C:\Tools\vibestats-helper.exe" sync"# })
+        ));
+        assert!(!is_vibestats_hook(
+            &json!({ "command": r#"python "C:\Tools\vibestats.exe" sync"# })
+        ));
         assert!(!is_vibestats_hook(&json!({ "command": "not-vibestats" })));
+
         // Missing / non-string command:
         assert!(!is_vibestats_hook(&json!({})));
         assert!(!is_vibestats_hook(&json!({ "command": 42 })));
