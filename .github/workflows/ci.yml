@@ -38,6 +38,11 @@ jobs:
       - name: Build release
         run: cargo build --release
 
+      - name: Installer tests (Pester)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Invoke-Pester -Path tests/installer/install.Tests.ps1 -CI
+
   site:
     name: Site checks
     runs-on: ubuntu-latest

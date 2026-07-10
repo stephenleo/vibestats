@@ -88,13 +88,17 @@ Steps:
 After these two changes the new id is automatically available to the CLI,
 sync, backfill, and checkpoint subsystems — no other Rust files need editing.
 
-### Part 2 — Installer hook wiring (`install.sh`)
+### Part 2 — Installer hook wiring (`install.sh` and `install.ps1`)
 
 vibestats relies on each harness firing `vibestats sync --quiet` after every
 session via that tool's native hooks mechanism. Because every tool stores hook
 configuration in its own format and location, each harness needs its own
-`configure_<name>_hooks` shell function in `install.sh`. Skip this part only
-if the new tool has no hooks system.
+`configure_<name>_hooks` shell function in `install.sh` **and** a matching
+`Configure-<Name>Hooks` function in the Windows installer `install.ps1`
+(follow `Configure-CodexHooks` there — it reuses `Ensure-HookCommand` for the
+idempotent merge, and Pester tests live in
+`tests/installer/install.Tests.ps1`). Skip this part only if the new tool has
+no hooks system.
 
 The pattern, mirrored in the existing `configure_hooks` (Claude) and
 `configure_codex_hooks` (Codex):
@@ -168,6 +172,8 @@ Constraints to respect:
 - [ ] `bash install.sh` (or just sourcing and calling `configure_hooks`)
       writes the new hook entries on a machine where the tool is installed,
       and is a no-op when re-run.
+- [ ] Same on Windows: `install.ps1` wires the new hooks idempotently, and
+      `Invoke-Pester -Path tests/installer/install.Tests.ps1` passes.
 - [ ] `cargo fmt && cargo clippy -- -D warnings && cargo test` all pass.
 
 ## Reporting Issues
