@@ -65,7 +65,7 @@ A live heatmap on your GitHub profile (the embed above), and a full analytics da
 
 ## Quickstart
 
-### Method 1: curl installer (recommended)
+### macOS/Linux: curl installer (recommended)
 
 ```bash
 curl -fsSL https://vibestats.dev/install.sh | bash
@@ -78,6 +78,29 @@ The installer handles everything in one step:
 - Configures Claude Code and Codex hooks to sync after each session when those tools are installed
 - Adds the heatmap to your profile `README.md`
 - Runs an initial backfill of existing session data
+
+### Windows: PowerShell installer
+
+On Windows, use PowerShell:
+
+```powershell
+irm https://vibestats.dev/install.ps1 | iex
+```
+
+The Windows installer performs the same setup as the macOS/Linux installer: it installs the native Windows binary, configures Claude Code and Codex hooks when those tools are present, registers the machine, and runs an initial backfill.
+
+VibeStats uses native Windows paths:
+
+| Data | Windows path |
+|---|---|
+| Config, checkpoint, and log files | `%LOCALAPPDATA%\vibestats` |
+| Binary | `%LOCALAPPDATA%\Programs\vibestats` |
+
+To remove VibeStats later, run:
+
+```powershell
+vibestats uninstall
+```
 
 ### Method 2: cargo install
 

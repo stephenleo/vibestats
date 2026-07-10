@@ -441,4 +441,106 @@ mod tests {
         assert_eq!(day.message_count, 2);
         assert_eq!(day.tool_uses, 1);
     }
+
+    // ── codex_sessions_dir() resolution ─────────────────────────────────────
+
+    /// Combined test for codex_sessions_dir() resolution.
+    /// Env-var mutations are process-global, so both Windows and Unix branches
+    /// are exercised serially inside one test to avoid races.
+    #[test]
+    fn codex_sessions_dir_resolves_under_profile_or_home() {
+        #[cfg(windows)]
+        {
+            let saved = std::env::var("USERPROFILE").ok();
+
+            unsafe {
+                std::env::set_var("USERPROFILE", r"C:\Users\TestUser");
+            }
+
+            let dir = codex_sessions_dir();
+            assert!(
+                dir.is_some(),
+                "codex_sessions_dir should return Some when USERPROFILE is set"
+            );
+
+            let path = dir.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("sessions")),
+                "final component must be 'sessions'"
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".codex")),
+                "parent component must be '.codex'"
+            );
+            assert!(
+                path.to_string_lossy().contains(r"C:\Users\TestUser"),
+                "path must contain USERPROFILE"
+            );
+
+            unsafe {
+                std::env::remove_var("USERPROFILE");
+            }
+
+            let dir = codex_sessions_dir();
+            assert!(
+                dir.is_none(),
+                "codex_sessions_dir should return None when USERPROFILE is unset"
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("USERPROFILE", value);
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            let saved = std::env::var("HOME").ok();
+
+            unsafe {
+                std::env::set_var("HOME", "/home/testuser");
+            }
+
+            let dir = codex_sessions_dir();
+            assert!(
+                dir.is_some(),
+                "codex_sessions_dir should return Some when HOME is set"
+            );
+
+            let path = dir.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("sessions")),
+                "final component must be 'sessions'"
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".codex")),
+                "parent component must be '.codex'"
+            );
+            assert!(
+                path.to_string_lossy().contains("/home/testuser"),
+                "path must contain HOME"
+            );
+
+            unsafe {
+                std::env::remove_var("HOME");
+            }
+
+            let dir = codex_sessions_dir();
+            assert!(
+                dir.is_none(),
+                "codex_sessions_dir should return None when HOME is unset"
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            }
+        }
+    }
 }

@@ -13,8 +13,10 @@ pub struct Config {
 fn config_path() -> Result<PathBuf, String> {
     #[cfg(windows)]
     {
-        let appdata = std::env::var("APPDATA").map_err(|_| {
-            "APPDATA environment variable is not set.
+        // LOCALAPPDATA (not APPDATA): config holds the machine-specific
+        // machine_id, which must not roam between machines.
+        let appdata = std::env::var("LOCALAPPDATA").map_err(|_| {
+            "LOCALAPPDATA environment variable is not set.
 Run 'vibestats auth' from a normal Windows user session."
                 .to_string()
         })?;

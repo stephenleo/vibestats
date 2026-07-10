@@ -1,27 +1,4 @@
-/// Returns the path to the vibestats checkpoint file for the current platform.
-///
-/// Unix: `$HOME/.config/vibestats/checkpoint.toml`
-/// Windows: `%APPDATA%\\vibestats\\checkpoint.toml`
-fn checkpoint_path() -> Option<std::path::PathBuf> {
-    #[cfg(windows)]
-    {
-        std::env::var("APPDATA").ok().map(|h| {
-            std::path::PathBuf::from(h)
-                .join("vibestats")
-                .join("checkpoint.toml")
-        })
-    }
-
-    #[cfg(not(windows))]
-    {
-        std::env::var("HOME").ok().map(|h| {
-            std::path::PathBuf::from(h)
-                .join(".config")
-                .join("vibestats")
-                .join("checkpoint.toml")
-        })
-    }
-}
+use crate::paths::checkpoint_path;
 
 /// Entry point called from `main.rs` for the `vibestats auth` command.
 ///
@@ -75,9 +52,10 @@ pub fn run() {
 
     // Step 3 — update VIBESTATS_TOKEN Actions secret (non-fatal if it fails).
     //
-    // SECURITY: we pass the token via stdin using `--body-file -` rather than
-    // `--body <token>` so the token never appears in this process's argv (and
-    // therefore never shows up in `ps` / `/proc/<pid>/cmdline`). NFR6.
+    // SECURITY: `gh secret set` has no `--body-file` flag; omitting `-b/--body`
+    // makes it read the value from stdin instead, so the token never appears
+    // in this process's argv (and therefore never shows up in `ps` /
+    // `/proc/<pid>/cmdline`). NFR6.
     let secret_result = (|| -> std::io::Result<std::process::Output> {
         use std::io::Write;
         let mut child = std::process::Command::new("gh")
@@ -87,8 +65,6 @@ pub fn run() {
                 "VIBESTATS_TOKEN",
                 "--repo",
                 &config.vibestats_data_repo,
-                "--body-file",
-                "-",
             ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -102,8 +78,8 @@ pub fn run() {
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stdin not piped"))?
             .write_all(config.oauth_token.as_bytes())?;
         // Drop stdin to close the pipe and signal EOF to the child process.
-        // Without this, `gh secret set --body-file -` would block waiting for
-        // more input, and wait_with_output() would deadlock.
+        // Without this, `gh secret set` would block waiting for more input,
+        // and wait_with_output() would deadlock.
         drop(child.stdin.take());
         child.wait_with_output()
     })();
@@ -115,7 +91,7 @@ pub fn run() {
             );
             println!("Run manually (feeds token via stdin to avoid leaking it in argv):");
             println!(
-                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {} --body-file -",
+                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {}",
                 config.vibestats_data_repo
             );
             // Continue — local token is updated; don't abort checkpoint clear
@@ -125,7 +101,7 @@ pub fn run() {
             println!("vibestats: token saved locally but 'gh secret set' failed: {stderr}");
             println!("Run manually (feeds token via stdin to avoid leaking it in argv):");
             println!(
-                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {} --body-file -",
+                "  gh auth token | gh secret set VIBESTATS_TOKEN --repo {}",
                 config.vibestats_data_repo
             );
             // Continue — local token is updated
@@ -148,115 +124,6 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-
-    fn checkpoint_path_returns_some_when_home_is_set() {
-        #[cfg(windows)]
-        {
-            let saved = std::env::var("APPDATA").ok();
-            unsafe {
-                std::env::set_var("APPDATA", r"C:\Users\Test\AppData\Roaming");
-            }
-
-            let result = checkpoint_path();
-            assert!(
-                result.is_some(),
-                "checkpoint_path() should return Some when APPDATA is set"
-            );
-
-            let path = result.unwrap();
-            assert_eq!(
-                path.file_name(),
-                Some(std::ffi::OsStr::new("checkpoint.toml"))
-            );
-            assert_eq!(
-                path.parent().and_then(|p| p.file_name()),
-                Some(std::ffi::OsStr::new("vibestats"))
-            );
-
-            if let Some(value) = saved {
-                unsafe {
-                    std::env::set_var("APPDATA", value);
-                }
-            } else {
-                unsafe {
-                    std::env::remove_var("APPDATA");
-                }
-            }
-        }
-
-        #[cfg(not(windows))]
-        {
-            let saved = std::env::var("HOME").ok();
-            unsafe {
-                std::env::set_var("HOME", "/tmp/vibestats-test-home");
-            }
-
-            let result = checkpoint_path();
-            assert!(
-                result.is_some(),
-                "checkpoint_path() should return Some when HOME is set"
-            );
-
-            let path = result.unwrap();
-            assert_eq!(
-                path.file_name(),
-                Some(std::ffi::OsStr::new("checkpoint.toml"))
-            );
-            assert_eq!(
-                path.parent().and_then(|p| p.file_name()),
-                Some(std::ffi::OsStr::new("vibestats"))
-            );
-            assert_eq!(
-                path.parent()
-                    .and_then(|p| p.parent())
-                    .and_then(|p| p.file_name()),
-                Some(std::ffi::OsStr::new(".config"))
-            );
-
-            if let Some(value) = saved {
-                unsafe {
-                    std::env::set_var("HOME", value);
-                }
-            } else {
-                unsafe {
-                    std::env::remove_var("HOME");
-                }
-            }
-        }
-    }
-
-    #[test]
-
-    fn checkpoint_path_returns_none_when_home_unset() {
-        #[cfg(windows)]
-        const ENV_NAME: &str = "APPDATA";
-
-        #[cfg(not(windows))]
-        const ENV_NAME: &str = "HOME";
-
-        let saved = std::env::var(ENV_NAME).ok();
-
-        unsafe {
-            std::env::remove_var(ENV_NAME);
-        }
-
-        let result = checkpoint_path();
-
-        if let Some(value) = saved {
-            unsafe {
-                std::env::set_var(ENV_NAME, value);
-            }
-        }
-
-        assert!(
-            result.is_none(),
-            "checkpoint_path() should return None when {ENV_NAME} is unset"
-        );
-    }
-
     #[test]
     fn nonexistent_gh_binary_causes_error() {
         // Verify that invoking a non-existent binary path produces an Err from .output()

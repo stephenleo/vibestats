@@ -560,4 +560,106 @@ mod tests {
         assert_eq!(day.output_tokens, 0);
         assert_eq!(day.tool_uses, 1);
     }
+
+    // ── claude_projects_dir() resolution ────────────────────────────────────
+
+    /// Combined test for claude_projects_dir() resolution.
+    /// Env-var mutations are process-global, so both Windows and Unix branches
+    /// are exercised serially inside one test to avoid races.
+    #[test]
+    fn claude_projects_dir_resolves_under_profile_or_home() {
+        #[cfg(windows)]
+        {
+            let saved = std::env::var("USERPROFILE").ok();
+
+            unsafe {
+                std::env::set_var("USERPROFILE", r"C:\Users\TestUser");
+            }
+
+            let dir = claude_projects_dir();
+            assert!(
+                dir.is_some(),
+                "claude_projects_dir should return Some when USERPROFILE is set"
+            );
+
+            let path = dir.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("projects")),
+                "final component must be 'projects'"
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".claude")),
+                "parent component must be '.claude'"
+            );
+            assert!(
+                path.to_string_lossy().contains(r"C:\Users\TestUser"),
+                "path must contain USERPROFILE"
+            );
+
+            unsafe {
+                std::env::remove_var("USERPROFILE");
+            }
+
+            let dir = claude_projects_dir();
+            assert!(
+                dir.is_none(),
+                "claude_projects_dir should return None when USERPROFILE is unset"
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("USERPROFILE", value);
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            let saved = std::env::var("HOME").ok();
+
+            unsafe {
+                std::env::set_var("HOME", "/home/testuser");
+            }
+
+            let dir = claude_projects_dir();
+            assert!(
+                dir.is_some(),
+                "claude_projects_dir should return Some when HOME is set"
+            );
+
+            let path = dir.unwrap();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("projects")),
+                "final component must be 'projects'"
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".claude")),
+                "parent component must be '.claude'"
+            );
+            assert!(
+                path.to_string_lossy().contains("/home/testuser"),
+                "path must contain HOME"
+            );
+
+            unsafe {
+                std::env::remove_var("HOME");
+            }
+
+            let dir = claude_projects_dir();
+            assert!(
+                dir.is_none(),
+                "claude_projects_dir should return None when HOME is unset"
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            }
+        }
+    }
 }

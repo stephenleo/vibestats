@@ -45,57 +45,6 @@ fn binary_path() -> Option<std::path::PathBuf> {
     }
 }
 
-fn profile_env_name() -> &'static str {
-    #[cfg(windows)]
-    {
-        "USERPROFILE"
-    }
-
-    #[cfg(not(windows))]
-    {
-        "HOME"
-    }
-}
-
-fn binary_env_name() -> &'static str {
-    #[cfg(windows)]
-    {
-        "LOCALAPPDATA"
-    }
-
-    #[cfg(not(windows))]
-    {
-        "HOME"
-    }
-}
-
-fn config_cleanup_instruction() -> &'static str {
-    #[cfg(windows)]
-    {
-        r#"Remove-Item -Recurse -Force "$env:APPDATA\vibestats""#
-    }
-
-    #[cfg(not(windows))]
-    {
-        "rm -rf ~/.config/vibestats"
-    }
-}
-
-fn print_manual_binary_delete_instruction(path: &std::path::Path) {
-    #[cfg(windows)]
-    {
-        println!(
-            "Delete it manually: Remove-Item -Force \"{}\"",
-            path.display()
-        );
-    }
-
-    #[cfg(not(windows))]
-    {
-        println!("Delete it manually: rm \"{}\"", path.display());
-    }
-}
-
 fn first_command_token(command: &str) -> Option<&str> {
     let trimmed = command.trim_start();
     if trimmed.is_empty() {
@@ -122,6 +71,9 @@ fn command_executable_basename(command: &str) -> Option<&str> {
 /// `"C:\\Users\\...\\vibestats.exe" sync`.
 /// Narrow on purpose: only inspects the first executable token, avoiding false
 /// positives like `"my-tool --flag vibestats-backup"`.
+// ponytail: hook contract triplicated in install.sh + install.ps1 + here;
+// fold into a `vibestats install-hooks` subcommand when the next harness
+// or hook-format change lands.
 fn is_vibestats_hook(hook_obj: &serde_json::Value) -> bool {
     hook_obj
         .get("command")
@@ -227,7 +179,7 @@ pub fn run() {
         None => {
             println!(
                 "vibestats: {} not set — skipping hook removal",
-                profile_env_name()
+                if cfg!(windows) { "USERPROFILE" } else { "HOME" }
             );
         }
         Some(path) => {
@@ -350,7 +302,11 @@ pub fn run() {
         None => {
             println!(
                 "vibestats: {} not set — skipping binary deletion",
-                binary_env_name()
+                if cfg!(windows) {
+                    "LOCALAPPDATA"
+                } else {
+                    "HOME"
+                }
             );
         }
         Some(path) => match std::fs::remove_file(&path) {
@@ -366,7 +322,14 @@ pub fn run() {
                     "vibestats: could not delete binary at {}: {e}",
                     path.display()
                 );
-                print_manual_binary_delete_instruction(&path);
+                if cfg!(windows) {
+                    println!(
+                        "Delete it manually: Remove-Item -Force \"{}\"",
+                        path.display()
+                    );
+                } else {
+                    println!("Delete it manually: rm \"{}\"", path.display());
+                }
             }
         },
     }
@@ -381,7 +344,14 @@ pub fn run() {
     println!("  2. Remove the heatmap markers from your profile README:");
     println!("       Delete the lines between <!-- vibestats-start --> and <!-- vibestats-end -->");
     println!("  3. Remove vibestats config and logs:");
-    println!("       {}", config_cleanup_instruction());
+    println!(
+        "       {}",
+        if cfg!(windows) {
+            r#"Remove-Item -Recurse -Force "$env:LOCALAPPDATA\vibestats""#
+        } else {
+            "rm -rf ~/.config/vibestats"
+        }
+    );
 }
 
 #[cfg(test)]
@@ -726,5 +696,104 @@ mod tests {
             settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"],
             "vibestats weird-hook"
         );
+    }
+
+    // ── first_command_token and command_executable_basename ──────────────────
+
+    #[test]
+    fn first_command_token_extracts_plain_command() {
+        assert_eq!(first_command_token("vibestats sync"), Some("vibestats"));
+        assert_eq!(first_command_token("vibestats"), Some("vibestats"));
+        assert_eq!(first_command_token("my-tool --flag arg"), Some("my-tool"));
+    }
+
+    #[test]
+    fn first_command_token_handles_quoted_path() {
+        assert_eq!(
+            first_command_token(r#""C:\Users\x\vibestats.exe" sync"#),
+            Some(r"C:\Users\x\vibestats.exe")
+        );
+        assert_eq!(
+            first_command_token(r#""C:\Program Files\app\tool.exe" --flag"#),
+            Some(r"C:\Program Files\app\tool.exe")
+        );
+    }
+
+    #[test]
+    fn first_command_token_returns_none_for_unterminated_quote() {
+        assert_eq!(first_command_token(r#""C:\foo"#), None);
+        assert_eq!(first_command_token(r#""unterminated"#), None);
+    }
+
+    #[test]
+    fn first_command_token_handles_leading_whitespace() {
+        assert_eq!(first_command_token("   vibestats"), Some("vibestats"));
+        assert_eq!(first_command_token("  \t  other-cmd"), Some("other-cmd"));
+    }
+
+    #[test]
+    fn first_command_token_returns_none_for_empty_or_whitespace() {
+        assert_eq!(first_command_token(""), None);
+        assert_eq!(first_command_token("   "), None);
+        assert_eq!(first_command_token("\t\n"), None);
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_plain_command() {
+        assert_eq!(
+            command_executable_basename("vibestats sync"),
+            Some("vibestats")
+        );
+        assert_eq!(
+            command_executable_basename("my-tool --arg"),
+            Some("my-tool")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_windows_path() {
+        assert_eq!(
+            command_executable_basename(
+                r#""C:\Users\Test\AppData\Local\Programs\vibestats\vibestats.exe" sync"#
+            ),
+            Some("vibestats.exe")
+        );
+        assert_eq!(
+            command_executable_basename(r#""C:\Program Files\App\tool.exe" --flag"#),
+            Some("tool.exe")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_unix_path() {
+        assert_eq!(
+            command_executable_basename("/home/test/.local/bin/vibestats sync"),
+            Some("vibestats")
+        );
+        assert_eq!(
+            command_executable_basename("/usr/local/bin/my-tool --arg"),
+            Some("my-tool")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_handles_mixed_separators() {
+        // Windows paths can have backslashes; Unix paths use forward slashes
+        assert_eq!(
+            command_executable_basename(r"C:\tools\vibestats.exe"),
+            Some("vibestats.exe")
+        );
+        assert_eq!(command_executable_basename("/path/to/app"), Some("app"));
+    }
+
+    #[test]
+    fn command_executable_basename_returns_none_for_unterminated_quote() {
+        assert_eq!(command_executable_basename(r#""C:\foo"#), None);
+    }
+
+    #[test]
+    fn command_executable_basename_returns_none_for_empty_or_whitespace() {
+        assert_eq!(command_executable_basename(""), None);
+        assert_eq!(command_executable_basename("   "), None);
     }
 }

@@ -2,27 +2,7 @@ use crate::checkpoint::Checkpoint;
 use crate::config::Config;
 use crate::github_api::GithubApi;
 use crate::logger;
-use std::path::PathBuf;
-
-/// Returns the path to the checkpoint file, or None if HOME is not set.
-fn checkpoint_path() -> Option<PathBuf> {
-    #[cfg(windows)]
-    {
-        std::env::var("APPDATA")
-            .ok()
-            .map(|h| PathBuf::from(h).join("vibestats").join("checkpoint.toml"))
-    }
-
-    #[cfg(not(windows))]
-    {
-        std::env::var("HOME").ok().map(|h| {
-            PathBuf::from(h)
-                .join(".config")
-                .join("vibestats")
-                .join("checkpoint.toml")
-        })
-    }
-}
+use crate::paths::checkpoint_path;
 
 /// Constructs the Hive path for a given date, harness id, and machine_id.
 /// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config.
