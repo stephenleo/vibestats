@@ -1177,20 +1177,25 @@ function Enable-CodexHooksFeature {
         $lines = @(Get-Content -LiteralPath $ConfigPath)
     }
 
+    # Codex renamed this feature flag from "codex_hooks" to "hooks"; the old
+    # key is a deprecated alias that now prints a startup warning. Strip any
+    # legacy key and ensure the canonical one is present.
+    $lines = @($lines | Where-Object { -not $_.Trim().StartsWith("codex_hooks") })
+
     $featuresIndex = -1
-    $codexHooksIndex = -1
+    $hooksIndex = -1
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $trimmed = $lines[$i].Trim()
         if ($trimmed -eq "[features]") {
             $featuresIndex = $i
-        } elseif ($trimmed.StartsWith("codex_hooks")) {
-            $codexHooksIndex = $i
+        } elseif ($trimmed.StartsWith("hooks")) {
+            $hooksIndex = $i
         }
     }
 
-    if ($codexHooksIndex -ge 0) {
-        $lines[$codexHooksIndex] = "codex_hooks = true"
+    if ($hooksIndex -ge 0) {
+        # A "hooks" value already exists (ours or user-managed) - leave it.
     } elseif ($featuresIndex -ge 0) {
         $insertAt = $featuresIndex + 1
         while ($insertAt -lt $lines.Count -and -not $lines[$insertAt].TrimStart().StartsWith("[")) {
@@ -1208,14 +1213,14 @@ function Enable-CodexHooksFeature {
             $after = @($lines[$insertAt..($lines.Count - 1)])
         }
 
-        $lines = @($before + "codex_hooks = true" + $after)
+        $lines = @($before + "hooks = true" + $after)
     } else {
         if ($lines.Count -gt 0 -and $lines[-1].Trim()) {
             $lines += ""
         }
 
         $lines += "[features]"
-        $lines += "codex_hooks = true"
+        $lines += "hooks = true"
     }
 
     [System.IO.File]::WriteAllText($ConfigPath, (($lines -join [Environment]::NewLine) + [Environment]::NewLine), $Utf8NoBom)

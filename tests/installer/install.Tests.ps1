@@ -102,7 +102,7 @@ Describe "Ensure-HookCommand" {
 
 Describe "Enable-CodexHooksFeature" {
 
-    It "updates an existing codex_hooks key in place" {
+    It "migrates a legacy codex_hooks key to hooks" {
         $path = Join-Path $TestDrive "config1.toml"
         Set-Content -LiteralPath $path -Value @(
             "[features]"
@@ -112,11 +112,27 @@ Describe "Enable-CodexHooksFeature" {
         Enable-CodexHooksFeature -ConfigPath $path
 
         $lines = @(Get-Content -LiteralPath $path)
-        @($lines | Where-Object { $_.Trim() -eq "codex_hooks = true" }).Count | Should -Be 1
-        @($lines | Where-Object { $_ -match "codex_hooks" }).Count | Should -Be 1
+        @($lines | Where-Object { $_.Trim() -eq "hooks = true" }).Count | Should -Be 1
+        @($lines | Where-Object { $_ -match "codex_hooks" }).Count | Should -Be 0
     }
 
-    It "inserts codex_hooks into an existing [features] section before the next section header" {
+    It "leaves an existing hooks key in place" {
+        $path = Join-Path $TestDrive "config1b.toml"
+        Set-Content -LiteralPath $path -Value @(
+            "[features]"
+            "hooks = false"
+        ) -Encoding UTF8
+
+        Enable-CodexHooksFeature -ConfigPath $path
+
+        $lines = @(Get-Content -LiteralPath $path)
+        $lines | Should -Be @(
+            "[features]"
+            "hooks = false"
+        )
+    }
+
+    It "inserts hooks into an existing [features] section before the next section header" {
         $path = Join-Path $TestDrive "config2.toml"
         Set-Content -LiteralPath $path -Value @(
             "[features]"
@@ -133,7 +149,7 @@ Describe "Enable-CodexHooksFeature" {
             "[features]"
             "some_other_flag = true"
             ""
-            "codex_hooks = true"
+            "hooks = true"
             "[other]"
             "x = 1"
         )
@@ -152,7 +168,7 @@ Describe "Enable-CodexHooksFeature" {
             'profile = "default"'
             ""
             "[features]"
-            "codex_hooks = true"
+            "hooks = true"
         )
     }
 
@@ -165,7 +181,7 @@ Describe "Enable-CodexHooksFeature" {
         $lines = @(Get-Content -LiteralPath $path)
         $lines | Should -Be @(
             "[features]"
-            "codex_hooks = true"
+            "hooks = true"
         )
     }
 
