@@ -1057,16 +1057,14 @@ function Write-JsonHashtable {
 
 function New-VibestatsHookCommand {
     param(
-        [string]$ExePath,
         [string]$Arguments
     )
 
-    $quotedExe = '"' + $ExePath.Replace('"', '\"') + '"'
     if ($Arguments.Trim()) {
-        return "$quotedExe $Arguments"
+        return "vibestats $Arguments"
     }
 
-    return $quotedExe
+    return "vibestats"
 }
 
 function Test-LegacyVibestatsHookCommand {
@@ -1143,8 +1141,6 @@ function Ensure-HookCommand {
 }
 
 function Configure-ClaudeHooks {
-    param([string]$ExePath)
-
     $claudeDir = Join-Path $env:USERPROFILE ".claude"
     $settingsPath = Join-Path $claudeDir "settings.json"
 
@@ -1159,7 +1155,7 @@ function Configure-ClaudeHooks {
         $settings["hooks"] = @{}
     }
 
-    $syncCommand = New-VibestatsHookCommand -ExePath $ExePath -Arguments "sync"
+    $syncCommand = New-VibestatsHookCommand -Arguments "sync"
 
     Ensure-HookCommand -Hooks $settings["hooks"] -HookName "Stop" -Command $syncCommand -Async $true
     Ensure-HookCommand -Hooks $settings["hooks"] -HookName "SessionStart" -Command $syncCommand -Async $false
@@ -1226,8 +1222,6 @@ function Enable-CodexHooksFeature {
 }
 
 function Configure-CodexHooks {
-    param([string]$ExePath)
-
     $codexDir = Join-Path $env:USERPROFILE ".codex"
     if (-not (Test-Path -LiteralPath $codexDir)) {
         Write-Info "Codex directory not found at $codexDir; skipping Codex hook configuration."
@@ -1242,7 +1236,7 @@ function Configure-CodexHooks {
         $hooksDoc["hooks"] = @{}
     }
 
-    $quietSyncCommand = New-VibestatsHookCommand -ExePath $ExePath -Arguments "sync --quiet"
+    $quietSyncCommand = New-VibestatsHookCommand -Arguments "sync --quiet"
 
     Ensure-HookCommand -Hooks $hooksDoc["hooks"] -HookName "Stop" -Command $quietSyncCommand -Async $false
     Ensure-HookCommand -Hooks $hooksDoc["hooks"] -HookName "SessionStart" -Command $quietSyncCommand -Async $false
@@ -1254,15 +1248,13 @@ function Configure-CodexHooks {
 }
 
 function Configure-LocalHooks {
-    param([string]$ExePath)
-
     if ($SkipHookConfiguration) {
         Write-Warn "Skipping Claude/Codex hook configuration."
         return
     }
 
-    Configure-ClaudeHooks -ExePath $ExePath
-    Configure-CodexHooks -ExePath $ExePath
+    Configure-ClaudeHooks
+    Configure-CodexHooks
 }
 
 function Install-VibestatsExe {
@@ -1356,7 +1348,7 @@ function Complete-VibestatsInstall {
     Configure-VibestatsDataRepository -GhPath $GhPath -SetupInfo $setupInfo
 
     Write-Step "Configure local hooks"
-    Configure-LocalHooks -ExePath $Dest
+    Configure-LocalHooks
 
     Write-Step "Complete account setup"
     Complete-VibestatsAccountSetup -GhPath $GhPath -ExePath $Dest -SetupInfo $setupInfo

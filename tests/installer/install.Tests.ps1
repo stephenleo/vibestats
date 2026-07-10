@@ -302,24 +302,16 @@ Describe "Test-LegacyVibestatsHookCommand" {
 }
 
 Describe "New-VibestatsHookCommand" {
-    It "quotes the exe path and appends args" {
-        New-VibestatsHookCommand -ExePath "C:\tools\vibestats.exe" -Arguments "sync" |
-            Should -Be '"C:\tools\vibestats.exe" sync'
+    It "prefixes 'vibestats' and appends args" {
+        New-VibestatsHookCommand -Arguments "sync" | Should -Be "vibestats sync"
     }
 
-    It "returns just the quoted exe path when Arguments is empty" {
-        New-VibestatsHookCommand -ExePath "C:\tools\vibestats.exe" -Arguments "" |
-            Should -Be '"C:\tools\vibestats.exe"'
+    It "returns just 'vibestats' when Arguments is empty" {
+        New-VibestatsHookCommand -Arguments "" | Should -Be "vibestats"
     }
 
-    It "returns just the quoted exe path when Arguments is whitespace-only" {
-        New-VibestatsHookCommand -ExePath "C:\tools\vibestats.exe" -Arguments "   " |
-            Should -Be '"C:\tools\vibestats.exe"'
-    }
-
-    It "escapes embedded double quotes in the exe path" {
-        New-VibestatsHookCommand -ExePath 'C:\tools\vibe"stats.exe' -Arguments "sync" |
-            Should -Be '"C:\tools\vibe\"stats.exe" sync'
+    It "returns just 'vibestats' when Arguments is whitespace-only" {
+        New-VibestatsHookCommand -Arguments "   " | Should -Be "vibestats"
     }
 }
 
