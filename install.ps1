@@ -13,54 +13,11 @@
     directories already exist, injects profile README markers, runs an initial
     backfill, and dispatches the aggregate workflow.
 
-.PARAMETER Yes
-    Non-interactive mode: accept installer defaults automatically where possible.
-
-.PARAMETER Repo
-    GitHub repository that owns the vibestats release artifacts.
-
-.PARAMETER Version
-    Release version to install, such as v2.4.1. Defaults to latest.
-
-.PARAMETER InstallDir
-    Directory where vibestats.exe will be installed.
-
-.PARAMETER SkipGhInstall
-    Do not attempt to install GitHub CLI if gh.exe is missing.
-
-.PARAMETER SkipGhAuth
-    Do not run gh auth status / gh auth login.
-
-.PARAMETER SkipPathUpdate
-    Do not add the install directory to the current user's PATH.
-
-.PARAMETER SkipVibestatsAuth
-    Do not run vibestats auth after installing the binary.
-
-.PARAMETER SkipHookConfiguration
-    Do not configure Claude Code or Codex hooks.
-
-.PARAMETER SkipReadmeMarkers
-    Do not add vibestats markers to the GitHub profile README.
-
-.PARAMETER SkipBackfill
-    Do not run vibestats sync --backfill after installing.
-
-.PARAMETER SkipInitialWorkflowDispatch
-    Do not dispatch the aggregate workflow after installing.
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\install.ps1
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\install.ps1 -Version v2.4.1
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\install.ps1 -Yes
+.NOTES
+    Run with -Help (or see Show-Usage below) for the option reference.
 #>
 [CmdletBinding()]
 param(
-    [switch]$Yes,
     [string]$Repo = "stephenleo/vibestats",
     [string]$Version = "latest",
     [string]$InstallDir = $(Join-Path $env:LOCALAPPDATA "Programs\vibestats"),
@@ -72,7 +29,11 @@ param(
     [switch]$SkipReadmeMarkers,
     [switch]$SkipBackfill,
     [switch]$SkipInitialWorkflowDispatch,
-    [switch]$Help
+    [switch]$Help,
+    # Internal: dot-source this script for its function definitions without
+    # running the installer. Used by dev-install.ps1 to reuse this file's
+    # functions instead of duplicating them.
+    [switch]$FunctionsOnly
 )
 
 Set-StrictMode -Version Latest
@@ -114,7 +75,6 @@ Usage:
   powershell -ExecutionPolicy Bypass -File .\install.ps1 [options]
 
 Options:
-  -Yes                     Non-interactive mode; accept defaults where possible
   -Repo <owner/repo>       Release repository. Default: stephenleo/vibestats
   -Version <tag|latest>    Release tag to install. Default: latest
   -InstallDir <path>       Install directory. Default: %LOCALAPPDATA%\Programs\vibestats
@@ -132,7 +92,6 @@ Options:
 Examples:
   powershell -ExecutionPolicy Bypass -File .\install.ps1
   powershell -ExecutionPolicy Bypass -File .\install.ps1 -Version v2.4.1
-  powershell -ExecutionPolicy Bypass -File .\install.ps1 -Yes
 "@
 }
 
@@ -202,7 +161,9 @@ function Install-GhIfMissing {
     }
 
     Write-Info "GitHub CLI not found. Installing with winget..."
-    & $winget.Source install --id GitHub.cli -e --source winget --accept-source-agreements --accept-package-agreements
+    # Out-Host: keep installer output visible without polluting this
+    # function's return value (PowerShell returns all pipeline output).
+    & $winget.Source install --id GitHub.cli -e --source winget --accept-source-agreements --accept-package-agreements | Out-Host
     if ($LASTEXITCODE -ne 0) {
         Fail "winget failed to install GitHub CLI. Exit code: $LASTEXITCODE"
     }
@@ -271,29 +232,15 @@ function Ensure-GhAuth {
     Write-Success "GitHub CLI authentication complete."
 }
 
-function Invoke-GhJson {
-    param(
-        [string]$GhPath,
-        [string[]]$Arguments
-    )
-
-    $output = & $GhPath @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        Fail "gh $($Arguments -join ' ') failed with exit code $LASTEXITCODE."
-    }
-
-    $jsonText = ($output | Out-String).Trim()
-    if (-not $jsonText) {
-        return $null
-    }
-
-    return $jsonText | ConvertFrom-Json
-}
-
 function Get-GithubLogin {
     param([string]$GhPath)
 
-    $user = Invoke-GhJson -GhPath $GhPath -Arguments @("api", "/user")
+    $output = & $GhPath api /user
+    if ($LASTEXITCODE -ne 0) {
+        Fail "gh api /user failed with exit code $LASTEXITCODE."
+    }
+
+    $user = (($output | Out-String).Trim()) | ConvertFrom-Json
     if (-not $user.login) {
         Fail "Could not determine GitHub username from gh api /user."
     }
@@ -325,7 +272,7 @@ function Ensure-VibestatsDataRepo {
     }
 
     Write-Info "Creating private repository: $repoName"
-    & $GhPath repo create $repoName --private --description "Private VibeStats data repository"
+    & $GhPath repo create $repoName --private --description "Private VibeStats data repository" | Out-Host
     if ($LASTEXITCODE -ne 0) {
         Fail "Failed to create repository: $repoName"
     }
@@ -344,10 +291,6 @@ function ConvertTo-Slug {
 
     if ($slug.Length -gt 20) {
         $slug = $slug.Substring(0, 20).Trim('-')
-    }
-
-    if (-not $slug) {
-        $slug = "machine"
     }
 
     return $slug
@@ -376,16 +319,14 @@ function New-VibestatsMachineId {
     return "$slug-$suffix"
 }
 
-function Get-IsoUtcNow {
-    return [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
-}
-
 function Get-VibestatsConfigPath {
-    if (-not $env:APPDATA) {
-        Fail "APPDATA is not set. Cannot write vibestats config.toml."
+    # LOCALAPPDATA (not APPDATA): config holds the machine-specific
+    # machine_id, which must not roam between machines.
+    if (-not $env:LOCALAPPDATA) {
+        Fail "LOCALAPPDATA is not set. Cannot write vibestats config.toml."
     }
 
-    return (Join-Path $env:APPDATA "vibestats\config.toml")
+    return (Join-Path $env:LOCALAPPDATA "vibestats\config.toml")
 }
 
 function Write-VibestatsConfig {
@@ -395,14 +336,9 @@ function Write-VibestatsConfig {
         [string]$RepoName
     )
 
-    $tokenOutput = & $GhPath auth token
-    if ($LASTEXITCODE -ne 0) {
-        Fail "Could not read GitHub token from gh auth token."
-    }
-
-    $token = (($tokenOutput | Out-String).Trim())
+    $token = Get-GhAuthToken -GhPath $GhPath
     if (-not $token) {
-        Fail "gh auth token returned an empty token."
+        Fail "Could not read GitHub token from gh auth token."
     }
 
     $configPath = Get-VibestatsConfigPath
@@ -445,10 +381,7 @@ function Get-RegistryDocument {
     $responseText = & $GhPath api "repos/$RepoName/contents/registry.json" 2>$null
     if ($LASTEXITCODE -ne 0) {
         return @{
-            Sha = ""
-            Document = @{
-                machines = @()
-            }
+            machines = @()
         }
     }
 
@@ -475,43 +408,26 @@ function Get-RegistryDocument {
         $document["machines"] = @()
     }
 
-    return @{
-        Sha = [string]$response.sha
-        Document = $document
-    }
+    return $document
 }
 
 function Save-RegistryDocument {
     param(
         [string]$GhPath,
         [string]$RepoName,
-        [string]$Sha,
         [hashtable]$Document,
         [string]$Message
     )
 
     $json = $Document | ConvertTo-Json -Depth 100
-    $encoded = Encode-GitHubContent -Content ($json + [Environment]::NewLine)
 
-    $args = @(
-        "api",
-        "repos/$RepoName/contents/registry.json",
-        "--method",
-        "PUT",
-        "--field",
-        "message=$Message",
-        "--field",
-        "content=$encoded"
-    )
-
-    if ($Sha) {
-        $args += @("--field", "sha=$Sha")
-    }
-
-    & $GhPath @args *> $null
-    if ($LASTEXITCODE -ne 0) {
-        Fail "Failed to update registry.json in $RepoName."
-    }
+    Write-GithubFile `
+        -GhPath $GhPath `
+        -RepoName $RepoName `
+        -Path "registry.json" `
+        -Content ($json + [Environment]::NewLine) `
+        -AddMessage $Message `
+        -UpdateMessage $Message
 }
 
 function Register-VibestatsMachine {
@@ -523,11 +439,10 @@ function Register-VibestatsMachine {
 
     Write-Info "Registering machine in $RepoName/registry.json..."
 
-    $registry = Get-RegistryDocument -GhPath $GhPath -RepoName $RepoName
-    $document = $registry.Document
+    $document = Get-RegistryDocument -GhPath $GhPath -RepoName $RepoName
     $machines = @($document["machines"])
     $hostName = [System.Net.Dns]::GetHostName()
-    $timestamp = Get-IsoUtcNow
+    $timestamp = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
 
     $found = $false
     for ($i = 0; $i -lt $machines.Count; $i++) {
@@ -556,7 +471,6 @@ function Register-VibestatsMachine {
     Save-RegistryDocument `
         -GhPath $GhPath `
         -RepoName $RepoName `
-        -Sha $registry.Sha `
         -Document $document `
         -Message "chore: register machine $MachineId"
 
@@ -613,19 +527,9 @@ function Get-GithubFileSha {
         [string]$Path
     )
 
-    $responseText = & $GhPath api "repos/$RepoName/contents/$Path" 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        return ""
-    }
-
-    try {
-        $response = (($responseText | Out-String).Trim()) | ConvertFrom-Json
-        if ($response.sha) {
-            return [string]$response.sha
-        }
-    }
-    catch {
-        return ""
+    $file = Get-GithubFileContent -GhPath $GhPath -RepoName $RepoName -Path $Path
+    if ($file) {
+        return [string]$file["Sha"]
     }
 
     return ""
@@ -705,7 +609,7 @@ function Set-GhSecretValue {
         Fail "$SecretName was empty."
     }
 
-    $SecretValue | & $GhPath secret set $SecretName --repo $RepoName --body-file - *> $null
+    $SecretValue | & $GhPath secret set $SecretName --repo $RepoName *> $null
     if ($LASTEXITCODE -ne 0) {
         if ($NonFatal) {
             Write-Warn "Could not set $SecretName."
@@ -942,12 +846,10 @@ function Complete-VibestatsAccountSetup {
         [hashtable]$SetupInfo
     )
 
+    # RepoName/GitHubUser already validated by Configure-VibestatsDataRepository,
+    # which always runs first from Complete-VibestatsInstall.
     $repoName = [string]$SetupInfo["RepoName"]
     $gitHubUser = [string]$SetupInfo["GitHubUser"]
-
-    if (-not $repoName -or -not $gitHubUser) {
-        Fail "Setup info did not include RepoName/GitHubUser."
-    }
 
     Add-ProfileReadmeMarkers -GhPath $GhPath -GitHubUser $gitHubUser
     Run-PostInstallBackfill -ExePath $ExePath
@@ -1015,6 +917,40 @@ function Assert-Checksum {
     Write-Success "Checksum verified: $actual"
 }
 
+function Get-UserPathVariable {
+    # Thin wrapper around the registry-backed User PATH so tests can mock it
+    # without ever touching the real user environment.
+    return [Environment]::GetEnvironmentVariable("Path", "User")
+}
+
+function Set-UserPathVariable {
+    param([string]$Value)
+
+    # Thin wrapper around the registry-backed User PATH so tests can mock it
+    # without ever touching the real user environment.
+    [Environment]::SetEnvironmentVariable("Path", $Value, "User")
+}
+
+function Test-PathListContains {
+    param(
+        [AllowNull()][string]$PathList,
+        [string]$Resolved
+    )
+
+    if (-not $PathList) {
+        return $false
+    }
+
+    foreach ($entry in ($PathList -split ';' | Where-Object { $_ -and $_.Trim() })) {
+        $normalized = [System.IO.Path]::GetFullPath($entry).TrimEnd('\')
+        if ([string]::Equals($normalized, $Resolved, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Add-UserPathEntry {
     param([string]$Directory)
 
@@ -1024,49 +960,20 @@ function Add-UserPathEntry {
     }
 
     $resolved = [System.IO.Path]::GetFullPath($Directory).TrimEnd('\')
-    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $userPath = Get-UserPathVariable
     if (-not $userPath) {
         $userPath = ""
     }
 
-    $entries = @()
-    if ($userPath.Trim()) {
-        $entries = $userPath -split ';' | Where-Object { $_ -and $_.Trim() }
-    }
-
-    $alreadyPresent = $false
-    foreach ($entry in $entries) {
-        $normalized = [System.IO.Path]::GetFullPath($entry).TrimEnd('\')
-        if ([string]::Equals($normalized, $resolved, [System.StringComparison]::OrdinalIgnoreCase)) {
-            $alreadyPresent = $true
-            break
-        }
-    }
-
-    if (-not $alreadyPresent) {
+    if (-not (Test-PathListContains -PathList $userPath -Resolved $resolved)) {
         $newPath = if ($userPath.Trim()) { "$userPath;$resolved" } else { $resolved }
-        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        Set-UserPathVariable -Value $newPath
         Write-Success "Added to user PATH: $resolved"
     } else {
         Write-Success "Install directory already exists in user PATH."
     }
 
-    $processPath = [Environment]::GetEnvironmentVariable("Path", "Process")
-    $processEntries = @()
-    if ($processPath) {
-        $processEntries = $processPath -split ';' | Where-Object { $_ -and $_.Trim() }
-    }
-
-    $processAlreadyPresent = $false
-    foreach ($entry in $processEntries) {
-        $normalized = [System.IO.Path]::GetFullPath($entry).TrimEnd('\')
-        if ([string]::Equals($normalized, $resolved, [System.StringComparison]::OrdinalIgnoreCase)) {
-            $processAlreadyPresent = $true
-            break
-        }
-    }
-
-    if (-not $processAlreadyPresent) {
+    if (-not (Test-PathListContains -PathList $env:Path -Resolved $resolved)) {
         $env:Path = "$resolved;$env:Path"
     }
 }
@@ -1358,9 +1265,24 @@ function Configure-LocalHooks {
     Configure-CodexHooks -ExePath $ExePath
 }
 
-function Install-Vibestats {
-    param([string]$GhPath)
+function Install-VibestatsExe {
+    param([string]$SourcePath)
 
+    Write-Step "Install binary"
+    New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+    $dest = Join-Path $InstallDir "vibestats.exe"
+    Copy-Item -LiteralPath $SourcePath -Destination $dest -Force
+    Unblock-File -LiteralPath $dest -ErrorAction SilentlyContinue
+
+    & $dest --version | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Installed vibestats.exe, but --version failed."
+    }
+
+    return $dest
+}
+
+function Get-VibestatsReleaseBinary {
     if (-not $env:LOCALAPPDATA) {
         Fail "LOCALAPPDATA is not set. This installer needs a normal user profile."
     }
@@ -1402,74 +1324,75 @@ function Install-Vibestats {
             Fail "Archive did not contain vibestats.exe."
         }
 
-        Write-Step "Install binary"
-        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-        $dest = Join-Path $InstallDir "vibestats.exe"
-        Copy-Item -LiteralPath $exe.FullName -Destination $dest -Force
-        Unblock-File -LiteralPath $dest -ErrorAction SilentlyContinue
-
-        & $dest --version
-        if ($LASTEXITCODE -ne 0) {
-            Fail "Installed vibestats.exe, but --version failed."
-        }
-
-        Add-UserPathEntry -Directory $InstallDir
-
-        Write-Step "Bootstrap vibestats config"
-        $setupInfo = Initialize-VibestatsConfig -GhPath $GhPath
-
-        if (-not $SkipVibestatsAuth) {
-            Write-Step "Run vibestats auth"
-            & $dest auth
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "vibestats auth exited with code $LASTEXITCODE. You can retry later with: vibestats auth"
-            }
-        } else {
-            Write-Warn "Skipping vibestats auth."
-        }
-
-        Write-Step "Configure vibestats-data"
-        Configure-VibestatsDataRepository -GhPath $GhPath -SetupInfo $setupInfo
-
-        Write-Step "Configure local hooks"
-        Configure-LocalHooks -ExePath $dest
-
-        Write-Step "Complete account setup"
-        Complete-VibestatsAccountSetup -GhPath $GhPath -ExePath $dest -SetupInfo $setupInfo
-
-        Write-Success "vibestats installed successfully: $dest"
-        Write-Host ""
-        Write-Host "Open a new terminal, then run:" -ForegroundColor Cyan
-        Write-Host "  vibestats --help"
-        Write-Host "  vibestats status"
-        Write-Host ""
-        Write-Success "Windows installer setup complete."
+        return Install-VibestatsExe -SourcePath $exe.FullName
     }
     finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
-if ($Help) {
-    Show-Usage
-    return
+function Complete-VibestatsInstall {
+    param(
+        [string]$GhPath,
+        [string]$Dest
+    )
+
+    Add-UserPathEntry -Directory $InstallDir
+
+    Write-Step "Bootstrap vibestats config"
+    $setupInfo = Initialize-VibestatsConfig -GhPath $GhPath
+
+    if (-not $SkipVibestatsAuth) {
+        Write-Step "Run vibestats auth"
+        & $Dest auth
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "vibestats auth exited with code $LASTEXITCODE. You can retry later with: vibestats auth"
+        }
+    } else {
+        Write-Warn "Skipping vibestats auth."
+    }
+
+    Write-Step "Configure vibestats-data"
+    Configure-VibestatsDataRepository -GhPath $GhPath -SetupInfo $setupInfo
+
+    Write-Step "Configure local hooks"
+    Configure-LocalHooks -ExePath $Dest
+
+    Write-Step "Complete account setup"
+    Complete-VibestatsAccountSetup -GhPath $GhPath -ExePath $Dest -SetupInfo $setupInfo
+
+    Write-Success "vibestats installed successfully: $Dest"
+    Write-Host ""
+    Write-Host "Open a new terminal, then run:" -ForegroundColor Cyan
+    Write-Host "  vibestats --help"
+    Write-Host "  vibestats status"
+    Write-Host ""
+    Write-Success "Windows installer setup complete."
 }
 
-try {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-} catch {
-    # Best effort for older PowerShell hosts.
+if (-not $FunctionsOnly) {
+    if ($Help) {
+        Show-Usage
+        return
+    }
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    } catch {
+        # Best effort for older PowerShell hosts.
+    }
+
+    Write-Host "=== vibestats Windows installer ===" -ForegroundColor Cyan
+
+    Write-Step "GitHub CLI"
+    $ghPath = Install-GhIfMissing
+    Assert-GhVersion -GhPath $ghPath
+    Ensure-GhAuth -GhPath $ghPath
+
+    Write-Step "Install vibestats"
+    $dest = Get-VibestatsReleaseBinary
+    Complete-VibestatsInstall -GhPath $ghPath -Dest $dest
+
+    Write-Step "Complete"
+    Write-Success "Installation complete."
 }
-
-Write-Host "=== vibestats Windows installer ===" -ForegroundColor Cyan
-
-Write-Step "GitHub CLI"
-$ghPath = Install-GhIfMissing
-Assert-GhVersion -GhPath $ghPath
-Ensure-GhAuth -GhPath $ghPath
-
-Write-Step "Install vibestats"
-Install-Vibestats -GhPath $ghPath
-
-Write-Step "Complete"
-Write-Success "Installation complete."
