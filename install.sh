@@ -555,6 +555,7 @@ configure_codex_hooks() {
   CODEX_CONFIG="${CODEX_DIR}/config.toml"
   python3 - "$CODEX_HOOKS" "$CODEX_CONFIG" <<'PYEOF'
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -615,26 +616,33 @@ except FileNotFoundError:
     config_text = ""
 
 lines = config_text.splitlines()
+legacy_key = re.compile(r"^\s*codex_hooks\s*=")
+hooks_key = re.compile(r"^\s*hooks\s*=")
+lines = [line for line in lines if not legacy_key.match(line)]
+
 features_idx = None
-codex_hooks_idx = None
+hooks_present = False
+in_features = False
 for i, line in enumerate(lines):
     stripped = line.strip()
-    if stripped == "[features]":
-        features_idx = i
-    elif stripped.startswith("codex_hooks"):
-        codex_hooks_idx = i
+    if stripped.startswith("["):
+        in_features = stripped == "[features]"
+        if in_features:
+            features_idx = i
+    elif in_features and hooks_key.match(line):
+        hooks_present = True
 
-if codex_hooks_idx is not None:
-    lines[codex_hooks_idx] = "codex_hooks = true"
+if hooks_present:
+    pass
 elif features_idx is not None:
     insert_at = features_idx + 1
     while insert_at < len(lines) and not lines[insert_at].lstrip().startswith("["):
         insert_at += 1
-    lines.insert(insert_at, "codex_hooks = true")
+    lines.insert(insert_at, "hooks = true")
 else:
     if lines and lines[-1].strip():
         lines.append("")
-    lines.extend(["[features]", "codex_hooks = true"])
+    lines.extend(["[features]", "hooks = true"])
 
 config_path.write_text("\n".join(lines) + "\n")
 PYEOF

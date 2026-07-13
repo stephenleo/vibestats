@@ -211,8 +211,66 @@ assert any(h.get('command') == 'vibestats sync --quiet' for g in session for h i
 assert hooks['hooks']['PostToolUse'][0]['hooks'][0]['command'] == 'echo keep-me'
 config = Path('${HOME}/.codex/config.toml').read_text()
 assert '[features]' in config
-assert 'codex_hooks = true' in config
+assert 'hooks = true' in config
+assert 'codex_hooks' not in config
 print('Codex hooks valid')
+"
+  [ "$status" -eq 0 ]
+}
+
+@test "[P1][6.4-UNIT-004C] configure_hooks: migrates legacy Codex flag and ignores hooks outside features" {
+  mkdir -p "${HOME}/.codex"
+  cat > "${HOME}/.codex/config.toml" <<'TOML'
+codex_hooks = false
+
+[unrelated]
+hooks = false
+codex_hooks = true
+
+[features]
+other_feature = true
+TOML
+
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+
+  run python3 -c "
+from pathlib import Path
+config = Path('${HOME}/.codex/config.toml').read_text()
+assert 'codex_hooks' not in config
+assert '[unrelated]\nhooks = false' in config
+assert '[features]\nother_feature = true\nhooks = true' in config
+print('Legacy Codex flag migrated')
+"
+  [ "$status" -eq 0 ]
+}
+
+@test "[P1][6.4-UNIT-004D] configure_hooks: preserves user-managed Codex hooks value" {
+  mkdir -p "${HOME}/.codex"
+  cat > "${HOME}/.codex/config.toml" <<'TOML'
+[features]
+codex_hooks = true
+hooks = false
+TOML
+
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+
+  run python3 -c "
+from pathlib import Path
+config = Path('${HOME}/.codex/config.toml').read_text()
+assert 'codex_hooks' not in config
+assert config.count('hooks = false') == 1
+assert 'hooks = true' not in config
+print('User-managed Codex hooks value preserved')
 "
   [ "$status" -eq 0 ]
 }
