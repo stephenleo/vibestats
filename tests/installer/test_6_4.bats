@@ -206,8 +206,12 @@ from pathlib import Path
 hooks = json.loads(Path('${HOME}/.codex/hooks.json').read_text())
 stop = hooks.get('hooks', {}).get('Stop', [])
 session = hooks.get('hooks', {}).get('SessionStart', [])
-assert any(h.get('command') == 'vibestats sync --quiet' for g in stop for h in g.get('hooks', []))
-assert any(h.get('command') == 'vibestats sync --quiet' for g in session for h in g.get('hooks', []))
+stop_commands = [h.get('command') for g in stop for h in g.get('hooks', [])]
+session_commands = [h.get('command') for g in session for h in g.get('hooks', [])]
+assert len(stop_commands) == 1, stop_commands
+assert stop_commands == session_commands
+assert stop_commands[0].startswith('vibestats sync --quiet >/dev/null 2>&1; ')
+assert 'printf' in stop_commands[0]
 assert hooks['hooks']['PostToolUse'][0]['hooks'][0]['command'] == 'echo keep-me'
 config = Path('${HOME}/.codex/config.toml').read_text()
 assert '[features]' in config
@@ -216,6 +220,87 @@ assert 'codex_hooks' not in config
 print('Codex hooks valid')
 "
   [ "$status" -eq 0 ]
+}
+
+@test "[P1][6.4-UNIT-004E] configure_hooks: Codex hooks always emit one valid JSON response" {
+  mkdir -p "${HOME}/.codex"
+  cat > "${HOME}/.codex/hooks.json" <<'JSON'
+{
+  "hooks": {
+    "Stop": [{"hooks": [{"type": "command", "command": "vibestats sync --quiet"}]}],
+    "SessionStart": [{"hooks": [{"type": "command", "command": "vibestats sync"}]}]
+  }
+}
+JSON
+
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+    configure_hooks
+  " 2>&1
+  [ "$status" -eq 0 ]
+
+  command="$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+hooks = json.loads((Path.home() / '.codex' / 'hooks.json').read_text())['hooks']
+stop = [h['command'] for g in hooks['Stop'] for h in g.get('hooks', [])]
+session = [h['command'] for g in hooks['SessionStart'] for h in g.get('hooks', [])]
+assert len(stop) == 1, stop
+assert len(session) == 1, session
+assert stop[0] == session[0]
+assert '--harness claude' not in stop[0]
+assert '--harness codex' not in stop[0]
+print(stop[0])
+PY
+)"
+
+  fake_bin="${BATS_TMPDIR}/fake-bin"
+  mkdir -p "$fake_bin"
+  cat > "${fake_bin}/vibestats" <<'SH'
+#!/usr/bin/env bash
+case "${VIBESTATS_FAKE_MODE:-silent}" in
+  silent)
+    exit 0
+    ;;
+  noisy)
+    echo "human-readable sync output"
+    echo "human-readable sync error" >&2
+    exit 0
+    ;;
+  failing)
+    echo "partial sync output"
+    echo "sync failed" >&2
+    exit 42
+    ;;
+esac
+SH
+  chmod +x "${fake_bin}/vibestats"
+
+  for mode in silent noisy failing; do
+    stdout_file="${BATS_TMPDIR}/${mode}.stdout"
+    stderr_file="${BATS_TMPDIR}/${mode}.stderr"
+    env \
+      PATH="${fake_bin}:${PATH}" \
+      VIBESTATS_FAKE_MODE="$mode" \
+      COMMAND="$command" \
+      STDOUT_FILE="$stdout_file" \
+      STDERR_FILE="$stderr_file" \
+      bash --noprofile --norc -c \
+        'bash --noprofile --norc -c "$COMMAND" >"$STDOUT_FILE" 2>"$STDERR_FILE"'
+    [ "$?" -eq 0 ]
+
+    python3 - "$stdout_file" "$stderr_file" <<'PY'
+from pathlib import Path
+import sys
+
+stdout = Path(sys.argv[1]).read_bytes()
+stderr = Path(sys.argv[2]).read_bytes()
+assert stdout == b"{}\n", stdout
+assert stderr == b"", stderr
+PY
+  done
 }
 
 @test "[P1][6.4-UNIT-004C] configure_hooks: migrates legacy Codex flag and ignores hooks outside features" {
