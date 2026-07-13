@@ -56,7 +56,8 @@ assert len(stop_matchers) >= 1, 'No Stop matchers in settings.json'
 hooks = stop_matchers[0].get('hooks', [])
 assert len(hooks) >= 1, 'No hooks in Stop matcher'
 h = hooks[0]
-assert h.get('command') == 'vibestats sync', f\"Stop command must be 'vibestats sync', got: {h.get('command')}\"
+expected = 'vibestats sync --quiet >/dev/null 2>&1 || true'
+assert h.get('command') == expected, f\"Stop command must be {expected!r}, got: {h.get('command')}\"
 assert h.get('async') == True, f'Stop hook async must be true, got: {h.get(\"async\")}'
 print('Stop hook valid')
 "
@@ -88,7 +89,8 @@ assert len(session_matchers) >= 1, 'No SessionStart matchers in settings.json'
 hooks = session_matchers[0].get('hooks', [])
 assert len(hooks) >= 1, 'No hooks in SessionStart matcher'
 h = hooks[0]
-assert h.get('command') == 'vibestats sync', f\"SessionStart command must be 'vibestats sync', got: {h.get('command')}\"
+expected = 'vibestats sync --quiet >/dev/null 2>&1 || true'
+assert h.get('command') == expected, f\"SessionStart command must be {expected!r}, got: {h.get('command')}\"
 assert 'async' not in h or h.get('async') is not True, 'SessionStart hook must NOT have async=true'
 print('SessionStart hook valid')
 "
@@ -172,6 +174,108 @@ assert 'SessionStart' in s.get('hooks', {}), 'SessionStart hook missing after co
 print('Pre-existing hooks preserved and vibestats hooks added')
 "
   [ "$status" -eq 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# P1 — configure_hooks migrates a legacy bare `vibestats sync` command to the
+# output-suppressing form (no duplicate hook left behind).
+# ---------------------------------------------------------------------------
+@test "[P1][6.4-UNIT-004F] configure_hooks: migrates legacy 'vibestats sync' Claude hook in place" {
+  mkdir -p "${HOME}/.claude"
+  cat > "${HOME}/.claude/settings.json" <<'JSON'
+{
+  "hooks": {
+    "Stop": [{"hooks": [{"type": "command", "command": "vibestats sync", "async": true}]}],
+    "SessionStart": [{"hooks": [{"type": "command", "command": "vibestats sync"}]}]
+  }
+}
+JSON
+
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+    configure_hooks
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+
+  run python3 -c "
+import json
+with open('${HOME}/.claude/settings.json') as f:
+    s = json.load(f)
+expected = 'vibestats sync --quiet >/dev/null 2>&1 || true'
+for hook_type in ('Stop', 'SessionStart'):
+    groups = s['hooks'][hook_type]
+    cmds = [h['command'] for g in groups for h in g.get('hooks', [])]
+    assert cmds == [expected], f'{hook_type} commands must be [{expected!r}], got {cmds}'
+assert s['hooks']['Stop'][0]['hooks'][0].get('async') is True, 'Stop must keep async=true'
+print('Legacy Claude hook migrated')
+"
+  [ "$status" -eq 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# P1 — The configured Claude hook command produces acceptable stdout for Claude
+# Code (empty = valid no-op) whether sync succeeds silently, prints noisy
+# stdout/stderr, or fails with a non-zero exit code.
+# ---------------------------------------------------------------------------
+@test "[P1][6.4-UNIT-004G] configure_hooks: Claude hook stdout is empty for silent/noisy/failing sync" {
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    configure_hooks
+  " 2>&1
+  [ "$status" -eq 0 ]
+
+  command="$(python3 -c "
+import json
+with open('${HOME}/.claude/settings.json') as f:
+    s = json.load(f)
+print(s['hooks']['Stop'][0]['hooks'][0]['command'])
+")"
+
+  fake_bin="${BATS_TMPDIR}/fake-bin"
+  mkdir -p "$fake_bin"
+  cat > "${fake_bin}/vibestats" <<'SH'
+#!/usr/bin/env bash
+case "${VIBESTATS_FAKE_MODE:-silent}" in
+  silent) exit 0 ;;
+  noisy)
+    echo "human-readable sync output"
+    echo "human-readable sync error" >&2
+    exit 0
+    ;;
+  failing)
+    echo "partial sync output"
+    echo "sync failed" >&2
+    exit 42
+    ;;
+esac
+SH
+  chmod +x "${fake_bin}/vibestats"
+
+  for mode in silent noisy failing; do
+    stdout_file="${BATS_TMPDIR}/claude_${mode}.stdout"
+    stderr_file="${BATS_TMPDIR}/claude_${mode}.stderr"
+    env \
+      PATH="${fake_bin}:${PATH}" \
+      VIBESTATS_FAKE_MODE="$mode" \
+      COMMAND="$command" \
+      STDOUT_FILE="$stdout_file" \
+      STDERR_FILE="$stderr_file" \
+      bash --noprofile --norc -c \
+        'bash --noprofile --norc -c "$COMMAND" >"$STDOUT_FILE" 2>"$STDERR_FILE"'
+    # Hook must always exit 0 — a sync failure must not fail the hook.
+    [ "$?" -eq 0 ]
+
+    python3 - "$stdout_file" "$stderr_file" <<'PY'
+from pathlib import Path
+import sys
+stdout = Path(sys.argv[1]).read_bytes()
+stderr = Path(sys.argv[2]).read_bytes()
+assert stdout == b"", stdout  # empty stdout is a valid Claude no-op
+assert stderr == b"", stderr
+PY
+  done
 }
 
 @test "[P1][6.4-UNIT-004B] configure_hooks: configures Codex hooks when ~/.codex exists" {
