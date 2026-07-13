@@ -562,7 +562,9 @@ PYEOF
 }
 
 # Configure Codex hooks when Codex is installed on this machine.
-# Codex hook output is protocol-sensitive, so use --quiet.
+# Codex requires every hook to emit valid JSON. Keep the sync itself
+# harness-agnostic, discard any human-readable diagnostics, and always return a
+# no-op JSON object even when sync fails (hook failures must not block Codex).
 configure_codex_hooks() {
   CODEX_DIR="${HOME}/.codex"
   if [ ! -d "${CODEX_DIR}" ]; then
@@ -620,8 +622,9 @@ def ensure_hook(hook_type, command):
         groups.append({"hooks": [{"type": "command", "command": command}]})
     hooks_doc["hooks"][hook_type] = groups
 
-ensure_hook("Stop", "vibestats sync --quiet")
-ensure_hook("SessionStart", "vibestats sync --quiet")
+codex_sync_command = "vibestats sync --quiet >/dev/null 2>&1; printf '%s\\n' '{}'"
+ensure_hook("Stop", codex_sync_command)
+ensure_hook("SessionStart", codex_sync_command)
 
 hooks_path.parent.mkdir(parents=True, exist_ok=True)
 with hooks_path.open("w") as f:
