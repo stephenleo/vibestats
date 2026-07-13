@@ -7,7 +7,7 @@ branding:
 
 inputs:
   token:
-    description: 'Fine-grained PAT with Contents write access to profile-repo (VIBESTATS_TOKEN)'
+    description: 'Token with Contents write access to profile-repo (VIBESTATS_TOKEN). Defaults to your gh OAuth token; can be a narrower fine-grained PAT scoped to just profile-repo.'
     required: true
   profile-repo:
     description: 'GitHub profile repo in format username/username'

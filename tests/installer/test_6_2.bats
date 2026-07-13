@@ -11,7 +11,7 @@
 # ACs tested:
 #   AC #1: vibestats-data does not exist → gh repo create --private called (FR4)
 #   AC #2: repo created → aggregate.yml written into vibestats-data/.github/workflows/ (FR7)
-#   AC #3: VIBESTATS_TOKEN generated via gh api, set as Actions secret, never written to disk (FR10, NFR7)
+#   AC #3: VIBESTATS_TOKEN set from gh auth token as Actions secret, never written to disk (FR10, NFR7)
 #   AC #4: local token stored in ~/.config/vibestats/config.toml with permissions 600 (FR39, NFR6)
 #   AC #5: registry.json contains machine entry with required fields (FR6)
 
@@ -40,7 +40,6 @@ teardown() {
 #   repo view               → return 1          (repo does NOT exist — first-install)
 #   repo create             → log + return 0
 #   api repos/*             → log + return 0    (Contents API PUT)
-#   api /user/personal_*   → echo token JSON
 #   secret set              → log + return 0
 #   *                       → log + return 0
 #
@@ -100,9 +99,6 @@ _gh() {
       else
         return 1
       fi
-      ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
       ;;
     "secret set")
       echo "gh secret set: \$*" >> "${HOME}/gh_calls.log"
@@ -238,7 +234,7 @@ STUB
 }
 
 # ---------------------------------------------------------------------------
-# AC #3 — VIBESTATS_TOKEN generated via gh api (not written to disk) (FR10, NFR7)
+# AC #3 — VIBESTATS_TOKEN set from gh auth token (not written to disk) (FR10, NFR7)
 # P0 — Story 6.2, R-001, NFR7
 # ---------------------------------------------------------------------------
 @test "[P0] VIBESTATS_TOKEN is never written to disk or echoed to stdout" {
@@ -252,7 +248,8 @@ STUB
 _gh() {
   case "\$1 \$2" in
     "auth token")
-      echo "ghp_FAKE_MACHINE_TOKEN"
+      # Return the sentinel token so we can scan for it in files afterward
+      echo "${SENTINEL_TOKEN}"
       ;;
     "api /user")
       echo '{"login":"testuser"}'
@@ -265,10 +262,6 @@ _gh() {
       ;;
     "api repos"*)
       return 0
-      ;;
-    "api /user/personal_access_tokens"*)
-      # Return the sentinel PAT so we can scan for it in files afterward
-      echo '{"token":"${SENTINEL_TOKEN}"}'
       ;;
     "secret set")
       echo "gh secret set called" >> "${HOME}/gh_calls.log"
@@ -505,9 +498,6 @@ _gh() {
     "api /user")
       echo '{"login":"testuser"}'
       ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN"}'
-      ;;
     "secret set")
       echo "Error: secret set failed" >&2
       return 1
@@ -560,9 +550,6 @@ _gh() {
           return 1
           ;;
       esac
-      ;;
-    "api /user/personal_access_tokens"*)
-      echo '{"token":"ghp_FAKE_VIBESTATS_TOKEN_67890"}'
       ;;
     "secret set")
       echo "secret set: \$*" >> "${HOME}/gh_calls.log"

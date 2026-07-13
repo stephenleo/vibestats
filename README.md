@@ -123,7 +123,7 @@ Commands:
 
 | Input | Required | Description |
 |---|---|---|
-| `token` | Yes | Fine-grained PAT with Contents write access to `profile-repo` |
+| `token` | Yes | Token with Contents write access to `profile-repo`. The installer defaults this to your `gh` OAuth token; opt in during install to supply a narrower fine-grained PAT scoped to just `profile-repo` instead. |
 | `profile-repo` | Yes | Your GitHub profile repo in `username/username` format |
 
 ## Contributing
