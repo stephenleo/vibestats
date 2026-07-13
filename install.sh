@@ -307,7 +307,9 @@ write_aggregate_workflow() {
 }
 
 # ---------------------------------------------------------------------------
-# Step 10: Generate and set VIBESTATS_TOKEN Actions secret (AC #3, FR10, NFR7)
+# Step 10: Set the VIBESTATS_TOKEN Actions secret (AC #3, FR10, NFR7)
+# Defaults to the gh OAuth token (as VIBESTATS_GH_TOKEN does); optionally accepts a
+# user-provided fine-grained PAT scoped to just the profile repo (see prompt below).
 # SECURITY: VIBESTATS_TOKEN is NEVER written to disk or echoed to stdout.
 # Requires: GITHUB_USER exported by detect_install_mode (auto-detected if not set)
 # ---------------------------------------------------------------------------
@@ -321,25 +323,41 @@ setup_vibestats_token() {
 
   echo "Setting up VIBESTATS_TOKEN Actions secret..."
 
-  # Attempt to generate a fine-grained PAT and pipe directly to gh secret set.
-  # The token value is never stored in a variable that could be written to disk.
-  if _gh api /user/personal_access_tokens \
-      --method POST \
-      --field name="vibestats-$(date +%Y)" \
-      --field expiration="never" \
-      --field repositories='["'"${GITHUB_USER}"'"]' \
-      --field permissions='{"contents":"write"}' \
-      --jq '.token' \
-      | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data"; then
-    echo "VIBESTATS_TOKEN secret set successfully."
-  else
-    # Fallback: enterprise may block fine-grained PAT creation
-    echo "Warning: Fine-grained PAT creation blocked. Using gh auth token as VIBESTATS_TOKEN fallback."
-    _gh auth token \
-      | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data" \
-      || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
-    echo "VIBESTATS_TOKEN secret set via fallback."
+  # Opt-in: a narrower fine-grained PAT (Contents write on your profile repo only).
+  # GitHub has no API to auto-create a repo-scoped token, so we deep-link the user to
+  # a prefilled PAT page and read the pasted token back. install.sh normally runs as
+  # `curl | bash` (stdin is the pipe), so we only prompt when stdout is a terminal and
+  # read the answer from /dev/tty. CI / non-interactive installs (stdout not a tty)
+  # skip the prompt and fall through to the gh auth token default rather than hanging.
+  if [ -t 1 ] && [ -r /dev/tty ]; then
+    printf 'Use a narrower fine-grained token (Contents write on %s/%s only)? [y/N] ' "${GITHUB_USER}" "${GITHUB_USER}"
+    read -r _use_pat < /dev/tty || _use_pat=""
+    if [ "${_use_pat}" = "y" ] || [ "${_use_pat}" = "Y" ]; then
+      echo "  1. Open: https://github.com/settings/personal-access-tokens/new?name=vibestats&target_name=${GITHUB_USER}&expires_in=none&contents=write"
+      echo "  2. Under 'Repository access' pick 'Only select repositories' and choose ${GITHUB_USER}/${GITHUB_USER}."
+      echo "  3. Generate the token, then paste it here (input hidden)."
+      printf '  Token: '
+      read -rs _pat < /dev/tty || _pat=""
+      echo
+      if [ -n "${_pat}" ]; then
+        # Pipe via printf so the value never lands in a file; then drop the variable.
+        printf '%s' "${_pat}" \
+          | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data" \
+          || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
+        unset _pat
+        echo "VIBESTATS_TOKEN secret set from your fine-grained PAT."
+        return
+      fi
+      echo "No token entered; using your gh auth token instead."
+    fi
   fi
+
+  # Default: the gh OAuth token, same as VIBESTATS_GH_TOKEN. Piped directly so the
+  # value never lands in a variable that could be written to disk.
+  _gh auth token \
+    | _gh secret set VIBESTATS_TOKEN --repo "${GITHUB_USER}/vibestats-data" \
+    || { echo "Error: Failed to set VIBESTATS_TOKEN secret." >&2; exit 1; }
+  echo "VIBESTATS_TOKEN secret set."
 }
 
 # ---------------------------------------------------------------------------
