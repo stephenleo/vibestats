@@ -314,8 +314,7 @@ stop_commands = [h.get('command') for g in stop for h in g.get('hooks', [])]
 session_commands = [h.get('command') for g in session for h in g.get('hooks', [])]
 assert len(stop_commands) == 1, stop_commands
 assert stop_commands == session_commands
-assert stop_commands[0].startswith('vibestats sync --quiet >/dev/null 2>&1; ')
-assert 'printf' in stop_commands[0]
+assert stop_commands[0] == 'vibestats sync --quiet >/dev/null 2>&1 || true'
 assert hooks['hooks']['PostToolUse'][0]['hooks'][0]['command'] == 'echo keep-me'
 config = Path('${HOME}/.codex/config.toml').read_text()
 assert '[features]' in config
@@ -326,7 +325,7 @@ print('Codex hooks valid')
   [ "$status" -eq 0 ]
 }
 
-@test "[P1][6.4-UNIT-004E] configure_hooks: Codex hooks always emit one valid JSON response" {
+@test "[P1][6.4-UNIT-004E] configure_hooks: Codex hooks succeed with empty output" {
   mkdir -p "${HOME}/.codex"
   cat > "${HOME}/.codex/hooks.json" <<'JSON'
 {
@@ -401,7 +400,7 @@ import sys
 
 stdout = Path(sys.argv[1]).read_bytes()
 stderr = Path(sys.argv[2]).read_bytes()
-assert stdout == b"{}\n", stdout
+assert stdout == b"", stdout
 assert stderr == b"", stderr
 PY
   done
