@@ -578,9 +578,9 @@ PYEOF
 }
 
 # Configure Codex hooks when Codex is installed on this machine.
-# Codex requires every hook to emit valid JSON. Keep the sync itself
-# harness-agnostic, discard any human-readable diagnostics, and always return a
-# no-op JSON object even when sync fails (hook failures must not block Codex).
+# Codex treats exit 0 with empty stdout as a successful no-op hook. Keep the
+# sync harness-agnostic, discard human-readable diagnostics, and swallow sync
+# failures so they never block Codex.
 configure_codex_hooks() {
   CODEX_DIR="${HOME}/.codex"
   if [ ! -d "${CODEX_DIR}" ]; then
@@ -638,7 +638,7 @@ def ensure_hook(hook_type, command):
         groups.append({"hooks": [{"type": "command", "command": command}]})
     hooks_doc["hooks"][hook_type] = groups
 
-codex_sync_command = "vibestats sync --quiet >/dev/null 2>&1; printf '%s\\n' '{}'"
+codex_sync_command = "vibestats sync --quiet >/dev/null 2>&1 || true"
 ensure_hook("Stop", codex_sync_command)
 ensure_hook("SessionStart", codex_sync_command)
 
