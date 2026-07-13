@@ -132,6 +132,67 @@ Describe "Enable-CodexHooksFeature" {
         )
     }
 
+    It "leaves an unrelated codex_hooks-prefixed key outside [features] alone" {
+        $path = Join-Path $TestDrive "config1d.toml"
+        Set-Content -LiteralPath $path -Value @(
+            "[other]"
+            "codex_hooks_timeout = 5"
+            ""
+            "[features]"
+            "codex_hooks = false"
+        ) -Encoding UTF8
+
+        Enable-CodexHooksFeature -ConfigPath $path
+
+        $lines = @(Get-Content -LiteralPath $path)
+        $lines | Should -Be @(
+            "[other]"
+            "codex_hooks_timeout = 5"
+            ""
+            "[features]"
+            "hooks = true"
+        )
+    }
+
+    It "recognizes a [features] header with a trailing comment" {
+        $path = Join-Path $TestDrive "config1e.toml"
+        Set-Content -LiteralPath $path -Value @(
+            "[features] # managed"
+            "codex_hooks = false"
+        ) -Encoding UTF8
+
+        Enable-CodexHooksFeature -ConfigPath $path
+
+        $lines = @(Get-Content -LiteralPath $path)
+        $lines | Should -Be @(
+            "[features] # managed"
+            "hooks = true"
+        )
+    }
+
+    It "inserts hooks under [features] even when an unrelated key elsewhere starts with hooks" {
+        $path = Join-Path $TestDrive "config1c.toml"
+        Set-Content -LiteralPath $path -Value @(
+            "[other]"
+            "hooks_verbose = true"
+            ""
+            "[features]"
+            "some_other_flag = true"
+        ) -Encoding UTF8
+
+        Enable-CodexHooksFeature -ConfigPath $path
+
+        $lines = @(Get-Content -LiteralPath $path)
+        $lines | Should -Be @(
+            "[other]"
+            "hooks_verbose = true"
+            ""
+            "[features]"
+            "some_other_flag = true"
+            "hooks = true"
+        )
+    }
+
     It "inserts hooks into an existing [features] section before the next section header" {
         $path = Join-Path $TestDrive "config2.toml"
         Set-Content -LiteralPath $path -Value @(

@@ -49,9 +49,7 @@ fn set_permissions_600(path: &std::path::Path) -> std::io::Result<()> {
 }
 
 /// Atomically create (or truncate) the file at `path` with mode 0600, so that the
-/// OAuth token is never briefly visible under a wider umask. On Unix this uses
-/// Atomically create (or truncate) the file at `path` with private permissions where supported,
-/// so that the OAuth token is not written with a broader mode on Unix.
+/// OAuth token is never briefly visible under a wider umask.
 #[cfg(unix)]
 fn write_file_mode_600(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
     use std::os::unix::fs::OpenOptionsExt;

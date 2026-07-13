@@ -1177,19 +1177,36 @@ function Enable-CodexHooksFeature {
         $lines = @(Get-Content -LiteralPath $ConfigPath)
     }
 
+    $sectionHeaderPattern = '^\[(?<name>[^\]]+)\]\s*(#.*)?$'
+
     # Codex renamed this feature flag from "codex_hooks" to "hooks"; the old
     # key is a deprecated alias that now prints a startup warning. Strip any
-    # legacy key and ensure the canonical one is present.
-    $lines = @($lines | Where-Object { -not $_.Trim().StartsWith("codex_hooks") })
+    # legacy key under [features] and ensure the canonical one is present.
+    $filtered = New-Object System.Collections.Generic.List[string]
+    $inFeatures = $false
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        if ($trimmed -match $sectionHeaderPattern) {
+            $inFeatures = ($Matches['name'].Trim() -eq "features")
+        } elseif ($inFeatures -and $trimmed -match "^codex_hooks\s*=") {
+            continue
+        }
+        $filtered.Add($line)
+    }
+    $lines = @($filtered)
 
     $featuresIndex = -1
     $hooksIndex = -1
+    $inFeatures = $false
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $trimmed = $lines[$i].Trim()
-        if ($trimmed -eq "[features]") {
-            $featuresIndex = $i
-        } elseif ($trimmed.StartsWith("hooks")) {
+        if ($trimmed -match $sectionHeaderPattern) {
+            $inFeatures = ($Matches['name'].Trim() -eq "features")
+            if ($inFeatures) {
+                $featuresIndex = $i
+            }
+        } elseif ($inFeatures -and $trimmed -match "^hooks\s*=") {
             $hooksIndex = $i
         }
     }
