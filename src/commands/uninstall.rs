@@ -22,6 +22,39 @@ fn codex_hooks_path() -> Option<std::path::PathBuf> {
     user_profile_dir().map(|h| h.join(".codex").join("hooks.json"))
 }
 
+/// Renames `path` aside and schedules the renamed file for deletion on next
+/// reboot. Windows keeps a running exe's image file locked, so it can't be
+/// deleted while `vibestats uninstall` (running as that same exe) is still
+/// executing - but Windows does allow renaming a running exe, so this at
+/// least frees up the original filename immediately.
+#[cfg(windows)]
+fn schedule_binary_delete_on_reboot(path: &std::path::Path) -> std::io::Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+
+    let old_path = path.with_extension("exe.old");
+    std::fs::rename(path, &old_path)?;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn MoveFileExW(existing: *const u16, new: *const u16, flags: u32) -> i32;
+    }
+    const MOVEFILE_DELAY_UNTIL_REBOOT: u32 = 0x4;
+
+    let wide: Vec<u16> = old_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let ok =
+        unsafe { MoveFileExW(wide.as_ptr(), std::ptr::null(), MOVEFILE_DELAY_UNTIL_REBOOT) != 0 };
+
+    if ok {
+        Ok(())
+    } else {
+        Err(std::io::Error::last_os_error())
+    }
+}
+
 /// Returns the path to the installed vibestats binary for the current platform.
 fn binary_path() -> Option<std::path::PathBuf> {
     #[cfg(windows)]
@@ -318,16 +351,35 @@ pub fn run() {
                 );
             }
             Err(e) => {
-                println!(
-                    "vibestats: could not delete binary at {}: {e}",
-                    path.display()
-                );
-                if cfg!(windows) {
+                #[cfg(windows)]
+                {
+                    // The running exe's image file is locked on Windows; this
+                    // is the expected path there, not just an error case.
+                    match schedule_binary_delete_on_reboot(&path) {
+                        Ok(()) => {
+                            println!(
+                                "vibestats: binary at {} is in use and will be removed on next reboot",
+                                path.display()
+                            );
+                        }
+                        Err(_) => {
+                            println!(
+                                "vibestats: could not delete binary at {}: {e}",
+                                path.display()
+                            );
+                            println!(
+                                "Delete it manually: Remove-Item -Force \"{}\"",
+                                path.display()
+                            );
+                        }
+                    }
+                }
+                #[cfg(not(windows))]
+                {
                     println!(
-                        "Delete it manually: Remove-Item -Force \"{}\"",
+                        "vibestats: could not delete binary at {}: {e}",
                         path.display()
                     );
-                } else {
                     println!("Delete it manually: rm \"{}\"", path.display());
                 }
             }

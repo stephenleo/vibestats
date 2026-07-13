@@ -54,6 +54,10 @@ jobs:
       - name: Build (Windows native)
         if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
+        env:
+          # Statically link the CRT so vibestats.exe doesn't depend on the
+          # target machine having the VC++ redistributable installed.
+          RUSTFLAGS: -C target-feature=+crt-static
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Build (cross for Linux)

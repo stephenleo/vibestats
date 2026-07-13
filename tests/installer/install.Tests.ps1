@@ -55,17 +55,35 @@ Describe "Ensure-HookCommand" {
             Stop = @(
                 @{
                     hooks = @(
-                        @{ type = "command"; command = "vibestats sync" }
+                        @{ type = "command"; command = "vibestats" }
                     )
                 }
             )
         }
 
-        Ensure-HookCommand -Hooks $hooks -HookName "Stop" -Command '"C:\Users\me\vibestats.exe" sync' -Async $true
+        Ensure-HookCommand -Hooks $hooks -HookName "Stop" -Command "vibestats sync" -Async $true
 
         $hooks["Stop"].Count | Should -Be 1
         $hooks["Stop"][0]["hooks"].Count | Should -Be 1
-        $hooks["Stop"][0]["hooks"][0]["command"] | Should -Be '"C:\Users\me\vibestats.exe" sync'
+        $hooks["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync"
+    }
+
+    It "does not rewrite a user's customized 'vibestats ...' hook, adds the canonical one alongside it" {
+        $hooks = @{
+            Stop = @(
+                @{
+                    hooks = @(
+                        @{ type = "command"; command = "vibestats sync --backfill" }
+                    )
+                }
+            )
+        }
+
+        Ensure-HookCommand -Hooks $hooks -HookName "Stop" -Command "vibestats sync" -Async $true
+
+        $hooks["Stop"].Count | Should -Be 2
+        $hooks["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync --backfill"
+        $hooks["Stop"][1]["hooks"][0]["command"] | Should -Be "vibestats sync"
     }
 
     It "preserves unrelated hook keys already present in the hooks table" {
@@ -294,6 +312,14 @@ Describe "Add-UserPathEntry" {
         Should -Invoke Set-UserPathVariable -Times 0
     }
 
+    It "skips an unparseable PATH entry instead of aborting the install" {
+        Mock Get-UserPathVariable { return 'C:\Windows;"C:\quoted\bad";C:\tools\vibestats' }
+        Mock Set-UserPathVariable { }
+
+        { Add-UserPathEntry -Directory "C:\tools\vibestats" } | Should -Not -Throw
+        Should -Invoke Set-UserPathVariable -Times 0
+    }
+
     It "is idempotent across repeated calls against the same (mocked) backing store" {
         $store = "C:\Windows"
         Mock Get-UserPathVariable { return $store }
@@ -375,6 +401,14 @@ Describe "Test-LegacyVibestatsHookCommand" {
 
     It "returns false for a quoted exe path command" {
         Test-LegacyVibestatsHookCommand -Command '"C:\tools\vibestats.exe" sync' | Should -BeFalse
+    }
+
+    It "returns true for 'vibestats sync --quiet'" {
+        Test-LegacyVibestatsHookCommand -Command "vibestats sync --quiet" | Should -BeTrue
+    }
+
+    It "returns false for a user's customized 'vibestats ...' command" {
+        Test-LegacyVibestatsHookCommand -Command "vibestats sync --backfill" | Should -BeFalse
     }
 }
 
@@ -574,13 +608,11 @@ Describe "Get-NativeTarget" {
         Get-NativeTarget | Should -Be "x86_64-pc-windows-msvc"
     }
 
-    It "fails for an unsupported architecture (ARM64)" {
-        Mock Fail { throw "FAIL: $Message" }
+    It "falls back to the x64 target under emulation for ARM64" {
         $env:PROCESSOR_ARCHITECTURE = "ARM64"
         $env:PROCESSOR_ARCHITEW6432 = $null
 
-        { Get-NativeTarget } | Should -Throw
-        Should -Invoke Fail -Times 1
+        Get-NativeTarget | Should -Be "x86_64-pc-windows-msvc"
     }
 
     It "fails for plain x86 with no WOW64 override" {

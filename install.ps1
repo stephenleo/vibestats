@@ -66,7 +66,10 @@ function Fail {
     param([string]$Message)
     Write-Host ""
     Write-Host $Message -ForegroundColor Red
-    exit 1
+    # `exit` would kill the caller's PowerShell session when this script runs
+    # via `irm ... | iex` (no child process to exit). Throw instead so an
+    # install failure just aborts the script and returns to the user's prompt.
+    throw $Message
 }
 
 function Show-Usage {
@@ -111,7 +114,12 @@ function Get-NativeTarget {
         return "x86_64-pc-windows-msvc"
     }
 
-    Fail "Unsupported Windows architecture: $arch. This installer currently supports x64 Windows only."
+    if ($arch -eq "ARM64") {
+        Write-Warn "No native ARM64 build yet; installing the x64 build to run under Windows' built-in emulation."
+        return "x86_64-pc-windows-msvc"
+    }
+
+    Fail "Unsupported Windows architecture: $arch. This installer currently supports x64 and ARM64 (via emulation) Windows only."
 }
 
 function Get-GhPath {
@@ -634,27 +642,16 @@ function Get-GhAuthToken {
     return (($tokenOutput | Out-String).Trim())
 }
 
-function New-FineGrainedVibestatsToken {
-    param(
-        [string]$GhPath,
-        [string]$GitHubUser
-    )
+function Read-PastedToken {
+    param([string]$Prompt)
 
-    $year = [DateTime]::UtcNow.Year
-
-    $tokenOutput = & $GhPath api /user/personal_access_tokens `
-        --method POST `
-        --field "name=vibestats-$year" `
-        --field "expiration=never" `
-        --field "repositories=[`"$GitHubUser`"]" `
-        --field 'permissions={"contents":"write"}' `
-        --jq ".token" 2>$null
-
-    if ($LASTEXITCODE -ne 0) {
-        return ""
+    $secure = Read-Host -Prompt $Prompt -AsSecureString
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try {
+        return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    } finally {
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
     }
-
-    return (($tokenOutput | Out-String).Trim())
 }
 
 function Set-VibestatsTokenSecret {
@@ -666,14 +663,28 @@ function Set-VibestatsTokenSecret {
 
     Write-Info "Setting VIBESTATS_TOKEN Actions secret..."
 
-    $fineGrainedToken = New-FineGrainedVibestatsToken -GhPath $GhPath -GitHubUser $GitHubUser
-    if ($fineGrainedToken) {
-        if (Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_TOKEN" -SecretValue $fineGrainedToken -NonFatal) {
-            return
+    # GitHub has no API to auto-create a repo-scoped token, so the narrower
+    # option is opt-in: deep-link to a prefilled fine-grained PAT page and
+    # read the pasted token back. Skip the prompt entirely when not running
+    # interactively (e.g. CI) rather than blocking on input.
+    if (-not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
+        $useNarrower = Read-Host "Use a narrower fine-grained token (Contents write on $GitHubUser/$GitHubUser only)? [y/N]"
+        if ($useNarrower -eq "y" -or $useNarrower -eq "Y") {
+            Write-Host "  1. Open: https://github.com/settings/personal-access-tokens/new?name=vibestats&target_name=$GitHubUser&expires_in=none&contents=write"
+            Write-Host "  2. Under 'Repository access' pick 'Only select repositories' and choose $GitHubUser/$GitHubUser."
+            Write-Host "  3. Generate the token, then paste it here (input hidden)."
+            $pat = Read-PastedToken -Prompt "  Token"
+            if ($pat) {
+                if (Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_TOKEN" -SecretValue $pat -NonFatal) {
+                    return
+                }
+                Write-Warn "Could not set VIBESTATS_TOKEN from the pasted token. Falling back to gh auth token."
+            } else {
+                Write-Info "No token entered; using your gh auth token instead."
+            }
         }
     }
 
-    Write-Warn "Fine-grained PAT creation failed or was blocked. Falling back to gh auth token."
     $fallbackToken = Get-GhAuthToken -GhPath $GhPath
     Set-GhSecretValue -GhPath $GhPath -RepoName $RepoName -SecretName "VIBESTATS_TOKEN" -SecretValue $fallbackToken | Out-Null
 }
@@ -918,17 +929,32 @@ function Assert-Checksum {
 }
 
 function Get-UserPathVariable {
-    # Thin wrapper around the registry-backed User PATH so tests can mock it
-    # without ever touching the real user environment.
-    return [Environment]::GetEnvironmentVariable("Path", "User")
+    # Read the raw, unexpanded User PATH straight from the registry. The
+    # [Environment] API expands %VAR% references on read, and re-expands them
+    # permanently if we write that back out - this preserves other software's
+    # %USERPROFILE%-style PATH entries as-is.
+    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey("Environment")
+    if (-not $key) {
+        return ""
+    }
+    try {
+        return [string]$key.GetValue("Path", "", [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    } finally {
+        $key.Close()
+    }
 }
 
 function Set-UserPathVariable {
     param([string]$Value)
 
-    # Thin wrapper around the registry-backed User PATH so tests can mock it
-    # without ever touching the real user environment.
-    [Environment]::SetEnvironmentVariable("Path", $Value, "User")
+    # Write back as REG_EXPAND_SZ (the type Windows itself uses for PATH) so
+    # any %VAR% references read above stay unexpanded on disk.
+    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey("Environment", $true)
+    try {
+        $key.SetValue("Path", $Value, [Microsoft.Win32.RegistryValueKind]::ExpandString)
+    } finally {
+        $key.Close()
+    }
 }
 
 function Test-PathListContains {
@@ -942,7 +968,14 @@ function Test-PathListContains {
     }
 
     foreach ($entry in ($PathList -split ';' | Where-Object { $_ -and $_.Trim() })) {
-        $normalized = [System.IO.Path]::GetFullPath($entry).TrimEnd('\')
+        try {
+            $normalized = [System.IO.Path]::GetFullPath($entry).TrimEnd('\')
+        } catch {
+            # Entries we can't normalize (quoted, or otherwise invalid path
+            # chars) aren't ones we could be adding anyway; skip rather than
+            # abort the whole install over an unrelated PATH entry.
+            continue
+        }
         if ([string]::Equals($normalized, $Resolved, [System.StringComparison]::OrdinalIgnoreCase)) {
             return $true
         }
@@ -1075,7 +1108,10 @@ function Test-LegacyVibestatsHookCommand {
     }
 
     $trimmed = $Command.Trim()
-    return ($trimmed -eq "vibestats" -or $trimmed.StartsWith("vibestats "))
+    # Only the exact forms this installer has ever written itself - never a
+    # user's own customized "vibestats ..." hook (e.g. extra flags), which
+    # should be left in place rather than rewritten.
+    return $trimmed -in @("vibestats", "vibestats sync", "vibestats sync --quiet")
 }
 
 function Ensure-HookCommand {
