@@ -513,6 +513,12 @@ first_install_path() {
 # Step 12: Configure Claude Code hooks in ~/.claude/settings.json (AC #1, FR8)
 # Writes Stop and SessionStart hooks; idempotent — safe to run multiple times.
 # Uses python3 stdlib only (no jq required).
+#
+# Claude Code parses any non-empty hook stdout as event JSON. The legacy
+# `vibestats sync` command printed "vibestats: sync complete", which failed that
+# validation ("hook returned invalid ... JSON output"). Suppress all sync output
+# (empty stdout is a valid no-op) and never let a sync failure fail the hook.
+# Legacy `vibestats sync` entries are migrated in place.
 # ---------------------------------------------------------------------------
 configure_hooks() {
   CLAUDE_SETTINGS="${HOME}/.claude/settings.json"
@@ -530,28 +536,38 @@ except (FileNotFoundError, json.JSONDecodeError):
 if not isinstance(settings, dict):
     settings = {}
 
-if 'hooks' not in settings:
-    settings['hooks'] = {}
+settings.setdefault('hooks', {})
 
-# Configure Stop hook
-stop_hooks = settings['hooks'].get('Stop', [])
-vibestats_stop_present = any(
-    any(h.get('command') == 'vibestats sync' for h in matcher.get('hooks', []))
-    for matcher in stop_hooks
-)
-if not vibestats_stop_present:
-    stop_hooks.append({'hooks': [{'type': 'command', 'command': 'vibestats sync', 'async': True}]})
-settings['hooks']['Stop'] = stop_hooks
+SYNC_COMMAND = 'vibestats sync --quiet >/dev/null 2>&1 || true'
 
-# Configure SessionStart hook
-session_hooks = settings['hooks'].get('SessionStart', [])
-vibestats_session_present = any(
-    any(h.get('command') == 'vibestats sync' for h in matcher.get('hooks', []))
-    for matcher in session_hooks
-)
-if not vibestats_session_present:
-    session_hooks.append({'hooks': [{'type': 'command', 'command': 'vibestats sync'}]})
-settings['hooks']['SessionStart'] = session_hooks
+def is_legacy(cmd):
+    return cmd == 'vibestats' or (isinstance(cmd, str) and cmd.startswith('vibestats '))
+
+def ensure_hook(hook_type, extra):
+    groups = settings['hooks'].get(hook_type, [])
+    if not isinstance(groups, list):
+        groups = []
+    # Migrate any legacy vibestats command (e.g. bare "vibestats sync") in place.
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        for hook in group.get('hooks', []):
+            if (isinstance(hook, dict) and is_legacy(hook.get('command'))
+                    and hook.get('command') != SYNC_COMMAND):
+                hook['command'] = SYNC_COMMAND
+                hook.update(extra)
+    present = any(
+        isinstance(group, dict)
+        and any(isinstance(h, dict) and h.get('command') == SYNC_COMMAND
+                for h in group.get('hooks', []))
+        for group in groups
+    )
+    if not present:
+        groups.append({'hooks': [{'type': 'command', 'command': SYNC_COMMAND, **extra}]})
+    settings['hooks'][hook_type] = groups
+
+ensure_hook('Stop', {'async': True})
+ensure_hook('SessionStart', {})
 
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
