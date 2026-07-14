@@ -3,6 +3,7 @@
 /favicon.ico  /favicon.ico  200
 /favicon.svg  /favicon.svg  200
 /install.sh   /install.sh   200
+/install.ps1  /install.ps1  200
 /_astro/*     /_astro/:splat  200
 
 # Catch-all: map vibestats.dev/<username> to the per-user dashboard shell.
