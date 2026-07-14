@@ -5,6 +5,7 @@ mod github_api;
 mod harnesses;
 mod hooks;
 mod logger;
+mod paths;
 mod sync;
 
 use clap::{Parser, Subcommand};

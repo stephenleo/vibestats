@@ -1,40 +1,120 @@
-/// Returns the path to ~/.claude/settings.json, or None if HOME is not set.
+fn user_profile_dir() -> Option<std::path::PathBuf> {
+    #[cfg(windows)]
+    {
+        std::env::var("USERPROFILE")
+            .ok()
+            .map(std::path::PathBuf::from)
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(std::path::PathBuf::from)
+    }
+}
+
+/// Returns the path to the Claude settings file for the current platform.
 fn settings_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".claude")
-            .join("settings.json")
-    })
+    user_profile_dir().map(|h| h.join(".claude").join("settings.json"))
 }
 
-/// Returns the path to ~/.codex/hooks.json, or None if HOME is not set.
+/// Returns the path to the Codex hooks file for the current platform.
 fn codex_hooks_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".codex")
-            .join("hooks.json")
-    })
+    user_profile_dir().map(|h| h.join(".codex").join("hooks.json"))
 }
 
-/// Returns the path to the installed vibestats binary at ~/.local/bin/vibestats,
-/// or None if HOME is not set.
+/// Renames `path` aside and schedules the renamed file for deletion on next
+/// reboot. Windows keeps a running exe's image file locked, so it can't be
+/// deleted while `vibestats uninstall` (running as that same exe) is still
+/// executing - but Windows does allow renaming a running exe, so this at
+/// least frees up the original filename immediately.
+#[cfg(windows)]
+fn schedule_binary_delete_on_reboot(path: &std::path::Path) -> std::io::Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+
+    let old_path = path.with_extension("exe.old");
+    std::fs::rename(path, &old_path)?;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn MoveFileExW(existing: *const u16, new: *const u16, flags: u32) -> i32;
+    }
+    const MOVEFILE_DELAY_UNTIL_REBOOT: u32 = 0x4;
+
+    let wide: Vec<u16> = old_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let ok =
+        unsafe { MoveFileExW(wide.as_ptr(), std::ptr::null(), MOVEFILE_DELAY_UNTIL_REBOOT) != 0 };
+
+    if ok {
+        Ok(())
+    } else {
+        Err(std::io::Error::last_os_error())
+    }
+}
+
+/// Returns the path to the installed vibestats binary for the current platform.
 fn binary_path() -> Option<std::path::PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        std::path::PathBuf::from(h)
-            .join(".local")
-            .join("bin")
-            .join("vibestats")
-    })
+    #[cfg(windows)]
+    {
+        std::env::var("LOCALAPPDATA").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join("Programs")
+                .join("vibestats")
+                .join("vibestats.exe")
+        })
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var("HOME").ok().map(|h| {
+            std::path::PathBuf::from(h)
+                .join(".local")
+                .join("bin")
+                .join("vibestats")
+        })
+    }
 }
 
-/// True if a hook object's "command" field identifies a vibestats command.
-/// Matches exactly `"vibestats"` or anything starting with `"vibestats "` (with space).
-/// Narrow on purpose: avoids false positives like `"my-tool --flag vibestats-backup"`.
+fn first_command_token(command: &str) -> Option<&str> {
+    let trimmed = command.trim_start();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Some(rest) = trimmed.strip_prefix('"') {
+        let end_quote = rest.find('"')?;
+        return Some(&rest[..end_quote]);
+    }
+
+    trimmed.split_whitespace().next()
+}
+
+fn command_executable_basename(command: &str) -> Option<&str> {
+    let token = first_command_token(command)?;
+    token.rsplit(['/', '\\']).next()
+}
+
+/// True if a hook object's "command" field invokes the vibestats binary.
+///
+/// Supports both legacy PATH-based hooks such as `vibestats sync` and
+/// full-path hooks written by the Windows installer such as
+/// `"C:\\Users\\...\\vibestats.exe" sync`.
+/// Narrow on purpose: only inspects the first executable token, avoiding false
+/// positives like `"my-tool --flag vibestats-backup"`.
+// ponytail: hook contract triplicated in install.sh + install.ps1 + here;
+// fold into a `vibestats install-hooks` subcommand when the next harness
+// or hook-format change lands.
 fn is_vibestats_hook(hook_obj: &serde_json::Value) -> bool {
     hook_obj
         .get("command")
         .and_then(|c| c.as_str())
-        .map(|cmd| cmd == "vibestats" || cmd.starts_with("vibestats "))
+        .and_then(command_executable_basename)
+        .map(|name| {
+            name.eq_ignore_ascii_case("vibestats") || name.eq_ignore_ascii_case("vibestats.exe")
+        })
         .unwrap_or(false)
 }
 
@@ -130,7 +210,10 @@ pub fn run() {
     // Step 1: Remove vibestats hooks from ~/.claude/settings.json
     match settings_path() {
         None => {
-            println!("vibestats: HOME not set — skipping hook removal");
+            println!(
+                "vibestats: {} not set — skipping hook removal",
+                if cfg!(windows) { "USERPROFILE" } else { "HOME" }
+            );
         }
         Some(path) => {
             if !path.exists() {
@@ -250,7 +333,14 @@ pub fn run() {
     // so a developer running `cargo run -- uninstall` does not nuke their dev build.
     match binary_path() {
         None => {
-            println!("vibestats: HOME not set — skipping binary deletion");
+            println!(
+                "vibestats: {} not set — skipping binary deletion",
+                if cfg!(windows) {
+                    "LOCALAPPDATA"
+                } else {
+                    "HOME"
+                }
+            );
         }
         Some(path) => match std::fs::remove_file(&path) {
             Ok(()) => println!("vibestats: deleted binary at {}", path.display()),
@@ -261,11 +351,37 @@ pub fn run() {
                 );
             }
             Err(e) => {
-                println!(
-                    "vibestats: could not delete binary at {}: {e}",
-                    path.display()
-                );
-                println!("Delete it manually: rm \"{}\"", path.display());
+                #[cfg(windows)]
+                {
+                    // The running exe's image file is locked on Windows; this
+                    // is the expected path there, not just an error case.
+                    match schedule_binary_delete_on_reboot(&path) {
+                        Ok(()) => {
+                            println!(
+                                "vibestats: binary at {} is in use and will be removed on next reboot",
+                                path.display()
+                            );
+                        }
+                        Err(_) => {
+                            println!(
+                                "vibestats: could not delete binary at {}: {e}",
+                                path.display()
+                            );
+                            println!(
+                                "Delete it manually: Remove-Item -Force \"{}\"",
+                                path.display()
+                            );
+                        }
+                    }
+                }
+                #[cfg(not(windows))]
+                {
+                    println!(
+                        "vibestats: could not delete binary at {}: {e}",
+                        path.display()
+                    );
+                    println!("Delete it manually: rm \"{}\"", path.display());
+                }
             }
         },
     }
@@ -280,7 +396,14 @@ pub fn run() {
     println!("  2. Remove the heatmap markers from your profile README:");
     println!("       Delete the lines between <!-- vibestats-start --> and <!-- vibestats-end -->");
     println!("  3. Remove vibestats config and logs:");
-    println!("       rm -rf ~/.config/vibestats");
+    println!(
+        "       {}",
+        if cfg!(windows) {
+            r#"Remove-Item -Recurse -Force "$env:LOCALAPPDATA\vibestats""#
+        } else {
+            "rm -rf ~/.config/vibestats"
+        }
+    );
 }
 
 #[cfg(test)]
@@ -292,55 +415,141 @@ mod tests {
     /// Mutating env vars is process-global, so both branches are exercised
     /// serially inside one test to avoid races with parallel test execution.
     #[test]
-    fn settings_path_reflects_home_state() {
-        let saved = std::env::var("HOME").ok();
 
-        // Case 1: HOME set
-        std::env::set_var("HOME", "/tmp/vibestats-test-home");
-        let path = settings_path().expect("must return Some when HOME is set");
-        assert!(
-            path.to_string_lossy().ends_with(".claude/settings.json"),
-            "path must end with .claude/settings.json, got: {}",
-            path.display()
+    fn settings_path_reflects_home_state() {
+        #[cfg(windows)]
+        const ENV_NAME: &str = "USERPROFILE";
+
+        #[cfg(not(windows))]
+        const ENV_NAME: &str = "HOME";
+
+        let saved = std::env::var(ENV_NAME).ok();
+
+        #[cfg(windows)]
+        unsafe {
+            std::env::set_var(ENV_NAME, r"C:\Users\Test");
+        }
+
+        #[cfg(not(windows))]
+        unsafe {
+            std::env::set_var(ENV_NAME, "/tmp/vibestats-test-home");
+        }
+
+        let path = settings_path().expect("must return Some when profile env var is set");
+        assert_eq!(
+            path.file_name(),
+            Some(std::ffi::OsStr::new("settings.json"))
+        );
+        assert_eq!(
+            path.parent().and_then(|p| p.file_name()),
+            Some(std::ffi::OsStr::new(".claude"))
         );
 
-        // Case 2: HOME unset
-        std::env::remove_var("HOME");
+        unsafe {
+            std::env::remove_var(ENV_NAME);
+        }
+
         assert!(
             settings_path().is_none(),
-            "settings_path must return None when HOME is unset"
+            "settings_path must return None when {ENV_NAME} is unset"
         );
 
-        // Restore HOME
-        if let Some(h) = saved {
-            std::env::set_var("HOME", h);
+        if let Some(value) = saved {
+            unsafe {
+                std::env::set_var(ENV_NAME, value);
+            }
         }
     }
 
     #[test]
+
     fn binary_path_builds_local_bin_path() {
-        let saved = std::env::var("HOME").ok();
-        std::env::set_var("HOME", "/tmp/vibestats-test-home");
-        let path = binary_path().expect("must return Some when HOME is set");
-        assert!(
-            path.to_string_lossy().ends_with(".local/bin/vibestats"),
-            "binary path must end with .local/bin/vibestats, got: {}",
-            path.display()
-        );
-        if let Some(h) = saved {
-            std::env::set_var("HOME", h);
-        } else {
-            std::env::remove_var("HOME");
+        #[cfg(windows)]
+        {
+            let saved = std::env::var("LOCALAPPDATA").ok();
+
+            unsafe {
+                std::env::set_var("LOCALAPPDATA", r"C:\Users\Test\AppData\Local");
+            }
+
+            let path = binary_path().expect("must return Some when LOCALAPPDATA is set");
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.exe"))
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("vibestats"))
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("Programs"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("LOCALAPPDATA", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("LOCALAPPDATA");
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            let saved = std::env::var("HOME").ok();
+
+            unsafe {
+                std::env::set_var("HOME", "/tmp/vibestats-test-home");
+            }
+
+            let path = binary_path().expect("must return Some when HOME is set");
+            assert_eq!(path.file_name(), Some(std::ffi::OsStr::new("vibestats")));
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("bin"))
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".local"))
+            );
+
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            } else {
+                unsafe {
+                    std::env::remove_var("HOME");
+                }
+            }
         }
     }
 
     #[test]
-    fn is_vibestats_hook_matches_only_exact_and_prefixed_commands() {
+    fn is_vibestats_hook_matches_legacy_and_full_path_commands() {
         assert!(is_vibestats_hook(&json!({ "command": "vibestats" })));
         assert!(is_vibestats_hook(&json!({ "command": "vibestats sync" })));
         assert!(is_vibestats_hook(
             &json!({ "command": "vibestats session-start" })
         ));
+
+        assert!(is_vibestats_hook(
+            &json!({ "command": r#""C:\Users\Test\AppData\Local\Programs\vibestats\vibestats.exe" sync"# })
+        ));
+        assert!(is_vibestats_hook(
+            &json!({ "command": r#""C:\Users\Test\AppData\Local\Programs\vibestats\VIBESTATS.EXE" sync --quiet"# })
+        ));
+        assert!(is_vibestats_hook(
+            &json!({ "command": "/home/test/.local/bin/vibestats sync" })
+        ));
+
         // False positives the old `.contains()` implementation would have matched:
         assert!(!is_vibestats_hook(
             &json!({ "command": "my-tool --arg vibestats-fake" })
@@ -348,7 +557,14 @@ mod tests {
         assert!(!is_vibestats_hook(
             &json!({ "command": "vibestats-killer" })
         ));
+        assert!(!is_vibestats_hook(
+            &json!({ "command": r#""C:\Tools\vibestats-helper.exe" sync"# })
+        ));
+        assert!(!is_vibestats_hook(
+            &json!({ "command": r#"python "C:\Tools\vibestats.exe" sync"# })
+        ));
         assert!(!is_vibestats_hook(&json!({ "command": "not-vibestats" })));
+
         // Missing / non-string command:
         assert!(!is_vibestats_hook(&json!({})));
         assert!(!is_vibestats_hook(&json!({ "command": 42 })));
@@ -532,5 +748,104 @@ mod tests {
             settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"],
             "vibestats weird-hook"
         );
+    }
+
+    // ── first_command_token and command_executable_basename ──────────────────
+
+    #[test]
+    fn first_command_token_extracts_plain_command() {
+        assert_eq!(first_command_token("vibestats sync"), Some("vibestats"));
+        assert_eq!(first_command_token("vibestats"), Some("vibestats"));
+        assert_eq!(first_command_token("my-tool --flag arg"), Some("my-tool"));
+    }
+
+    #[test]
+    fn first_command_token_handles_quoted_path() {
+        assert_eq!(
+            first_command_token(r#""C:\Users\x\vibestats.exe" sync"#),
+            Some(r"C:\Users\x\vibestats.exe")
+        );
+        assert_eq!(
+            first_command_token(r#""C:\Program Files\app\tool.exe" --flag"#),
+            Some(r"C:\Program Files\app\tool.exe")
+        );
+    }
+
+    #[test]
+    fn first_command_token_returns_none_for_unterminated_quote() {
+        assert_eq!(first_command_token(r#""C:\foo"#), None);
+        assert_eq!(first_command_token(r#""unterminated"#), None);
+    }
+
+    #[test]
+    fn first_command_token_handles_leading_whitespace() {
+        assert_eq!(first_command_token("   vibestats"), Some("vibestats"));
+        assert_eq!(first_command_token("  \t  other-cmd"), Some("other-cmd"));
+    }
+
+    #[test]
+    fn first_command_token_returns_none_for_empty_or_whitespace() {
+        assert_eq!(first_command_token(""), None);
+        assert_eq!(first_command_token("   "), None);
+        assert_eq!(first_command_token("\t\n"), None);
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_plain_command() {
+        assert_eq!(
+            command_executable_basename("vibestats sync"),
+            Some("vibestats")
+        );
+        assert_eq!(
+            command_executable_basename("my-tool --arg"),
+            Some("my-tool")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_windows_path() {
+        assert_eq!(
+            command_executable_basename(
+                r#""C:\Users\Test\AppData\Local\Programs\vibestats\vibestats.exe" sync"#
+            ),
+            Some("vibestats.exe")
+        );
+        assert_eq!(
+            command_executable_basename(r#""C:\Program Files\App\tool.exe" --flag"#),
+            Some("tool.exe")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_extracts_from_unix_path() {
+        assert_eq!(
+            command_executable_basename("/home/test/.local/bin/vibestats sync"),
+            Some("vibestats")
+        );
+        assert_eq!(
+            command_executable_basename("/usr/local/bin/my-tool --arg"),
+            Some("my-tool")
+        );
+    }
+
+    #[test]
+    fn command_executable_basename_handles_mixed_separators() {
+        // Windows paths can have backslashes; Unix paths use forward slashes
+        assert_eq!(
+            command_executable_basename(r"C:\tools\vibestats.exe"),
+            Some("vibestats.exe")
+        );
+        assert_eq!(command_executable_basename("/path/to/app"), Some("app"));
+    }
+
+    #[test]
+    fn command_executable_basename_returns_none_for_unterminated_quote() {
+        assert_eq!(command_executable_basename(r#""C:\foo"#), None);
+    }
+
+    #[test]
+    fn command_executable_basename_returns_none_for_empty_or_whitespace() {
+        assert_eq!(command_executable_basename(""), None);
+        assert_eq!(command_executable_basename("   "), None);
     }
 }

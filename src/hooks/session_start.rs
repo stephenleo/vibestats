@@ -16,18 +16,8 @@ use crate::checkpoint::Checkpoint;
 use crate::config::Config;
 use crate::github_api::GithubApi;
 use crate::logger;
+use crate::paths::checkpoint_path;
 use crate::sync;
-use std::path::PathBuf;
-
-/// Returns the path to the checkpoint file, or None if HOME is not set.
-fn checkpoint_path() -> Option<PathBuf> {
-    std::env::var("HOME").ok().map(|h| {
-        PathBuf::from(h)
-            .join(".config")
-            .join("vibestats")
-            .join("checkpoint.toml")
-    })
-}
 
 /// Returns yesterday's date as `"YYYY-MM-DD"` (UTC).
 ///

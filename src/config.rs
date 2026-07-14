@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -10,37 +11,67 @@ pub struct Config {
 }
 
 fn config_path() -> Result<PathBuf, String> {
-    let home = std::env::var("HOME").map_err(|_| {
-        "HOME environment variable is not set. Run 'vibestats auth' after exporting HOME."
-            .to_string()
-    })?;
-    Ok(PathBuf::from(home)
-        .join(".config")
-        .join("vibestats")
-        .join("config.toml"))
+    #[cfg(windows)]
+    {
+        // LOCALAPPDATA (not APPDATA): config holds the machine-specific
+        // machine_id, which must not roam between machines.
+        let appdata = std::env::var("LOCALAPPDATA").map_err(|_| {
+            "LOCALAPPDATA environment variable is not set.
+Run 'vibestats auth' from a normal Windows user session."
+                .to_string()
+        })?;
+
+        Ok(PathBuf::from(appdata).join("vibestats").join("config.toml"))
+    }
+
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var("HOME").map_err(|_| {
+            "HOME environment variable is not set.
+Run 'vibestats auth' after exporting HOME."
+                .to_string()
+        })?;
+
+        Ok(PathBuf::from(home)
+            .join(".config")
+            .join("vibestats")
+            .join("config.toml"))
+    }
 }
 
+#[cfg(unix)]
 fn set_permissions_600(path: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
+
     let mut perms = std::fs::metadata(path)?.permissions();
     perms.set_mode(0o600);
     std::fs::set_permissions(path, perms)
 }
 
 /// Atomically create (or truncate) the file at `path` with mode 0600, so that the
-/// OAuth token is never briefly visible under a wider umask. On Unix this uses
-/// `OpenOptions::mode(0o600)` at creation time.
+/// OAuth token is never briefly visible under a wider umask.
+#[cfg(unix)]
 fn write_file_mode_600(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
     use std::os::unix::fs::OpenOptionsExt;
+
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
         .mode(0o600)
         .open(path)?;
+
     file.write_all(contents)?;
+
     // Re-assert mode in case the file already existed with looser perms.
     set_permissions_600(path)
+}
+
+/// Windows does not expose Unix mode bits. For the MVP native Windows build,
+/// rely on the user's profile directory ACLs and write the config normally.
+#[cfg(windows)]
+fn write_file_mode_600(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    std::fs::write(path, contents)
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -134,6 +165,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     fn unique_temp_path(suffix: &str) -> PathBuf {
@@ -221,6 +253,7 @@ vibestats_data_repo = "user/vibestats-data"
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_save_sets_600_permissions() {
         let temp_dir = unique_temp_path("perms_test_dir");
@@ -247,6 +280,7 @@ vibestats_data_repo = "user/repo"
         std::fs::remove_dir_all(&temp_dir).ok();
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_write_file_mode_600_overwrites_loose_perms() {
         // If the file already exists with wider permissions (e.g. from a legacy

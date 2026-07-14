@@ -1,6 +1,7 @@
 //! Logger module for vibestats.
 //!
-//! Appends structured log entries to `~/.config/vibestats/vibestats.log`.
+//! Appends structured log entries to `~/.config/vibestats/vibestats.log`
+//! (Unix) or `%LOCALAPPDATA%\vibestats\logs\vibestats.log` (Windows).
 //! Rotates the file at 1 MB (renames to `vibestats.log.1`).
 //!
 //! # Silent failure contract
@@ -16,11 +17,27 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
 fn log_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    PathBuf::from(home)
-        .join(".config")
-        .join("vibestats")
-        .join("vibestats.log")
+    #[cfg(windows)]
+    {
+        let base = std::env::var("LOCALAPPDATA")
+            .or_else(|_| std::env::var("TEMP"))
+            .unwrap_or_else(|_| ".".to_string());
+
+        PathBuf::from(base)
+            .join("vibestats")
+            .join("logs")
+            .join("vibestats.log")
+    }
+
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+
+        PathBuf::from(home)
+            .join(".config")
+            .join("vibestats")
+            .join("vibestats.log")
+    }
 }
 
 // ─── Timestamp (stdlib only, no chrono) ───────────────────────────────────────
@@ -447,5 +464,136 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    // ── log_path() resolution ─────────────────────────────────────────────────
+
+    /// Combined test for log_path() resolution across all branches.
+    /// Env-var mutations are process-global, so all branches are exercised
+    /// serially inside one test to avoid races with parallel test execution.
+    #[test]
+    fn log_path_resolves_correctly_for_platform() {
+        #[cfg(windows)]
+        {
+            // Test 1: LOCALAPPDATA set → path ends with vibestats\logs\vibestats.log
+            let saved_local = std::env::var("LOCALAPPDATA").ok();
+            let saved_temp = std::env::var("TEMP").ok();
+
+            unsafe {
+                std::env::set_var("LOCALAPPDATA", r"C:\Users\Test\AppData\Local");
+            }
+
+            let path = log_path();
+            assert!(
+                path.ends_with("vibestats\\logs\\vibestats.log")
+                    || path.ends_with("vibestats/logs/vibestats.log"),
+                "log_path with LOCALAPPDATA should end in vibestats/logs/vibestats.log, got {:?}",
+                path
+            );
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.log"))
+            );
+
+            // Test 2: LOCALAPPDATA unset, TEMP set → path under TEMP
+            unsafe {
+                std::env::remove_var("LOCALAPPDATA");
+                std::env::set_var("TEMP", r"C:\Temp");
+            }
+
+            let path = log_path();
+            assert!(
+                path.starts_with(r"C:\Temp") || path.starts_with("C:\\Temp"),
+                "log_path with TEMP should start with TEMP path, got {:?}",
+                path
+            );
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.log"))
+            );
+
+            // Test 3: Both LOCALAPPDATA and TEMP unset → current dir fallback
+            unsafe {
+                std::env::remove_var("LOCALAPPDATA");
+                std::env::remove_var("TEMP");
+            }
+
+            let path = log_path();
+            assert!(
+                path.ends_with("vibestats\\logs\\vibestats.log")
+                    || path.ends_with("vibestats/logs/vibestats.log"),
+                "log_path with no env vars should use current dir, got {:?}",
+                path
+            );
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.log"))
+            );
+
+            // Restore original values
+            if let Some(value) = saved_local {
+                unsafe {
+                    std::env::set_var("LOCALAPPDATA", value);
+                }
+            }
+            if let Some(value) = saved_temp {
+                unsafe {
+                    std::env::set_var("TEMP", value);
+                }
+            }
+        }
+
+        #[cfg(not(windows))]
+        {
+            // Test 1: HOME set → .config/vibestats/vibestats.log (no logs/
+            // subdir on Unix — that layout is Windows-only)
+            let saved = std::env::var("HOME").ok();
+
+            unsafe {
+                std::env::set_var("HOME", "/tmp/vibestats-test-home");
+            }
+
+            let path = log_path();
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.log")),
+                "filename must be vibestats.log"
+            );
+            assert_eq!(
+                path.parent().and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new("vibestats")),
+                "parent dir must be vibestats"
+            );
+            assert_eq!(
+                path.parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.file_name()),
+                Some(std::ffi::OsStr::new(".config")),
+                "grandparent dir must be .config"
+            );
+
+            // Test 2: HOME unset → /tmp fallback
+            unsafe {
+                std::env::remove_var("HOME");
+            }
+
+            let path = log_path();
+            assert!(
+                path.starts_with("/tmp"),
+                "log_path with HOME unset should use /tmp fallback, got {:?}",
+                path
+            );
+            assert_eq!(
+                path.file_name(),
+                Some(std::ffi::OsStr::new("vibestats.log"))
+            );
+
+            // Restore original value
+            if let Some(value) = saved {
+                unsafe {
+                    std::env::set_var("HOME", value);
+                }
+            }
+        }
     }
 }
