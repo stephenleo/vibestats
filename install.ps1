@@ -1191,7 +1191,9 @@ function Configure-ClaudeHooks {
         $settings["hooks"] = @{}
     }
 
-    $syncCommand = New-VibestatsHookCommand -Arguments "sync"
+    # Claude Code parses any non-empty hook stdout as event JSON; --quiet keeps
+    # stdout empty so the hook is treated as a valid no-op (see install.sh).
+    $syncCommand = New-VibestatsHookCommand -Arguments "sync --quiet"
 
     Ensure-HookCommand -Hooks $settings["hooks"] -HookName "Stop" -Command $syncCommand -Async $true
     Ensure-HookCommand -Hooks $settings["hooks"] -HookName "SessionStart" -Command $syncCommand -Async $false

@@ -68,6 +68,24 @@ Describe "Ensure-HookCommand" {
         $hooks["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync"
     }
 
+    It "migrates a legacy bare 'vibestats sync' command to 'vibestats sync --quiet' in place" {
+        $hooks = @{
+            Stop = @(
+                @{
+                    hooks = @(
+                        @{ type = "command"; command = "vibestats sync" }
+                    )
+                }
+            )
+        }
+
+        Ensure-HookCommand -Hooks $hooks -HookName "Stop" -Command "vibestats sync --quiet" -Async $true
+
+        $hooks["Stop"].Count | Should -Be 1
+        $hooks["Stop"][0]["hooks"].Count | Should -Be 1
+        $hooks["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync --quiet"
+    }
+
     It "does not rewrite a user's customized 'vibestats ...' hook, adds the canonical one alongside it" {
         $hooks = @{
             Stop = @(
@@ -115,6 +133,46 @@ Describe "Ensure-HookCommand" {
         Ensure-HookCommand -Hooks $hooks -HookName "Stop" -Command "vibestats.exe sync" -Async $true
 
         $hooks["Stop"].Count | Should -Be 2
+    }
+}
+
+Describe "Configure-ClaudeHooks" {
+
+    BeforeEach {
+        $script:originalUserProfile = $env:USERPROFILE
+        $env:USERPROFILE = Join-Path $TestDrive "profile"
+        New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE ".claude") | Out-Null
+    }
+
+    AfterEach {
+        $env:USERPROFILE = $script:originalUserProfile
+    }
+
+    It "writes 'vibestats sync --quiet' for both Stop and SessionStart hooks" {
+        Configure-ClaudeHooks 6>$null
+
+        $settingsPath = Join-Path (Join-Path $env:USERPROFILE ".claude") "settings.json"
+        $settings = Read-JsonHashtable -Path $settingsPath
+
+        $settings["hooks"]["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync --quiet"
+        $settings["hooks"]["SessionStart"][0]["hooks"][0]["command"] | Should -Be "vibestats sync --quiet"
+    }
+
+    It "migrates an existing bare 'vibestats sync' hook to the quiet command" {
+        $settingsPath = Join-Path (Join-Path $env:USERPROFILE ".claude") "settings.json"
+        Write-JsonHashtable -Path $settingsPath -Data @{
+            hooks = @{
+                Stop = @(
+                    @{ hooks = @(@{ type = "command"; command = "vibestats sync" }) }
+                )
+            }
+        }
+
+        Configure-ClaudeHooks 6>$null
+
+        $settings = Read-JsonHashtable -Path $settingsPath
+        $settings["hooks"]["Stop"].Count | Should -Be 1
+        $settings["hooks"]["Stop"][0]["hooks"][0]["command"] | Should -Be "vibestats sync --quiet"
     }
 }
 
