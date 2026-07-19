@@ -130,7 +130,7 @@ async function main() {
       await captureHero(page, join(OUT_DIR, `dashboard-hero-${theme}.png`));
       await captureRegion(page, '.card:has(#cal-heatmap)', join(OUT_DIR, `dashboard-heatmap-${theme}.png`));
       await captureRegion(page, '#kpi-row', join(OUT_DIR, `dashboard-kpis-${theme}.png`));
-      await captureRegion(page, '.three-col', join(OUT_DIR, `dashboard-charts-${theme}.png`));
+      await captureRegion(page, '.three-col', join(OUT_DIR, `dashboard-summary-charts-${theme}.png`));
       await captureRegion(page, '.model-area-card', join(OUT_DIR, `dashboard-model-usage-${theme}.png`));
 
       await context.close();

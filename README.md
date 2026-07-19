@@ -58,8 +58,8 @@ Weekly model token usage shows the selected period's top six models individually
   <tr>
     <td colspan="2">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-charts-dark.png">
-        <img src="docs/images/dashboard-charts-light.png" alt="Weekly Token Consumption and Efficiency summary charts in an equal-width row">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-summary-charts-dark.png">
+        <img src="docs/images/dashboard-summary-charts-light.png" alt="Weekly Token Consumption and Efficiency summary charts in an equal-width row">
       </picture>
     </td>
   </tr>
