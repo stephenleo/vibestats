@@ -706,7 +706,7 @@ import Base from '../layouts/Base.astro';
     modelChartEl.appendChild(legend);
   }
 
-  // ── Daily model token usage (stacked area) ─────────────────────────
+  // ── Weekly model token usage (stacked area) ────────────────────────
   function renderModelAreaChart(range: 'L12M' | string): void {
     if (!vibestatsData) return;
     const { startDate, predicate } = rangeBounds(range);
@@ -740,16 +740,24 @@ import Base from '../layouts/Base.astro';
           : modelTotals[model] ?? 0),
       });
     }
+    const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, index) => {
+      const bucket = days.slice(index * 7, index * 7 + 7);
+      return {
+        date: bucket[0].date,
+        endDate: bucket[bucket.length - 1].date,
+        values: series.map((_, seriesIndex) => bucket.reduce((sum, day) => sum + day.values[seriesIndex], 0)),
+      };
+    });
 
     const WIDTH = 900, HEIGHT = 280, LEFT = 62, TOP = 12, RIGHT = 12, BOTTOM = 30;
     const plotWidth = WIDTH - LEFT - RIGHT, plotHeight = HEIGHT - TOP - BOTTOM;
-    const max = Math.max(1, ...days.map(day => day.values.reduce((sum, value) => sum + value, 0)));
-    const x = (index: number): number => LEFT + (index / Math.max(1, days.length - 1)) * plotWidth;
+    const max = Math.max(1, ...weeks.map(week => week.values.reduce((sum, value) => sum + value, 0)));
+    const x = (index: number): number => LEFT + (index / Math.max(1, weeks.length - 1)) * plotWidth;
     const y = (value: number): number => TOP + plotHeight - (value / max) * plotHeight;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Daily token usage by model');
+    svg.setAttribute('aria-label', 'Weekly token usage by model');
 
     for (let step = 0; step <= 4; step++) {
       const value = max * step / 4;
@@ -765,12 +773,12 @@ import Base from '../layouts/Base.astro';
       svg.appendChild(label);
     }
 
-    const stacked = days.map(() => 0);
+    const stacked = weeks.map(() => 0);
     series.forEach((_, seriesIndex) => {
       const lower = [...stacked];
-      days.forEach((day, index) => { stacked[index] += day.values[seriesIndex]; });
-      const top = days.map((_, index) => `${x(index)},${y(stacked[index])}`).join(' L');
-      const bottom = days.map((_, index) => `${x(days.length - 1 - index)},${y(lower[days.length - 1 - index])}`).join(' L');
+      weeks.forEach((week, index) => { stacked[index] += week.values[seriesIndex]; });
+      const top = weeks.map((_, index) => `${x(index)},${y(stacked[index])}`).join(' L');
+      const bottom = weeks.map((_, index) => `${x(weeks.length - 1 - index)},${y(lower[weeks.length - 1 - index])}`).join(' L');
       const path = document.createElementNS(svg.namespaceURI, 'path');
       path.setAttribute('d', `M${top} L${bottom} Z`);
       path.setAttribute('fill', MODEL_COLORS[seriesIndex]);
@@ -778,24 +786,24 @@ import Base from '../layouts/Base.astro';
       svg.appendChild(path);
     });
 
-    days.forEach((day, index) => {
-      const total = day.values.reduce((sum, value) => sum + value, 0);
+    weeks.forEach((week, index) => {
+      const total = week.values.reduce((sum, value) => sum + value, 0);
       const point = document.createElementNS(svg.namespaceURI, 'circle');
       point.setAttribute('cx', String(x(index))); point.setAttribute('cy', String(y(total)));
       point.setAttribute('r', '6'); point.setAttribute('class', 'model-area-point');
       const title = document.createElementNS(svg.namespaceURI, 'title');
-      title.textContent = `${day.date}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(day.values[i]))}`).join(' · ')}`;
+      title.textContent = `${week.date} – ${week.endDate}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(week.values[i]))}`).join(' · ')}`;
       point.appendChild(title);
       svg.appendChild(point);
     });
 
     for (let step = 0; step <= 4; step++) {
-      const index = Math.round((days.length - 1) * step / 4);
+      const index = Math.round((weeks.length - 1) * step / 4);
       const label = document.createElementNS(svg.namespaceURI, 'text');
       label.setAttribute('x', String(x(index))); label.setAttribute('y', String(HEIGHT - 6));
       label.setAttribute('class', 'model-area-label');
       label.setAttribute('text-anchor', step === 0 ? 'start' : step === 4 ? 'end' : 'middle');
-      label.textContent = new Date(`${days[index].date}T00:00:00Z`).toLocaleDateString('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+      label.textContent = new Date(`${weeks[index].date}T00:00:00Z`).toLocaleDateString('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
       svg.appendChild(label);
     }
     modelAreaChartEl.appendChild(svg);
