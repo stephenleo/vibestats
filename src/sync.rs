@@ -109,19 +109,38 @@ fn sha256_hex(data: &[u8]) -> String {
 /// dates via `github_api`, and updates the checkpoint. Always saves checkpoint and
 /// returns `()` — never calls `std::process::exit`.
 pub fn run(start_date: &str, end_date: &str) {
-    run_harnesses(start_date, end_date, crate::harnesses::all());
+    let _ = run_harnesses(start_date, end_date, crate::harnesses::all());
+}
+
+/// Records an upload result and returns whether it succeeded.
+fn record_upload_result(
+    checkpoint: &mut Checkpoint,
+    harness_id: &str,
+    date: &str,
+    hash: &str,
+    uploaded: bool,
+) -> bool {
+    if uploaded {
+        checkpoint.update_hash_for_harness(harness_id, date, hash);
+        checkpoint.clear_auth_error();
+        true
+    } else {
+        checkpoint.set_auth_error();
+        false
+    }
 }
 
 pub fn run_harnesses(
     start_date: &str,
     end_date: &str,
     harnesses: &[&'static dyn crate::harnesses::Harness],
-) {
+) -> bool {
     let config = Config::load_or_exit();
     let cp_path = checkpoint_path();
     let mut checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
+    let mut succeeded = true;
     for harness in harnesses {
         let activities = harness.parse_date_range(start_date, end_date);
 
@@ -155,13 +174,14 @@ pub fn run_harnesses(
             let path = hive_path(date, harness.id(), &config.machine_id);
             match api.put_file(&path, &payload) {
                 Ok(()) => {
-                    checkpoint.update_hash_for_harness(harness.id(), date, &hash);
-                    checkpoint.clear_auth_error();
+                    record_upload_result(&mut checkpoint, harness.id(), date, &hash, true);
                 }
                 Err(e) => {
                     // Treat all API errors as potential auth errors (err on the side of
                     // caution; user can clear via `vibestats auth`). Log and continue.
-                    checkpoint.set_auth_error();
+                    succeeded =
+                        record_upload_result(&mut checkpoint, harness.id(), date, &hash, false)
+                            && succeeded;
                     logger::error(&format!(
                         "sync: put_file failed for {} {date}: {e}",
                         harness.id()
@@ -177,6 +197,7 @@ pub fn run_harnesses(
             logger::error(&format!("sync: failed to save checkpoint: {e}"));
         }
     }
+    succeeded
 }
 
 #[cfg(test)]
@@ -311,5 +332,21 @@ mod tests {
         let h1 = sha256_hex(b"{\"sessions\":1,\"active_minutes\":10}");
         let h2 = sha256_hex(b"{\"sessions\":2,\"active_minutes\":20}");
         assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn failed_upload_leaves_hash_retryable() {
+        let mut checkpoint = Checkpoint::default();
+        let hash = sha256_hex(b"payload");
+
+        assert!(!record_upload_result(
+            &mut checkpoint,
+            "codex",
+            "2026-07-19",
+            &hash,
+            false,
+        ));
+        assert!(checkpoint.auth_error);
+        assert!(!checkpoint.hash_matches_for_harness("codex", "2026-07-19", &hash));
     }
 }
