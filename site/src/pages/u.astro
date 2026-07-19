@@ -686,15 +686,77 @@ import Base from '../layouts/Base.astro';
       svg.appendChild(path);
     });
 
-    weeks.forEach((week, index) => {
+    const guide = document.createElementNS(svg.namespaceURI, 'line');
+    guide.setAttribute('y1', String(TOP)); guide.setAttribute('y2', String(TOP + plotHeight));
+    guide.setAttribute('class', 'model-area-guide'); guide.setAttribute('visibility', 'hidden');
+    svg.appendChild(guide);
+    const tooltip = document.createElement('div');
+    tooltip.className = 'model-area-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    const hits: SVGRectElement[] = [];
+    const hideTooltip = (): void => {
+      tooltip.hidden = true;
+      guide.setAttribute('visibility', 'hidden');
+    };
+    const showTooltip = (index: number): void => {
+      const week = weeks[index];
       const total = week.values.reduce((sum, value) => sum + value, 0);
-      const point = document.createElementNS(svg.namespaceURI, 'circle');
-      point.setAttribute('cx', String(x(index))); point.setAttribute('cy', String(y(total)));
-      point.setAttribute('r', '6'); point.setAttribute('class', 'model-area-point');
-      const title = document.createElementNS(svg.namespaceURI, 'title');
-      title.textContent = `${week.date} – ${week.endDate}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(week.values[i]))}`).join(' · ')}`;
-      point.appendChild(title);
-      svg.appendChild(point);
+      const heading = document.createElement('strong');
+      heading.textContent = `${week.date} – ${week.endDate}`;
+      const totalEl = document.createElement('span');
+      totalEl.className = 'model-area-tooltip-total';
+      totalEl.textContent = `Total ${fmtTokens(Math.round(total))}`;
+      tooltip.replaceChildren(heading, totalEl);
+      series.forEach((model, seriesIndex) => {
+        const row = document.createElement('span');
+        row.className = 'model-area-tooltip-row';
+        const swatch = document.createElement('span');
+        swatch.className = 'model-area-tooltip-swatch';
+        swatch.style.background = MODEL_COLORS[seriesIndex];
+        const label = document.createElement('span');
+        label.textContent = formatModelLabel(model);
+        const value = document.createElement('span');
+        value.textContent = fmtTokens(Math.round(week.values[seriesIndex]));
+        row.append(swatch, label, value);
+        tooltip.appendChild(row);
+      });
+      guide.setAttribute('x1', String(x(index))); guide.setAttribute('x2', String(x(index)));
+      guide.setAttribute('visibility', 'visible');
+      tooltip.hidden = false;
+      const pointX = x(index) / WIDTH * modelAreaChartEl.clientWidth;
+      tooltip.style.left = `${Math.max(4, Math.min(pointX - tooltip.offsetWidth / 2, modelAreaChartEl.clientWidth - tooltip.offsetWidth - 4))}px`;
+      const cardRect = modelAreaChartEl.closest('.model-area-card')!.getBoundingClientRect();
+      const chartRect = modelAreaChartEl.getBoundingClientRect();
+      const minTop = cardRect.top - chartRect.top + 4;
+      const maxTop = cardRect.bottom - chartRect.top - tooltip.offsetHeight - 4;
+      tooltip.style.top = `${Math.max(minTop, Math.min(4, maxTop))}px`;
+    };
+    weeks.forEach((week, index) => {
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const left = index === 0 ? LEFT : (x(index - 1) + x(index)) / 2;
+      const right = index === weeks.length - 1 ? WIDTH - RIGHT : (x(index) + x(index + 1)) / 2;
+      const total = week.values.reduce((sum, value) => sum + value, 0);
+      const label = `${week.date} to ${week.endDate}, total ${fmtTokens(Math.round(total))}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(week.values[i]))}`).join(', ')}`;
+      hit.setAttribute('x', String(left)); hit.setAttribute('width', String(right - left));
+      hit.setAttribute('y', String(TOP)); hit.setAttribute('height', String(plotHeight));
+      hit.setAttribute('class', 'model-area-hit'); hit.setAttribute('tabindex', index === 0 ? '0' : '-1');
+      hit.setAttribute('aria-label', label);
+      hit.addEventListener('pointerenter', () => showTooltip(index));
+      hit.addEventListener('pointerleave', hideTooltip);
+      hit.addEventListener('focus', () => showTooltip(index));
+      hit.addEventListener('blur', hideTooltip);
+      hit.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Escape') { hit.blur(); return; }
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const next = Math.max(0, Math.min(index + (event.key === 'ArrowRight' ? 1 : -1), hits.length - 1));
+        hit.setAttribute('tabindex', '-1');
+        hits[next].setAttribute('tabindex', '0');
+        hits[next].focus();
+      });
+      hits.push(hit);
+      svg.appendChild(hit);
     });
 
     for (let step = 0; step <= 4; step++) {
@@ -707,6 +769,7 @@ import Base from '../layouts/Base.astro';
       svg.appendChild(label);
     }
     modelAreaChartEl.appendChild(svg);
+    modelAreaChartEl.appendChild(tooltip);
 
     series.forEach((model, index) => {
       const item = document.createElement('span');
@@ -967,12 +1030,24 @@ import Base from '../layouts/Base.astro';
   #cal-heatmap, #gh-heatmap { overflow-x: auto; scrollbar-width: none; }
   #cal-heatmap::-webkit-scrollbar, #gh-heatmap::-webkit-scrollbar { display: none; }
 
-  .model-area-chart { color: var(--muted); font-size: 0.85rem; }
+  .model-area-chart { color: var(--muted); font-size: 0.85rem; position: relative; }
   .model-area-chart :global(svg) { display: block; width: 100%; height: auto; }
   .model-area-chart :global(.model-area-grid) { stroke: var(--border); stroke-width: 1; }
   .model-area-chart :global(.model-area-label) { fill: var(--faint); font: 11px var(--font-mono); }
   .model-area-chart :global(.model-area-fill) { opacity: 0.82; }
-  .model-area-chart :global(.model-area-point) { fill: transparent; }
+  .model-area-chart :global(.model-area-guide) { stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
+  .model-area-chart :global(.model-area-hit) { fill: transparent; cursor: crosshair; outline: none; }
+  :global(.model-area-tooltip) {
+    position: absolute; top: 0.25rem; z-index: 2; width: max-content; max-width: calc(100% - 0.5rem);
+    display: flex; flex-direction: column; gap: 0.25rem; padding: 0.65rem 0.75rem; border: 1px solid var(--border);
+    border-radius: 9px; background: var(--surface2); color: var(--text); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-family: var(--font-mono); font-size: 0.68rem; pointer-events: none;
+  }
+  :global(.model-area-tooltip[hidden]) { display: none; }
+  :global(.model-area-tooltip-total) { color: var(--muted); }
+  :global(.model-area-tooltip-row) { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; }
+  :global(.model-area-tooltip-row span:nth-child(2)) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :global(.model-area-tooltip-swatch) { width: 8px; height: 8px; border-radius: 2px; }
 
   /* GitHub card inner panel */
   .gh-panel { border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem; background: var(--surface2); }
