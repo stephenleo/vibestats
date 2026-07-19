@@ -71,7 +71,7 @@ import Base from '../layouts/Base.astro';
         <div id="cal-heatmap"></div>
       </div>
 
-      <!-- 40 / 40 / 20 row -->
+      <!-- Weekly summary row -->
       <div class="three-col">
         <!-- Weekly token consumption -->
         <div class="card">
@@ -94,11 +94,6 @@ import Base from '../layouts/Base.astro';
             <span class="card-meta">12-week avg</span>
           </div>
           <div id="efficiency" class="eff-rows"></div>
-        </div>
-        <!-- Model usage -->
-        <div class="card">
-          <h3 class="card-title">Model Usage</h3>
-          <div id="model-chart" class="donut-wrapper"></div>
         </div>
       </div>
 
@@ -184,7 +179,6 @@ import Base from '../layouts/Base.astro';
   const heatCaptionEl = document.getElementById('heat-caption')!;
   const heatLegendEl = document.getElementById('heat-legend')!;
   const tokenChartEl = document.getElementById('token-chart')!;
-  const modelChartEl = document.getElementById('model-chart')!;
   const modelAreaChartEl = document.getElementById('model-area-chart')!;
   const modelAreaLegendEl = document.getElementById('model-area-legend')!;
   const modelYearSelectEl = document.getElementById('model-year-select') as HTMLSelectElement;
@@ -357,7 +351,7 @@ import Base from '../layouts/Base.astro';
   function formatModelLabel(model: string): string {
     return model === 'Others' ? model : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
   }
-  const MODEL_COLORS = ['#ea580c', '#fb923c', '#fdba74', '#fed7aa'];
+  const MODEL_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#db2777', '#4f46e5', '#0d9488', '#9333ea', '#0284c7', '#c026d3', '#475569', '#94a3b8'];
 
   // ── KPI rendering ─────────────────────────────────────────────────
   function renderKPIs(data: VibestatsData): void {
@@ -612,100 +606,6 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Model donut ────────────────────────────────────────────────────
-  function renderModelChart(data: VibestatsData): void {
-    const modelTotals: Record<string, number> = {};
-    for (const d of Object.values(data.days)) {
-      for (const [model, total] of Object.entries(modelTokenTotals(d))) {
-        modelTotals[model] = (modelTotals[model] ?? 0) + total;
-      }
-    }
-    const sorted = Object.entries(modelTotals).sort((a, b) => b[1] - a[1]);
-    const total = sorted.reduce((s, [, v]) => s + v, 0);
-    const modelCount = sorted.length;
-    clearEl(modelChartEl);
-    if (total === 0) {
-      const msg = document.createElement('p');
-      msg.style.cssText = 'color:var(--muted);font-size:0.85rem';
-      msg.textContent = 'No model data available';
-      modelChartEl.appendChild(msg);
-      return;
-    }
-    // Single-hue accent ramp (green is reserved for GitHub).
-    const colors = [
-      'var(--accent)',
-      'color-mix(in srgb, var(--accent) 70%, #fff)',
-      'color-mix(in srgb, var(--accent) 46%, #fff)',
-      'color-mix(in srgb, var(--accent) 26%, #fff)',
-      'var(--border)',
-    ];
-    const TOP_N = 3;
-    const top: Array<[string, number]> = sorted.slice(0, TOP_N);
-    const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
-    if (otherTotal > 0) top.push(['Others', otherTotal]);
-
-    const slices: Array<{ name: string; pct: number; color: string; startPct: number; endPct: number }> = [];
-    let cumPct = 0;
-    for (let i = 0; i < top.length; i++) {
-      const pct = (top[i][1] / total) * 100;
-      slices.push({ name: top[i][0], pct: Math.round(pct), color: colors[i] ?? colors[colors.length - 1], startPct: cumPct / 100, endPct: (cumPct + pct) / 100 });
-      cumPct += pct;
-    }
-
-    const SIZE = 170, CX = 85, CY = 85, R_OUTER = 80, R_INNER = 50;
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const arcPath = (startPct: number, endPct: number): string => {
-      const sweep = Math.min(endPct - startPct, 0.9999);
-      const a0 = startPct * 2 * Math.PI - Math.PI / 2;
-      const a1 = (startPct + sweep) * 2 * Math.PI - Math.PI / 2;
-      const xO0 = CX + R_OUTER * Math.cos(a0), yO0 = CY + R_OUTER * Math.sin(a0);
-      const xO1 = CX + R_OUTER * Math.cos(a1), yO1 = CY + R_OUTER * Math.sin(a1);
-      const xI0 = CX + R_INNER * Math.cos(a0), yI0 = CY + R_INNER * Math.sin(a0);
-      const xI1 = CX + R_INNER * Math.cos(a1), yI1 = CY + R_INNER * Math.sin(a1);
-      const large = sweep > 0.5 ? 1 : 0;
-      return `M${xO0} ${yO0} A${R_OUTER} ${R_OUTER} 0 ${large} 1 ${xO1} ${yO1} L${xI1} ${yI1} A${R_INNER} ${R_INNER} 0 ${large} 0 ${xI0} ${yI0} Z`;
-    };
-    const donutWrap = document.createElement('div');
-    donutWrap.className = 'donut-box';
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('class', 'donut');
-    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Model usage breakdown');
-    for (const s of slices) {
-      const path = document.createElementNS(SVG_NS, 'path');
-      path.setAttribute('d', arcPath(s.startPct, s.endPct));
-      path.setAttribute('fill', s.color);
-      const t = document.createElementNS(SVG_NS, 'title');
-      t.textContent = `${formatModelLabel(s.name)}: ${s.pct}%`;
-      path.appendChild(t);
-      svg.appendChild(path);
-    }
-    const center = document.createElement('div');
-    center.className = 'donut-center';
-    center.innerHTML = `<span class="donut-center-num">${modelCount}</span><span class="donut-center-lbl">models</span>`;
-    donutWrap.appendChild(svg);
-    donutWrap.appendChild(center);
-
-    const legend = document.createElement('div');
-    legend.className = 'donut-legend';
-    for (const s of slices) {
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.title = `${formatModelLabel(s.name)}: ${s.pct}%`;
-      const dot = document.createElement('span');
-      dot.className = 'legend-dot';
-      dot.style.background = s.color;
-      const label = document.createElement('span');
-      label.textContent = `${formatModelLabel(s.name)} · ${s.pct}%`;
-      item.appendChild(dot);
-      item.appendChild(label);
-      legend.appendChild(item);
-    }
-    modelChartEl.appendChild(donutWrap);
-    modelChartEl.appendChild(legend);
-  }
-
   // ── Weekly model token usage (stacked area) ────────────────────────
   function renderModelAreaChart(range: 'L12M' | string): void {
     if (!vibestatsData) return;
@@ -719,7 +619,7 @@ import Base from '../layouts/Base.astro';
         totals[model] = (totals[model] ?? 0) + total;
       }
     }
-    const models = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([model]) => model);
+    const models = Object.entries(totals).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 10).map(([model]) => model);
     const series = [...models, ...(Object.keys(totals).length > models.length ? ['Others'] : [])];
     clearEl(modelAreaChartEl);
     clearEl(modelAreaLegendEl);
@@ -980,7 +880,6 @@ import Base from '../layouts/Base.astro';
     fillRangeSelect(yearSelectEl, years, currentRange);
     await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
-    renderModelChart(data);
     fillRangeSelect(modelYearSelectEl, [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a)), modelRange);
     renderModelAreaChart(modelRange);
     renderEfficiency(data);
@@ -1039,7 +938,7 @@ import Base from '../layouts/Base.astro';
   .card-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
   .card-desc { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0 1rem; }
 
-  .three-col { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
+  .three-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: stretch; }
   @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
   /* cancel the global `.card + .card` top margin that leaks onto the 2nd/3rd
      grid cells and shrinks their stretched height */
@@ -1146,15 +1045,4 @@ import Base from '../layouts/Base.astro';
   .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
   .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; }
 
-  /* Donut */
-  .donut-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; }
-  .donut-box { position: relative; width: 170px; height: 170px; }
-  .donut { width: 170px; height: 170px; display: block; }
-  .donut path { transition: opacity 120ms ease; }
-  .donut:hover path:not(:hover) { opacity: 0.55; }
-  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-  .donut-center-num { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1; }
-  .donut-center-lbl { font-size: 0.68rem; color: var(--faint); }
-  .donut-legend { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 </style>
