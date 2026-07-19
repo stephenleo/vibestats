@@ -351,7 +351,7 @@ import Base from '../layouts/Base.astro';
   function formatModelLabel(model: string): string {
     return model === 'Others' ? model : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
   }
-  const MODEL_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#db2777', '#4f46e5', '#0d9488', '#9333ea', '#0284c7', '#c026d3', '#475569', '#94a3b8'];
+  const MODEL_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#db2777', '#4f46e5', '#0d9488', '#94a3b8'];
 
   // ── KPI rendering ─────────────────────────────────────────────────
   function renderKPIs(data: VibestatsData): void {
@@ -619,7 +619,7 @@ import Base from '../layouts/Base.astro';
         totals[model] = (totals[model] ?? 0) + total;
       }
     }
-    const models = Object.entries(totals).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 10).map(([model]) => model);
+    const models = Object.entries(totals).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6).map(([model]) => model);
     const series = [...models, ...(Object.keys(totals).length > models.length ? ['Others'] : [])];
     clearEl(modelAreaChartEl);
     clearEl(modelAreaLegendEl);
