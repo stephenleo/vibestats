@@ -102,6 +102,16 @@ import Base from '../layouts/Base.astro';
         </div>
       </div>
 
+      <!-- Model token usage over time -->
+      <div class="card model-area-card">
+        <div class="card-head">
+          <h3 class="card-title">Model Token Usage</h3>
+          <select id="model-year-select" class="range-select" aria-label="Select model token range"></select>
+        </div>
+        <div id="model-area-chart" class="model-area-chart"></div>
+        <div id="model-area-legend" class="chart-legend"></div>
+      </div>
+
       <!-- GitHub Contributions -->
       <div id="github-card" class="card gh-card" hidden>
         <h3 class="card-title">GitHub Contributions</h3>
@@ -175,6 +185,9 @@ import Base from '../layouts/Base.astro';
   const heatLegendEl = document.getElementById('heat-legend')!;
   const tokenChartEl = document.getElementById('token-chart')!;
   const modelChartEl = document.getElementById('model-chart')!;
+  const modelAreaChartEl = document.getElementById('model-area-chart')!;
+  const modelAreaLegendEl = document.getElementById('model-area-legend')!;
+  const modelYearSelectEl = document.getElementById('model-year-select') as HTMLSelectElement;
   const efficiencyEl = document.getElementById('efficiency')!;
   const heatmapTabsEl = document.getElementById('heatmap-tabs')!;
   const githubCardEl = document.getElementById('github-card')!;
@@ -203,6 +216,7 @@ import Base from '../layouts/Base.astro';
   let ghInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
   let currentRange: 'L12M' | string = 'L12M';
+  let modelRange: 'L12M' | string = 'L12M';
   let ghRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
 
@@ -322,6 +336,28 @@ import Base from '../layouts/Base.astro';
   function tokensTotal(e: DayEntry): number {
     return (e.input_tokens ?? 0) + (e.output_tokens ?? 0) + (e.cache_creation_tokens ?? 0);
   }
+  function harnessOf(model: string): string | null {
+    if (/^claude-/.test(model)) return 'claude';
+    if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
+    return null;
+  }
+  function modelTokenTotals(day: DayEntry): Record<string, number> {
+    const harnessOutput: Record<string, number> = {};
+    for (const [model, output] of Object.entries(day.models ?? {})) {
+      const harness = harnessOf(model);
+      if (harness) harnessOutput[harness] = (harnessOutput[harness] ?? 0) + output;
+    }
+    return Object.fromEntries(Object.entries(day.models ?? {}).map(([model, output]) => {
+      const harness = harnessOf(model);
+      const weight = harness && harnessOutput[harness] > 0 ? output / harnessOutput[harness] : 0;
+      const details = harness ? day.harnesses?.[harness] : undefined;
+      return [model, output + weight * ((details?.input_tokens ?? 0) + (details?.cache_creation_tokens ?? 0))];
+    }));
+  }
+  function formatModelLabel(model: string): string {
+    return model === 'Others' ? model : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
+  }
+  const MODEL_COLORS = ['#ea580c', '#fb923c', '#fdba74', '#fed7aa'];
 
   // ── KPI rendering ─────────────────────────────────────────────────
   function renderKPIs(data: VibestatsData): void {
@@ -578,26 +614,10 @@ import Base from '../layouts/Base.astro';
 
   // ── Model donut ────────────────────────────────────────────────────
   function renderModelChart(data: VibestatsData): void {
-    const harnessOf = (model: string): string | null => {
-      if (/^claude-/.test(model)) return 'claude';
-      if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
-      return null;
-    };
     const modelTotals: Record<string, number> = {};
     for (const d of Object.values(data.days)) {
-      const harnessOut: Record<string, number> = {};
-      for (const [model, out] of Object.entries(d.models ?? {})) {
-        const h = harnessOf(model);
-        if (!h) continue;
-        harnessOut[h] = (harnessOut[h] ?? 0) + out;
-      }
-      for (const [model, out] of Object.entries(d.models ?? {})) {
-        const h = harnessOf(model);
-        const harnessIn = h ? (d.harnesses?.[h]?.input_tokens ?? 0) : 0;
-        const harnessCacheCreate = h ? (d.harnesses?.[h]?.cache_creation_tokens ?? 0) : 0;
-        const totalOutForHarness = h ? harnessOut[h] : 0;
-        const weight = totalOutForHarness > 0 ? out / totalOutForHarness : 0;
-        modelTotals[model] = (modelTotals[model] ?? 0) + out + weight * harnessIn + weight * harnessCacheCreate;
+      for (const [model, total] of Object.entries(modelTokenTotals(d))) {
+        modelTotals[model] = (modelTotals[model] ?? 0) + total;
       }
     }
     const sorted = Object.entries(modelTotals).sort((a, b) => b[1] - a[1]);
@@ -619,9 +639,6 @@ import Base from '../layouts/Base.astro';
       'color-mix(in srgb, var(--accent) 26%, #fff)',
       'var(--border)',
     ];
-    const formatModelLabel = (m: string): string =>
-      m === 'Others' ? m : m.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
-
     const TOP_N = 3;
     const top: Array<[string, number]> = sorted.slice(0, TOP_N);
     const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
@@ -687,6 +704,112 @@ import Base from '../layouts/Base.astro';
     }
     modelChartEl.appendChild(donutWrap);
     modelChartEl.appendChild(legend);
+  }
+
+  // ── Daily model token usage (stacked area) ─────────────────────────
+  function renderModelAreaChart(range: 'L12M' | string): void {
+    if (!vibestatsData) return;
+    const { startDate, predicate } = rangeBounds(range);
+    const entries = Object.entries(vibestatsData.days)
+      .filter(([date]) => predicate(date))
+      .sort(([a], [b]) => a.localeCompare(b));
+    const totals: Record<string, number> = {};
+    for (const [, day] of entries) {
+      for (const [model, total] of Object.entries(modelTokenTotals(day))) {
+        totals[model] = (totals[model] ?? 0) + total;
+      }
+    }
+    const models = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([model]) => model);
+    const series = [...models, ...(Object.keys(totals).length > models.length ? ['Others'] : [])];
+    clearEl(modelAreaChartEl);
+    clearEl(modelAreaLegendEl);
+    if (entries.length === 0 || series.length === 0) {
+      modelAreaChartEl.textContent = 'No model data available';
+      return;
+    }
+
+    const endDate = range === 'L12M' ? new Date() : new Date(Date.UTC(Number(range), 11, 31));
+    const days: Array<{ date: string; values: number[] }> = [];
+    for (const d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+      const date = dateStr(d);
+      const modelTotals = modelTokenTotals(vibestatsData.days[date] ?? { sessions: 0, active_minutes: 0 });
+      days.push({
+        date,
+        values: series.map(model => model === 'Others'
+          ? Object.entries(modelTotals).filter(([name]) => !models.includes(name)).reduce((sum, [, value]) => sum + value, 0)
+          : modelTotals[model] ?? 0),
+      });
+    }
+
+    const WIDTH = 900, HEIGHT = 280, LEFT = 62, TOP = 12, RIGHT = 12, BOTTOM = 30;
+    const plotWidth = WIDTH - LEFT - RIGHT, plotHeight = HEIGHT - TOP - BOTTOM;
+    const max = Math.max(1, ...days.map(day => day.values.reduce((sum, value) => sum + value, 0)));
+    const x = (index: number): number => LEFT + (index / Math.max(1, days.length - 1)) * plotWidth;
+    const y = (value: number): number => TOP + plotHeight - (value / max) * plotHeight;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Daily token usage by model');
+
+    for (let step = 0; step <= 4; step++) {
+      const value = max * step / 4;
+      const line = document.createElementNS(svg.namespaceURI, 'line');
+      line.setAttribute('x1', String(LEFT)); line.setAttribute('x2', String(WIDTH - RIGHT));
+      line.setAttribute('y1', String(y(value))); line.setAttribute('y2', String(y(value)));
+      line.setAttribute('class', 'model-area-grid');
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', String(LEFT - 8)); label.setAttribute('y', String(y(value) + 4));
+      label.setAttribute('class', 'model-area-label'); label.setAttribute('text-anchor', 'end');
+      label.textContent = fmtTokens(Math.round(value));
+      svg.appendChild(label);
+    }
+
+    const stacked = days.map(() => 0);
+    series.forEach((_, seriesIndex) => {
+      const lower = [...stacked];
+      days.forEach((day, index) => { stacked[index] += day.values[seriesIndex]; });
+      const top = days.map((_, index) => `${x(index)},${y(stacked[index])}`).join(' L');
+      const bottom = days.map((_, index) => `${x(days.length - 1 - index)},${y(lower[days.length - 1 - index])}`).join(' L');
+      const path = document.createElementNS(svg.namespaceURI, 'path');
+      path.setAttribute('d', `M${top} L${bottom} Z`);
+      path.setAttribute('fill', MODEL_COLORS[seriesIndex]);
+      path.setAttribute('class', 'model-area-fill');
+      svg.appendChild(path);
+    });
+
+    days.forEach((day, index) => {
+      const total = day.values.reduce((sum, value) => sum + value, 0);
+      const point = document.createElementNS(svg.namespaceURI, 'circle');
+      point.setAttribute('cx', String(x(index))); point.setAttribute('cy', String(y(total)));
+      point.setAttribute('r', '6'); point.setAttribute('class', 'model-area-point');
+      const title = document.createElementNS(svg.namespaceURI, 'title');
+      title.textContent = `${day.date}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(day.values[i]))}`).join(' · ')}`;
+      point.appendChild(title);
+      svg.appendChild(point);
+    });
+
+    for (let step = 0; step <= 4; step++) {
+      const index = Math.round((days.length - 1) * step / 4);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', String(x(index))); label.setAttribute('y', String(HEIGHT - 6));
+      label.setAttribute('class', 'model-area-label');
+      label.setAttribute('text-anchor', step === 0 ? 'start' : step === 4 ? 'end' : 'middle');
+      label.textContent = new Date(`${days[index].date}T00:00:00Z`).toLocaleDateString('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+      svg.appendChild(label);
+    }
+    modelAreaChartEl.appendChild(svg);
+
+    series.forEach((model, index) => {
+      const item = document.createElement('span');
+      item.className = 'legend-item';
+      const swatch = document.createElement('span');
+      swatch.className = 'legend-swatch';
+      swatch.style.background = MODEL_COLORS[index];
+      item.appendChild(swatch);
+      item.append(formatModelLabel(model));
+      modelAreaLegendEl.appendChild(item);
+    });
   }
 
   // ── Efficiency (Tokens/min · Cache hit rate · Avg session) ─────────
@@ -768,6 +891,7 @@ import Base from '../layouts/Base.astro';
     renderHeatmap(currentRange, metric);
   });
   yearSelectEl.addEventListener('change', () => { currentRange = yearSelectEl.value; renderHeatmap(currentRange, currentMetric); });
+  modelYearSelectEl.addEventListener('change', () => { modelRange = modelYearSelectEl.value; renderModelAreaChart(modelRange); });
   ghYearSelectEl.addEventListener('change', () => { ghRange = ghYearSelectEl.value; renderGithub(ghRange); });
 
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
@@ -838,6 +962,7 @@ import Base from '../layouts/Base.astro';
     }
 
     currentRange = 'L12M';
+    modelRange = 'L12M';
     ghRange = 'L12M';
 
     loadingEl.hidden = true;
@@ -848,6 +973,8 @@ import Base from '../layouts/Base.astro';
     await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
     renderModelChart(data);
+    fillRangeSelect(modelYearSelectEl, [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a)), modelRange);
+    renderModelAreaChart(modelRange);
     renderEfficiency(data);
 
     if (data.github_contributions && Object.keys(data.github_contributions).length > 0) {
@@ -932,6 +1059,13 @@ import Base from '../layouts/Base.astro';
 
   #cal-heatmap, #gh-heatmap { overflow-x: auto; scrollbar-width: none; }
   #cal-heatmap::-webkit-scrollbar, #gh-heatmap::-webkit-scrollbar { display: none; }
+
+  .model-area-chart { min-height: 260px; color: var(--muted); font-size: 0.85rem; }
+  .model-area-chart :global(svg) { display: block; width: 100%; height: auto; }
+  .model-area-chart :global(.model-area-grid) { stroke: var(--border); stroke-width: 1; }
+  .model-area-chart :global(.model-area-label) { fill: var(--faint); font: 11px var(--font-mono); }
+  .model-area-chart :global(.model-area-fill) { opacity: 0.82; }
+  .model-area-chart :global(.model-area-point) { fill: transparent; }
 
   /* GitHub card inner panel */
   .gh-panel { border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem; background: var(--surface2); }
