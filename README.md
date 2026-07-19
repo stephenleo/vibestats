@@ -38,6 +38,8 @@ What that gets you:
 
 A live heatmap on your GitHub profile (the embed above), and a full analytics dashboard at `vibestats.dev/<your-username>`:
 
+Weekly model token usage shows the selected period's top six models individually and groups rank seven onward as **Others**. It defaults to the last 12 months, with calendar-year selection available; Weekly Token Consumption and Efficiency share the summary row equally.
+
 <table>
   <tr>
     <td>
@@ -56,8 +58,16 @@ A live heatmap on your GitHub profile (the embed above), and a full analytics da
   <tr>
     <td colspan="2">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-charts-dark.png">
-        <img src="docs/images/dashboard-charts-light.png" alt="Weekly token consumption bars, efficiency stats, and a model-usage donut">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-summary-charts-dark.png">
+        <img src="docs/images/dashboard-summary-charts-light.png" alt="Weekly Token Consumption and Efficiency summary charts in an equal-width row">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-model-usage-dark.png">
+        <img src="docs/images/dashboard-model-usage-light.png" alt="Weekly Model Token Usage area chart showing the top six models and Others, with a Last 12 months or calendar-year selector">
       </picture>
     </td>
   </tr>

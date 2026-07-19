@@ -71,7 +71,7 @@ import Base from '../layouts/Base.astro';
         <div id="cal-heatmap"></div>
       </div>
 
-      <!-- 40 / 40 / 20 row -->
+      <!-- Weekly summary row -->
       <div class="three-col">
         <!-- Weekly token consumption -->
         <div class="card">
@@ -95,11 +95,16 @@ import Base from '../layouts/Base.astro';
           </div>
           <div id="efficiency" class="eff-rows"></div>
         </div>
-        <!-- Model usage -->
-        <div class="card">
-          <h3 class="card-title">Model Usage</h3>
-          <div id="model-chart" class="donut-wrapper"></div>
+      </div>
+
+      <!-- Model token usage over time -->
+      <div class="card model-area-card">
+        <div class="card-head">
+          <h3 class="card-title">Model Token Usage</h3>
+          <select id="model-year-select" class="range-select" aria-label="Select model token range"></select>
         </div>
+        <div id="model-area-chart" class="model-area-chart"></div>
+        <div id="model-area-legend" class="chart-legend"></div>
       </div>
 
       <!-- GitHub Contributions -->
@@ -174,7 +179,9 @@ import Base from '../layouts/Base.astro';
   const heatCaptionEl = document.getElementById('heat-caption')!;
   const heatLegendEl = document.getElementById('heat-legend')!;
   const tokenChartEl = document.getElementById('token-chart')!;
-  const modelChartEl = document.getElementById('model-chart')!;
+  const modelAreaChartEl = document.getElementById('model-area-chart')!;
+  const modelAreaLegendEl = document.getElementById('model-area-legend')!;
+  const modelYearSelectEl = document.getElementById('model-year-select') as HTMLSelectElement;
   const efficiencyEl = document.getElementById('efficiency')!;
   const heatmapTabsEl = document.getElementById('heatmap-tabs')!;
   const githubCardEl = document.getElementById('github-card')!;
@@ -203,6 +210,7 @@ import Base from '../layouts/Base.astro';
   let ghInstance: CalHeatmap | null = null;
   let vibestatsData: VibestatsData | null = null;
   let currentRange: 'L12M' | string = 'L12M';
+  let modelRange: 'L12M' | string = 'L12M';
   let ghRange: 'L12M' | string = 'L12M';
   let currentMetric = 'sessions';
 
@@ -322,6 +330,28 @@ import Base from '../layouts/Base.astro';
   function tokensTotal(e: DayEntry): number {
     return (e.input_tokens ?? 0) + (e.output_tokens ?? 0) + (e.cache_creation_tokens ?? 0);
   }
+  function harnessOf(model: string): string | null {
+    if (/^claude-/.test(model)) return 'claude';
+    if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
+    return null;
+  }
+  function modelTokenTotals(day: DayEntry): Record<string, number> {
+    const harnessOutput: Record<string, number> = {};
+    for (const [model, output] of Object.entries(day.models ?? {})) {
+      const harness = harnessOf(model);
+      if (harness) harnessOutput[harness] = (harnessOutput[harness] ?? 0) + output;
+    }
+    return Object.fromEntries(Object.entries(day.models ?? {}).map(([model, output]) => {
+      const harness = harnessOf(model);
+      const weight = harness && harnessOutput[harness] > 0 ? output / harnessOutput[harness] : 0;
+      const details = harness ? day.harnesses?.[harness] : undefined;
+      return [model, output + weight * ((details?.input_tokens ?? 0) + (details?.cache_creation_tokens ?? 0))];
+    }));
+  }
+  function formatModelLabel(model: string): string {
+    return model === 'Others' ? model : model.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
+  }
+  const MODEL_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#db2777', '#4f46e5', '#0d9488', '#94a3b8'];
 
   // ── KPI rendering ─────────────────────────────────────────────────
   function renderKPIs(data: VibestatsData): void {
@@ -576,117 +606,181 @@ import Base from '../layouts/Base.astro';
     }
   }
 
-  // ── Model donut ────────────────────────────────────────────────────
-  function renderModelChart(data: VibestatsData): void {
-    const harnessOf = (model: string): string | null => {
-      if (/^claude-/.test(model)) return 'claude';
-      if (/^(gpt-|o\d|codex)/i.test(model)) return 'codex';
-      return null;
-    };
-    const modelTotals: Record<string, number> = {};
-    for (const d of Object.values(data.days)) {
-      const harnessOut: Record<string, number> = {};
-      for (const [model, out] of Object.entries(d.models ?? {})) {
-        const h = harnessOf(model);
-        if (!h) continue;
-        harnessOut[h] = (harnessOut[h] ?? 0) + out;
-      }
-      for (const [model, out] of Object.entries(d.models ?? {})) {
-        const h = harnessOf(model);
-        const harnessIn = h ? (d.harnesses?.[h]?.input_tokens ?? 0) : 0;
-        const harnessCacheCreate = h ? (d.harnesses?.[h]?.cache_creation_tokens ?? 0) : 0;
-        const totalOutForHarness = h ? harnessOut[h] : 0;
-        const weight = totalOutForHarness > 0 ? out / totalOutForHarness : 0;
-        modelTotals[model] = (modelTotals[model] ?? 0) + out + weight * harnessIn + weight * harnessCacheCreate;
+  // ── Weekly model token usage (stacked area) ────────────────────────
+  function renderModelAreaChart(range: 'L12M' | string): void {
+    if (!vibestatsData) return;
+    const { startDate, predicate } = rangeBounds(range);
+    const entries = Object.entries(vibestatsData.days)
+      .filter(([date]) => predicate(date))
+      .sort(([a], [b]) => a.localeCompare(b));
+    const totals: Record<string, number> = {};
+    for (const [, day] of entries) {
+      for (const [model, total] of Object.entries(modelTokenTotals(day))) {
+        totals[model] = (totals[model] ?? 0) + total;
       }
     }
-    const sorted = Object.entries(modelTotals).sort((a, b) => b[1] - a[1]);
-    const total = sorted.reduce((s, [, v]) => s + v, 0);
-    const modelCount = sorted.length;
-    clearEl(modelChartEl);
-    if (total === 0) {
-      const msg = document.createElement('p');
-      msg.style.cssText = 'color:var(--muted);font-size:0.85rem';
-      msg.textContent = 'No model data available';
-      modelChartEl.appendChild(msg);
+    const models = Object.entries(totals).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6).map(([model]) => model);
+    const series = [...models, ...(Object.keys(totals).length > models.length ? ['Others'] : [])];
+    clearEl(modelAreaChartEl);
+    clearEl(modelAreaLegendEl);
+    if (entries.length === 0 || series.length === 0) {
+      modelAreaChartEl.textContent = 'No model data available';
       return;
     }
-    // Single-hue accent ramp (green is reserved for GitHub).
-    const colors = [
-      'var(--accent)',
-      'color-mix(in srgb, var(--accent) 70%, #fff)',
-      'color-mix(in srgb, var(--accent) 46%, #fff)',
-      'color-mix(in srgb, var(--accent) 26%, #fff)',
-      'var(--border)',
-    ];
-    const formatModelLabel = (m: string): string =>
-      m === 'Others' ? m : m.replace(/^claude-/, '').replace(/-(\d)/, ' $1');
 
-    const TOP_N = 3;
-    const top: Array<[string, number]> = sorted.slice(0, TOP_N);
-    const otherTotal = sorted.slice(TOP_N).reduce((s, [, v]) => s + v, 0);
-    if (otherTotal > 0) top.push(['Others', otherTotal]);
-
-    const slices: Array<{ name: string; pct: number; color: string; startPct: number; endPct: number }> = [];
-    let cumPct = 0;
-    for (let i = 0; i < top.length; i++) {
-      const pct = (top[i][1] / total) * 100;
-      slices.push({ name: top[i][0], pct: Math.round(pct), color: colors[i] ?? colors[colors.length - 1], startPct: cumPct / 100, endPct: (cumPct + pct) / 100 });
-      cumPct += pct;
+    const endDate = range === 'L12M' ? new Date() : new Date(Date.UTC(Number(range), 11, 31));
+    const days: Array<{ date: string; values: number[] }> = [];
+    for (const d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+      const date = dateStr(d);
+      const modelTotals = modelTokenTotals(vibestatsData.days[date] ?? { sessions: 0, active_minutes: 0 });
+      days.push({
+        date,
+        values: series.map(model => model === 'Others'
+          ? Object.entries(modelTotals).filter(([name]) => !models.includes(name)).reduce((sum, [, value]) => sum + value, 0)
+          : modelTotals[model] ?? 0),
+      });
     }
+    const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, index) => {
+      const bucket = days.slice(index * 7, index * 7 + 7);
+      return {
+        date: bucket[0].date,
+        endDate: bucket[bucket.length - 1].date,
+        values: series.map((_, seriesIndex) => bucket.reduce((sum, day) => sum + day.values[seriesIndex], 0)),
+      };
+    });
 
-    const SIZE = 170, CX = 85, CY = 85, R_OUTER = 80, R_INNER = 50;
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const arcPath = (startPct: number, endPct: number): string => {
-      const sweep = Math.min(endPct - startPct, 0.9999);
-      const a0 = startPct * 2 * Math.PI - Math.PI / 2;
-      const a1 = (startPct + sweep) * 2 * Math.PI - Math.PI / 2;
-      const xO0 = CX + R_OUTER * Math.cos(a0), yO0 = CY + R_OUTER * Math.sin(a0);
-      const xO1 = CX + R_OUTER * Math.cos(a1), yO1 = CY + R_OUTER * Math.sin(a1);
-      const xI0 = CX + R_INNER * Math.cos(a0), yI0 = CY + R_INNER * Math.sin(a0);
-      const xI1 = CX + R_INNER * Math.cos(a1), yI1 = CY + R_INNER * Math.sin(a1);
-      const large = sweep > 0.5 ? 1 : 0;
-      return `M${xO0} ${yO0} A${R_OUTER} ${R_OUTER} 0 ${large} 1 ${xO1} ${yO1} L${xI1} ${yI1} A${R_INNER} ${R_INNER} 0 ${large} 0 ${xI0} ${yI0} Z`;
-    };
-    const donutWrap = document.createElement('div');
-    donutWrap.className = 'donut-box';
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('class', 'donut');
-    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
+    const WIDTH = 900, HEIGHT = 202, LEFT = 62, TOP = 12, RIGHT = 12, BOTTOM = 30;
+    const plotWidth = WIDTH - LEFT - RIGHT, plotHeight = HEIGHT - TOP - BOTTOM;
+    const max = Math.max(1, ...weeks.map(week => week.values.reduce((sum, value) => sum + value, 0)));
+    const x = (index: number): number => LEFT + (index / Math.max(1, weeks.length - 1)) * plotWidth;
+    const y = (value: number): number => TOP + plotHeight - (value / max) * plotHeight;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Model usage breakdown');
-    for (const s of slices) {
-      const path = document.createElementNS(SVG_NS, 'path');
-      path.setAttribute('d', arcPath(s.startPct, s.endPct));
-      path.setAttribute('fill', s.color);
-      const t = document.createElementNS(SVG_NS, 'title');
-      t.textContent = `${formatModelLabel(s.name)}: ${s.pct}%`;
-      path.appendChild(t);
-      svg.appendChild(path);
-    }
-    const center = document.createElement('div');
-    center.className = 'donut-center';
-    center.innerHTML = `<span class="donut-center-num">${modelCount}</span><span class="donut-center-lbl">models</span>`;
-    donutWrap.appendChild(svg);
-    donutWrap.appendChild(center);
+    svg.setAttribute('aria-label', 'Weekly token usage by model');
 
-    const legend = document.createElement('div');
-    legend.className = 'donut-legend';
-    for (const s of slices) {
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.title = `${formatModelLabel(s.name)}: ${s.pct}%`;
-      const dot = document.createElement('span');
-      dot.className = 'legend-dot';
-      dot.style.background = s.color;
-      const label = document.createElement('span');
-      label.textContent = `${formatModelLabel(s.name)} · ${s.pct}%`;
-      item.appendChild(dot);
-      item.appendChild(label);
-      legend.appendChild(item);
+    for (let step = 0; step <= 4; step++) {
+      const value = max * step / 4;
+      const line = document.createElementNS(svg.namespaceURI, 'line');
+      line.setAttribute('x1', String(LEFT)); line.setAttribute('x2', String(WIDTH - RIGHT));
+      line.setAttribute('y1', String(y(value))); line.setAttribute('y2', String(y(value)));
+      line.setAttribute('class', 'model-area-grid');
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', String(LEFT - 8)); label.setAttribute('y', String(y(value) + 4));
+      label.setAttribute('class', 'model-area-label'); label.setAttribute('text-anchor', 'end');
+      label.textContent = fmtTokens(Math.round(value));
+      svg.appendChild(label);
     }
-    modelChartEl.appendChild(donutWrap);
-    modelChartEl.appendChild(legend);
+
+    const stacked = weeks.map(() => 0);
+    series.forEach((_, seriesIndex) => {
+      const lower = [...stacked];
+      weeks.forEach((week, index) => { stacked[index] += week.values[seriesIndex]; });
+      const top = weeks.map((_, index) => `${x(index)},${y(stacked[index])}`).join(' L');
+      const bottom = weeks.map((_, index) => `${x(weeks.length - 1 - index)},${y(lower[weeks.length - 1 - index])}`).join(' L');
+      const path = document.createElementNS(svg.namespaceURI, 'path');
+      path.setAttribute('d', `M${top} L${bottom} Z`);
+      path.setAttribute('fill', MODEL_COLORS[seriesIndex]);
+      path.setAttribute('class', 'model-area-fill');
+      svg.appendChild(path);
+    });
+
+    const guide = document.createElementNS(svg.namespaceURI, 'line');
+    guide.setAttribute('y1', String(TOP)); guide.setAttribute('y2', String(TOP + plotHeight));
+    guide.setAttribute('class', 'model-area-guide'); guide.setAttribute('visibility', 'hidden');
+    svg.appendChild(guide);
+    const tooltip = document.createElement('div');
+    tooltip.className = 'model-area-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    const hits: SVGRectElement[] = [];
+    const hideTooltip = (): void => {
+      tooltip.hidden = true;
+      guide.setAttribute('visibility', 'hidden');
+    };
+    const showTooltip = (index: number): void => {
+      const week = weeks[index];
+      const total = week.values.reduce((sum, value) => sum + value, 0);
+      const heading = document.createElement('strong');
+      heading.textContent = `${week.date} – ${week.endDate}`;
+      const totalEl = document.createElement('span');
+      totalEl.className = 'model-area-tooltip-total';
+      totalEl.textContent = `Total ${fmtTokens(Math.round(total))}`;
+      tooltip.replaceChildren(heading, totalEl);
+      series.forEach((model, seriesIndex) => {
+        const row = document.createElement('span');
+        row.className = 'model-area-tooltip-row';
+        const swatch = document.createElement('span');
+        swatch.className = 'model-area-tooltip-swatch';
+        swatch.style.background = MODEL_COLORS[seriesIndex];
+        const label = document.createElement('span');
+        label.textContent = formatModelLabel(model);
+        const value = document.createElement('span');
+        value.textContent = fmtTokens(Math.round(week.values[seriesIndex]));
+        row.append(swatch, label, value);
+        tooltip.appendChild(row);
+      });
+      guide.setAttribute('x1', String(x(index))); guide.setAttribute('x2', String(x(index)));
+      guide.setAttribute('visibility', 'visible');
+      tooltip.hidden = false;
+      const pointX = x(index) / WIDTH * modelAreaChartEl.clientWidth;
+      tooltip.style.left = `${Math.max(4, Math.min(pointX - tooltip.offsetWidth / 2, modelAreaChartEl.clientWidth - tooltip.offsetWidth - 4))}px`;
+      const cardRect = modelAreaChartEl.closest('.model-area-card')!.getBoundingClientRect();
+      const chartRect = modelAreaChartEl.getBoundingClientRect();
+      const minTop = cardRect.top - chartRect.top + 4;
+      const maxTop = cardRect.bottom - chartRect.top - tooltip.offsetHeight - 4;
+      tooltip.style.top = `${Math.max(minTop, Math.min(4, maxTop))}px`;
+    };
+    weeks.forEach((week, index) => {
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const left = index === 0 ? LEFT : (x(index - 1) + x(index)) / 2;
+      const right = index === weeks.length - 1 ? WIDTH - RIGHT : (x(index) + x(index + 1)) / 2;
+      const total = week.values.reduce((sum, value) => sum + value, 0);
+      const label = `${week.date} to ${week.endDate}, total ${fmtTokens(Math.round(total))}: ${series.map((model, i) => `${formatModelLabel(model)} ${fmtTokens(Math.round(week.values[i]))}`).join(', ')}`;
+      hit.setAttribute('x', String(left)); hit.setAttribute('width', String(right - left));
+      hit.setAttribute('y', String(TOP)); hit.setAttribute('height', String(plotHeight));
+      hit.setAttribute('class', 'model-area-hit'); hit.setAttribute('tabindex', index === 0 ? '0' : '-1');
+      hit.setAttribute('aria-label', label);
+      hit.addEventListener('pointerenter', () => showTooltip(index));
+      hit.addEventListener('pointerleave', hideTooltip);
+      hit.addEventListener('focus', () => showTooltip(index));
+      hit.addEventListener('blur', hideTooltip);
+      hit.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Escape') { hit.blur(); return; }
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const next = Math.max(0, Math.min(index + (event.key === 'ArrowRight' ? 1 : -1), hits.length - 1));
+        hit.setAttribute('tabindex', '-1');
+        hits[next].setAttribute('tabindex', '0');
+        hits[next].focus();
+      });
+      hits.push(hit);
+      svg.appendChild(hit);
+    });
+
+    for (let step = 0; step <= 4; step++) {
+      const index = Math.round((weeks.length - 1) * step / 4);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', String(x(index))); label.setAttribute('y', String(HEIGHT - 6));
+      label.setAttribute('class', 'model-area-label');
+      label.setAttribute('text-anchor', step === 0 ? 'start' : step === 4 ? 'end' : 'middle');
+      label.textContent = new Date(`${weeks[index].date}T00:00:00Z`).toLocaleDateString('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+      svg.appendChild(label);
+    }
+    modelAreaChartEl.appendChild(svg);
+    modelAreaChartEl.appendChild(tooltip);
+
+    series.forEach((model, index) => {
+      const item = document.createElement('span');
+      item.className = 'legend-item';
+      const swatch = document.createElement('span');
+      swatch.className = 'legend-swatch';
+      swatch.style.background = MODEL_COLORS[index];
+      item.appendChild(swatch);
+      item.append(formatModelLabel(model));
+      modelAreaLegendEl.appendChild(item);
+    });
   }
 
   // ── Efficiency (Tokens/min · Cache hit rate · Avg session) ─────────
@@ -768,6 +862,7 @@ import Base from '../layouts/Base.astro';
     renderHeatmap(currentRange, metric);
   });
   yearSelectEl.addEventListener('change', () => { currentRange = yearSelectEl.value; renderHeatmap(currentRange, currentMetric); });
+  modelYearSelectEl.addEventListener('change', () => { modelRange = modelYearSelectEl.value; renderModelAreaChart(modelRange); });
   ghYearSelectEl.addEventListener('change', () => { ghRange = ghYearSelectEl.value; renderGithub(ghRange); });
 
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
@@ -838,6 +933,7 @@ import Base from '../layouts/Base.astro';
     }
 
     currentRange = 'L12M';
+    modelRange = 'L12M';
     ghRange = 'L12M';
 
     loadingEl.hidden = true;
@@ -847,7 +943,8 @@ import Base from '../layouts/Base.astro';
     fillRangeSelect(yearSelectEl, years, currentRange);
     await renderHeatmap(currentRange, currentMetric);
     renderTokenChart(data);
-    renderModelChart(data);
+    fillRangeSelect(modelYearSelectEl, [...new Set(Object.keys(data.days).map(d => d.slice(0, 4)))].sort((a, b) => b.localeCompare(a)), modelRange);
+    renderModelAreaChart(modelRange);
     renderEfficiency(data);
 
     if (data.github_contributions && Object.keys(data.github_contributions).length > 0) {
@@ -898,13 +995,13 @@ import Base from '../layouts/Base.astro';
     box-shadow: 0 14px 38px rgba(20, 20, 55, 0.06);
   }
   :global(.dark) .card { box-shadow: 0 18px 46px rgba(0, 0, 0, 0.4); }
-  .card + .card, .three-col, .gh-card { margin-top: 1rem; }
+  .card + .card, .three-col, .model-area-card, .gh-card { margin-top: 1rem; }
   .card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
   .card-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--text); }
   .card-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
   .card-desc { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0 1rem; }
 
-  .three-col { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
+  .three-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: stretch; }
   @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
   /* cancel the global `.card + .card` top margin that leaks onto the 2nd/3rd
      grid cells and shrinks their stretched height */
@@ -932,6 +1029,25 @@ import Base from '../layouts/Base.astro';
 
   #cal-heatmap, #gh-heatmap { overflow-x: auto; scrollbar-width: none; }
   #cal-heatmap::-webkit-scrollbar, #gh-heatmap::-webkit-scrollbar { display: none; }
+
+  .model-area-chart { color: var(--muted); font-size: 0.85rem; position: relative; }
+  .model-area-chart :global(svg) { display: block; width: 100%; height: auto; }
+  .model-area-chart :global(.model-area-grid) { stroke: var(--border); stroke-width: 1; }
+  .model-area-chart :global(.model-area-label) { fill: var(--faint); font: 11px var(--font-mono); }
+  .model-area-chart :global(.model-area-fill) { opacity: 0.82; }
+  .model-area-chart :global(.model-area-guide) { stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
+  .model-area-chart :global(.model-area-hit) { fill: transparent; cursor: crosshair; outline: none; }
+  :global(.model-area-tooltip) {
+    position: absolute; top: 0.25rem; z-index: 2; width: max-content; max-width: calc(100% - 0.5rem);
+    display: flex; flex-direction: column; gap: 0.25rem; padding: 0.65rem 0.75rem; border: 1px solid var(--border);
+    border-radius: 9px; background: var(--surface2); color: var(--text); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-family: var(--font-mono); font-size: 0.68rem; pointer-events: none;
+  }
+  :global(.model-area-tooltip[hidden]) { display: none; }
+  :global(.model-area-tooltip-total) { color: var(--muted); }
+  :global(.model-area-tooltip-row) { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; }
+  :global(.model-area-tooltip-row span:nth-child(2)) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :global(.model-area-tooltip-swatch) { width: 8px; height: 8px; border-radius: 2px; }
 
   /* GitHub card inner panel */
   .gh-panel { border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem; background: var(--surface2); }
@@ -1004,15 +1120,4 @@ import Base from '../layouts/Base.astro';
   .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
   .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; }
 
-  /* Donut */
-  .donut-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; }
-  .donut-box { position: relative; width: 170px; height: 170px; }
-  .donut { width: 170px; height: 170px; display: block; }
-  .donut path { transition: opacity 120ms ease; }
-  .donut:hover path:not(:hover) { opacity: 0.55; }
-  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-  .donut-center-num { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1; }
-  .donut-center-lbl { font-size: 0.68rem; color: var(--faint); }
-  .donut-legend { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 </style>
