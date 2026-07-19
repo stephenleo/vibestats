@@ -299,7 +299,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
     <!-- ── Dashboard preview ─────────────────────────────────────── -->
     <section class="section">
       <h2 class="h2">Your analytics dashboard</h2>
-      <p class="section-sub">Six headline metrics, a weekly token breakdown, and efficiency metrics.</p>
+      <p class="section-sub">Six headline metrics, weekly token and model trends, and efficiency metrics.</p>
 
       <div class="kpis">
         <div class="kpi"><span class="kpi-label">Total Tokens</span><span class="kpi-value">24.8M</span><span class="kpi-delta up">▲ 12%</span></div>
@@ -311,7 +311,7 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
       </div>
 
       <div class="preview-row">
-        <!-- Weekly token consumption (40%) -->
+        <!-- Weekly token consumption -->
         <div class="card">
           <div class="card-head">
             <h3 class="card-title">Weekly Token Consumption</h3>
@@ -325,23 +325,13 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
             <span class="legend-item"><span class="legend-swatch" style="background:#fed7aa"></span>Cache create</span>
           </div>
         </div>
-        <!-- Efficiency (40%) -->
+        <!-- Efficiency -->
         <div class="card">
           <div class="card-head">
             <h3 class="card-title">Efficiency</h3>
             <span class="card-meta">12-week avg</span>
           </div>
           <div id="preview-efficiency" class="eff-rows"></div>
-        </div>
-        <!-- Model usage (20%) -->
-        <div class="card">
-          <h3 class="card-title">Model Usage</h3>
-          <div class="donut-mini"></div>
-          <div class="donut-legend">
-            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Sonnet 4.5 · 46%</div>
-            <div class="legend-item"><span class="legend-dot" style="background:color-mix(in srgb, var(--accent) 70%, #fff)"></span>Opus 4 · 24%</div>
-            <div class="legend-item"><span class="legend-dot" style="background:color-mix(in srgb, var(--accent) 46%, #fff)"></span>Sonnet 4 · 16%</div>
-          </div>
         </div>
       </div>
 
@@ -623,8 +613,8 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
   .kpi-delta.up { color: var(--accent); }
   .kpi-sub { font-size: 0.74rem; color: var(--muted); }
 
-  /* ── Preview 40/40/20 row ────────────────────────────────────── */
-  .preview-row { display: grid; grid-template-columns: 2fr 2fr 1.3fr; gap: 1rem; align-items: stretch; }
+  /* ── Preview summary row ─────────────────────────────────────── */
+  .preview-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: stretch; }
   @media (max-width: 880px) { .preview-row { grid-template-columns: 1fr; } }
   .preview-row .card { display: flex; flex-direction: column; }
 
@@ -641,20 +631,6 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
   .eff-value { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
   .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
   .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; opacity: 0.8; }
-
-  .donut-mini {
-    width: 130px; height: 130px; border-radius: 50%; margin: 0.5rem auto 1rem;
-    background: conic-gradient(
-      var(--accent) 0% 46%,
-      color-mix(in srgb, var(--accent) 70%, #fff) 46% 70%,
-      color-mix(in srgb, var(--accent) 46%, #fff) 70% 86%,
-      color-mix(in srgb, var(--accent) 26%, #fff) 86% 95%,
-      var(--border) 95% 100%
-    );
-    position: relative;
-  }
-  .donut-mini::after { content: ''; position: absolute; inset: 26%; border-radius: 50%; background: var(--surface); }
-  .donut-legend { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
 
   /* ── GitHub card ─────────────────────────────────────────────── */
   .gh-card { margin-top: 1rem; }
