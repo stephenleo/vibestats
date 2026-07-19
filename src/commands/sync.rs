@@ -39,7 +39,7 @@ fn today_utc() -> String {
 /// `selection = None` means every registered harness; `Some(h)` runs only that one.
 ///
 /// NEVER calls `std::process::exit` — `main.rs` handles exit.
-pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool) {
+pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool) -> bool {
     let today = today_utc();
     // Resolve the selection into a slice. The `single` array is bound here so
     // its lifetime extends through the rest of the function — taking a
@@ -54,10 +54,13 @@ pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool)
     };
 
     if !backfill {
-        crate::sync::run_harnesses(&today, &today, harnesses);
-        if !quiet {
+        let succeeded = crate::sync::run_harnesses(&today, &today, harnesses);
+        if succeeded && !quiet {
             println!("vibestats: sync complete");
+        } else if !succeeded {
+            eprintln!("vibestats: sync failed — see vibestats.log for details");
         }
+        succeeded
     } else {
         // Discover all historical dates from selected harnesses.
         // "0000-00-00" is lexicographically less than any real ISO date, so
@@ -74,7 +77,7 @@ pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool)
             if !quiet {
                 println!("vibestats: backfill complete — no local data found");
             }
-            return;
+            return true;
         }
 
         let mut dates: Vec<&String> = activities.keys().collect();
@@ -82,10 +85,13 @@ pub fn run(backfill: bool, selection: Option<&'static dyn Harness>, quiet: bool)
         let earliest = dates[0].clone();
         let count = dates.len();
 
-        crate::sync::run_harnesses(&earliest, &today, harnesses);
-        if !quiet {
+        let succeeded = crate::sync::run_harnesses(&earliest, &today, harnesses);
+        if succeeded && !quiet {
             println!("vibestats: backfill complete — processed {} date(s)", count);
+        } else if !succeeded {
+            eprintln!("vibestats: backfill failed — see vibestats.log for details");
         }
+        succeeded
     }
 }
 

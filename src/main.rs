@@ -91,7 +91,11 @@ fn main() {
             backfill,
             harness,
             quiet,
-        } => commands::sync::run(backfill, parse_harness_selection(&harness), quiet),
+        } => {
+            if !commands::sync::run(backfill, parse_harness_selection(&harness), quiet) {
+                std::process::exit(1);
+            }
+        }
         Commands::Status => commands::status::run(),
         Commands::Machines { subcommand } => match subcommand {
             MachinesSubcommand::List => commands::machines::list(),
