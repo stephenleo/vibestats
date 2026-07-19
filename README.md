@@ -59,7 +59,15 @@ Weekly model token usage shows the selected period's top six models individually
     <td colspan="2">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-charts-dark.png">
-        <img src="docs/images/dashboard-charts-light.png" alt="Weekly model token usage area chart showing the top six models and Others, with a Last 12 months or calendar-year selector">
+        <img src="docs/images/dashboard-charts-light.png" alt="Weekly Token Consumption and Efficiency summary charts in an equal-width row">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-model-usage-dark.png">
+        <img src="docs/images/dashboard-model-usage-light.png" alt="Weekly Model Token Usage area chart showing the top six models and Others, with a Last 12 months or calendar-year selector">
       </picture>
     </td>
   </tr>

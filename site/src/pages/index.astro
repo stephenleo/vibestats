@@ -335,6 +335,50 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
         </div>
       </div>
 
+      <!-- Model token usage over time -->
+      <div class="card model-preview-card">
+        <div class="card-head">
+          <h3 class="card-title">Model Token Usage</h3>
+          <span class="model-preview-range">Last 12 months <span aria-hidden="true">⌄</span></span>
+        </div>
+        <svg class="model-preview-chart" viewBox="0 0 860 220" role="img" aria-label="Weekly model token usage for the last 12 months">
+          <g class="model-preview-grid">
+            <line x1="60" y1="40" x2="840" y2="40"></line>
+            <line x1="60" y1="87" x2="840" y2="87"></line>
+            <line x1="60" y1="133" x2="840" y2="133"></line>
+            <line x1="60" y1="180" x2="840" y2="180"></line>
+          </g>
+          <g class="model-preview-axis">
+            <text x="48" y="44">6.0M</text>
+            <text x="48" y="91">4.0M</text>
+            <text x="48" y="137">2.0M</text>
+            <text x="48" y="184">0</text>
+            <text x="60" y="207" text-anchor="start">Aug 25</text>
+            <text x="320" y="207" text-anchor="middle">Dec 25</text>
+            <text x="580" y="207" text-anchor="middle">Mar 26</text>
+            <text x="840" y="207" text-anchor="end">Jul 26</text>
+          </g>
+          <g class="model-preview-areas">
+            <path fill="#2563eb" d="M60,162 L106,152 L152,166 L198,145 L244,158 L289,138 L335,155 L381,143 L427,159 L473,150 L519,134 L565,153 L611,130 L656,144 L702,124 L748,146 L794,160 L840,180 L840,180 L794,180 L748,180 L702,180 L656,180 L611,180 L565,180 L519,180 L473,180 L427,180 L381,180 L335,180 L289,180 L244,180 L198,180 L152,180 L106,180 L60,180 Z"></path>
+            <path fill="#7c3aed" d="M60,155 L106,141 L152,159 L198,130 L244,148 L289,123 L335,145 L381,126 L427,150 L473,137 L519,117 L565,142 L611,110 L656,130 L702,102 L748,134 L794,153 L840,180 L840,180 L794,160 L748,146 L702,124 L656,144 L611,130 L565,153 L519,134 L473,150 L427,159 L381,143 L335,155 L289,138 L244,158 L198,145 L152,166 L106,152 L60,162 Z"></path>
+            <path fill="#0891b2" d="M60,150 L106,133 L152,155 L198,121 L244,142 L289,112 L335,138 L381,116 L427,145 L473,129 L519,105 L565,135 L611,95 L656,120 L702,86 L748,125 L794,148 L840,180 L840,180 L794,153 L748,134 L702,102 L656,130 L611,110 L565,142 L519,117 L473,137 L427,150 L381,126 L335,145 L289,123 L244,148 L198,130 L152,159 L106,141 L60,155 Z"></path>
+            <path fill="#db2777" d="M60,146 L106,126 L152,152 L198,114 L244,137 L289,103 L335,132 L381,108 L427,141 L473,122 L519,95 L565,130 L611,84 L656,113 L702,73 L748,118 L794,144 L840,180 L840,180 L794,148 L748,125 L702,86 L656,120 L611,95 L565,135 L519,105 L473,129 L427,145 L381,116 L335,138 L289,112 L244,142 L198,121 L152,155 L106,133 L60,150 Z"></path>
+            <path fill="#4f46e5" d="M60,142 L106,122 L152,150 L198,108 L244,133 L289,97 L335,128 L381,102 L427,138 L473,118 L519,88 L565,126 L611,76 L656,107 L702,63 L748,112 L794,141 L840,180 L840,180 L794,144 L748,118 L702,73 L656,113 L611,84 L565,130 L519,95 L473,122 L427,141 L381,108 L335,132 L289,103 L244,137 L198,114 L152,152 L106,126 L60,146 Z"></path>
+            <path fill="#0d9488" d="M60,140 L106,118 L152,148 L198,103 L244,130 L289,91 L335,125 L381,97 L427,135 L473,114 L519,82 L565,122 L611,70 L656,102 L702,56 L748,108 L794,138 L840,180 L840,180 L794,141 L748,112 L702,63 L656,107 L611,76 L565,126 L519,88 L473,118 L427,138 L381,102 L335,128 L289,97 L244,133 L198,108 L152,150 L106,122 L60,142 Z"></path>
+            <path fill="#94a3b8" d="M60,136 L106,112 L152,145 L198,97 L244,125 L289,84 L335,120 L381,90 L427,131 L473,108 L519,74 L565,118 L611,61 L656,96 L702,46 L748,102 L794,135 L840,180 L840,180 L794,138 L748,108 L702,56 L656,102 L611,70 L565,122 L519,82 L473,114 L427,135 L381,97 L335,125 L289,91 L244,130 L198,103 L152,148 L106,118 L60,140 Z"></path>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-swatch" style="background:#2563eb"></span>sonnet 4-6</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#7c3aed"></span>gpt 5.4</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#0891b2"></span>opus 4-7</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#db2777"></span>gpt 5.3-codex</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#4f46e5"></span>gpt 5.5</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#0d9488"></span>opus 4-6</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#94a3b8"></span>Others</span>
+        </div>
+      </div>
+
       <!-- GitHub contributions -->
       <div class="card gh-card">
         <h3 class="card-title">GitHub Contributions</h3>
@@ -631,6 +675,24 @@ const INSTALL_CMD = 'curl -sSf https://vibestats.dev/install.sh | bash';
   .eff-value { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
   .eff-spark { width: 120px; height: 34px; display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; }
   .eff-spark span { flex: 1; background: var(--accent); border-radius: 1.5px; min-height: 2px; opacity: 0.8; }
+
+  .model-preview-card { margin-top: 1rem; }
+  .model-preview-range {
+    display: inline-flex; align-items: center; gap: 0.7rem; flex-shrink: 0;
+    padding: 0.48rem 0.7rem; border: 1px solid var(--border); border-radius: 9px;
+    color: var(--text); font-size: 0.76rem; font-weight: 500;
+  }
+  .model-preview-chart { display: block; width: 100%; height: auto; }
+  .model-preview-grid line { stroke: var(--border); stroke-width: 1; }
+  .model-preview-axis { fill: var(--faint); font: 10px var(--font-mono); }
+  .model-preview-axis text:nth-child(-n + 4) { text-anchor: end; }
+  .model-preview-areas path { opacity: 0.82; }
+  @media (max-width: 520px) {
+    .model-preview-card { padding: 1rem; }
+    .model-preview-card .card-head { align-items: center; }
+    .model-preview-chart { margin-top: 0.25rem; }
+    .model-preview-card .chart-legend { gap: 0.65rem; }
+  }
 
   /* ── GitHub card ─────────────────────────────────────────────── */
   .gh-card { margin-top: 1rem; }
