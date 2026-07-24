@@ -1,4 +1,4 @@
-const DASHBOARD_PATHS = new Set(['contact', 'privacy', 'security', 'u']);
+const DASHBOARD_PATHS = new Set(['404', 'contact', 'privacy', 'security', 'u']);
 const USERNAME_RE = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
 const SECURITY_HEADERS = {
   'Content-Security-Policy':

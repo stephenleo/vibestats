@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import test from 'node:test';
 
 import worker from '../public/_worker.js';
@@ -8,26 +9,38 @@ test('routes dashboards, trust pages, and unknown usernames correctly', async ()
   const env = {
     ASSETS: {
       async fetch(request) {
-        requestedAssets.push(new URL(request.url).pathname);
-        return new Response('asset');
+        const path = new URL(request.url).pathname;
+        requestedAssets.push(path);
+        return new Response(`asset:${path}`, { status: path === '/404' ? 404 : 200 });
       },
     },
   };
   const originalFetch = globalThis.fetch;
 
   try {
-    globalThis.fetch = async () => new Response(null, { status: 200 });
+    let dashboardChecks = 0;
+    globalThis.fetch = async () => {
+      dashboardChecks += 1;
+      return new Response(null, { status: 200 });
+    };
     const dashboard = await worker.fetch(new Request('https://vibestats.dev/stephenleo'), env);
     assert.equal(dashboard.status, 200);
     assert.equal(requestedAssets.pop(), '/u');
 
-    const privacy = await worker.fetch(new Request('https://vibestats.dev/privacy'), env);
-    assert.equal(privacy.status, 200);
-    assert.equal(requestedAssets.pop(), '/privacy');
-
-    const sitemap = await worker.fetch(new Request('https://vibestats.dev/sitemap.xml'), env);
-    assert.equal(sitemap.status, 200);
-    assert.equal(requestedAssets.pop(), '/sitemap.xml');
+    for (const path of [
+      '/404',
+      '/contact',
+      '/privacy',
+      '/robots.txt',
+      '/security',
+      '/sitemap.xml',
+      '/u',
+    ]) {
+      const response = await worker.fetch(new Request(`https://vibestats.dev${path}`), env);
+      assert.equal(response.status, path === '/404' ? 404 : 200);
+      assert.equal(requestedAssets.pop(), path);
+    }
+    assert.equal(dashboardChecks, 1);
 
     globalThis.fetch = async () => new Response(null, { status: 404 });
     const missing = await worker.fetch(
@@ -36,8 +49,13 @@ test('routes dashboards, trust pages, and unknown usernames correctly', async ()
     );
     assert.equal(missing.status, 404);
     assert.equal(requestedAssets.pop(), '/404');
+    assert.equal(await missing.text(), 'asset:/404');
     assert.equal(missing.headers.get('x-content-type-options'), 'nosniff');
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test('does not ship Pages redirects ahead of worker routing', () => {
+  assert.equal(existsSync(new URL('../public/_redirects', import.meta.url)), false);
 });
