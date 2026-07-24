@@ -1,7 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-<Base title="VibeStats dashboard">
+<Base
+  title="VibeStats dashboard"
+  description="View a VibeStats user's public coding activity dashboard."
+  noindex
+>
   <!-- Early fetch: start data download in <head>, before the module loads -->
   <script is:inline slot="head">
     (function() {

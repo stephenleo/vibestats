@@ -5,9 +5,26 @@ import '../styles/global.css';
 
 interface Props {
   title: string;
+  description?: string;
+  noindex?: boolean;
 }
-const { title } = Astro.props;
+const {
+  title,
+  description = 'Track Claude Code and Codex sessions across your machines with a GitHub heatmap and analytics dashboard.',
+  noindex = false,
+} = Astro.props;
+const canonicalPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
+const canonicalUrl = new URL(canonicalPath, Astro.site);
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'VibeStats',
+  url: 'https://vibestats.dev/',
+  description,
+  sameAs: ['https://github.com/stephenleo/vibestats'],
+};
 ---
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -17,6 +34,27 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    {
+      noindex ? (
+        <meta name="robots" content="noindex,follow" />
+      ) : (
+        <link rel="canonical" href={canonicalUrl} />
+      )
+    }
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="VibeStats" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {!noindex && <meta property="og:url" content={canonicalUrl} />}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {
+      canonicalPath === '/' && (
+        <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+      )
+    }
     <!-- Fonts: Space Grotesk (display) · Hanken Grotesk (body) · JetBrains Mono (code) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

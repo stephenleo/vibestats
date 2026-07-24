@@ -1,0 +1,4 @@
+Contact: https://vibestats.dev/security
+Expires: 2027-07-24T00:00:00Z
+Canonical: https://vibestats.dev/.well-known/security.txt
+Policy: https://vibestats.dev/security
