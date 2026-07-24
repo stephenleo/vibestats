@@ -65,6 +65,10 @@ jobs:
         working-directory: site
         run: npm run check
 
+      - name: Test
+        working-directory: site
+        run: npm test
+
       - name: Build
         working-directory: site
         run: npm run build
