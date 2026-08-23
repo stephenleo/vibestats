@@ -18,6 +18,7 @@ _CLEANUP_TMPDIR=""
 # --skip-binary flag in main(). The setup steps (data repo, hooks, etc)
 # still run.
 SKIP_BINARY=0
+SKIP_HOOK_CONFIGURATION=0
 
 cleanup() {
   if [ -n "$_CLEANUP_TMPDIR" ]; then
@@ -521,6 +522,11 @@ first_install_path() {
 # Legacy `vibestats sync` entries are migrated in place.
 # ---------------------------------------------------------------------------
 configure_hooks() {
+  if [ "$SKIP_HOOK_CONFIGURATION" -eq 1 ]; then
+    echo "Skipping Claude Code and Codex hook configuration."
+    return 0
+  fi
+
   CLAUDE_SETTINGS="${HOME}/.claude/settings.json"
   mkdir -p "${HOME}/.claude"
   python3 - "$CLAUDE_SETTINGS" <<'PYEOF'
@@ -788,23 +794,28 @@ trigger_initial_aggregate() {
 # Main entrypoint
 # ---------------------------------------------------------------------------
 main() {
-  # Parse flags. Currently only --skip-binary is recognized; unknown args
-  # exit non-zero so we don't silently swallow typos.
+  # Parse flags; unknown args exit non-zero so we don't silently swallow typos.
   while [ $# -gt 0 ]; do
     case "$1" in
       --skip-binary)
         SKIP_BINARY=1
         shift
         ;;
+      --skip-hook-configuration)
+        SKIP_HOOK_CONFIGURATION=1
+        shift
+        ;;
       -h|--help)
-        echo "Usage: install.sh [--skip-binary]"
+        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration]"
         echo "  --skip-binary  Use the existing 'vibestats' on PATH (e.g. from"
         echo "                 'cargo install') instead of downloading a release."
+        echo "  --skip-hook-configuration"
+        echo "                 Do not configure Claude Code or Codex hooks."
         exit 0
         ;;
       *)
         echo "Error: Unknown argument: $1" >&2
-        echo "Usage: install.sh [--skip-binary]" >&2
+        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration]" >&2
         exit 2
         ;;
     esac

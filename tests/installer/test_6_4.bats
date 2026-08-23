@@ -32,6 +32,31 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
+# P1 — Manual-only install: skip hook configuration
+# ---------------------------------------------------------------------------
+@test "[P1] installer: --skip-hook-configuration leaves hook files untouched" {
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    install_gh_if_missing() { :; }
+    check_gh_version() { :; }
+    check_gh_auth() { :; }
+    download_and_install_binary() { :; }
+    detect_install_mode() { INSTALL_MODE=multi-machine; }
+    register_machine() { :; }
+    write_aggregate_workflow() { :; }
+    setup_github_contributions_token() { :; }
+    inject_readme_markers() { :; }
+    run_backfill() { :; }
+    trigger_initial_aggregate() { :; }
+    main --skip-hook-configuration
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+  [ ! -e "${HOME}/.claude/settings.json" ]
+  [[ "$output" == *"Skipping Claude Code and Codex hook configuration."* ]]
+}
+
+# ---------------------------------------------------------------------------
 # P1 — AC #1 (FR8): Stop hook written to ~/.claude/settings.json
 # Assert: hooks.Stop[0].hooks[0].command == "vibestats sync" and async == true
 # ---------------------------------------------------------------------------

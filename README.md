@@ -89,6 +89,15 @@ The installer handles everything in one step:
 - Adds the heatmap to your profile `README.md`
 - Runs an initial backfill of existing session data
 
+To sync manually without installing Claude Code or Codex hooks:
+
+```bash
+curl -fsSL https://vibestats.dev/install.sh | bash -s -- --skip-hook-configuration
+vibestats sync
+```
+
+Run `vibestats sync --backfill` whenever you want to rescan all historical sessions.
+
 ### Windows: PowerShell installer
 
 On Windows, use PowerShell:
