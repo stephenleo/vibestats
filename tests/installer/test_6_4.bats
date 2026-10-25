@@ -57,6 +57,25 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
+# P1 — Claude Code cloud environment: binary + hooks only, no gh calls
+# ---------------------------------------------------------------------------
+@test "[P1] installer: --cloud installs binary and hooks without any gh calls" {
+  run bash --noprofile --norc -c "
+    source '${INSTALL_SH}'
+    _gh() { echo \"\$*\" >> '${GH_SPY_LOG}'; return 1; }
+    install_gh_if_missing() { echo 'unexpected gh install'; exit 1; }
+    download_and_install_binary() { echo 'binary installed'; }
+    main --cloud
+  " 2>&1
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"binary installed"* ]]
+  [[ "$output" == *"Cloud setup complete"* ]]
+  [ ! -e "${GH_SPY_LOG}" ]
+  grep -q 'vibestats sync --quiet' "${HOME}/.claude/settings.json"
+}
+
+# ---------------------------------------------------------------------------
 # P1 — AC #1 (FR8): Stop hook written to ~/.claude/settings.json
 # Assert: hooks.Stop[0].hooks[0].command == "vibestats sync" and async == true
 # ---------------------------------------------------------------------------

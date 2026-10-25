@@ -374,6 +374,53 @@ class TestAggregateEmptyHiveDirectory(unittest.TestCase):
         self.assertEqual(result["days"], {})
 
 
+class TestAggregateCloudSessions(unittest.TestCase):
+    """Cloud sessions share machine_id=claude-cloud with one session=<id>/ file each."""
+
+    def _write(self, root, rel, record):
+        path = root / "machines" / rel / "data.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record), encoding="utf-8")
+
+    def test_cloud_session_files_summed_with_regular_machines(self):
+        agg = _import_aggregate()
+        day = "year=2026/month=10/day=25/harness=claude"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmproot = pathlib.Path(tmpdir)
+            self._write(tmproot, f"{day}/machine_id=mbp-a1b2c3",
+                        {"sessions": 1, "active_minutes": 10, "input_tokens": 100})
+            self._write(tmproot, f"{day}/machine_id=claude-cloud/session=cse_a",
+                        {"sessions": 1, "active_minutes": 20, "input_tokens": 200})
+            self._write(tmproot, f"{day}/machine_id=claude-cloud/session=cse_b",
+                        {"sessions": 2, "active_minutes": 30, "input_tokens": 300})
+
+            result = agg.aggregate(tmproot, "testuser")
+
+        totals = result["days"]["2026-10-25"]
+        self.assertEqual(totals["sessions"], 4)
+        self.assertEqual(totals["active_minutes"], 60)
+        self.assertEqual(totals["input_tokens"], 600)
+
+    def test_purged_cloud_machine_excludes_all_session_files(self):
+        agg = _import_aggregate()
+        day = "year=2026/month=10/day=25/harness=claude"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmproot = pathlib.Path(tmpdir)
+            self._write(tmproot, f"{day}/machine_id=mbp-a1b2c3",
+                        {"sessions": 1, "active_minutes": 10})
+            self._write(tmproot, f"{day}/machine_id=claude-cloud/session=cse_a",
+                        {"sessions": 5, "active_minutes": 50})
+            (tmproot / "registry.json").write_text(json.dumps({"machines": [
+                {"machine_id": "claude-cloud", "status": "purged"},
+            ]}), encoding="utf-8")
+
+            result = agg.aggregate(tmproot, "testuser")
+
+        self.assertEqual(result["days"]["2026-10-25"]["sessions"], 1)
+
+
 class TestAggregateMultipleHarnesses(unittest.TestCase):
     """5.1-UNIT-008: Multiple harness dirs (harness=claude, harness=codex) summed correctly (P2)."""
 

@@ -27,4 +27,9 @@ clap = { version = "4.5", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ureq = "2.10"
+# Same TLS stack ureq already bundles; used directly only to add the roots from
+# SSL_CERT_FILE (Claude Code cloud sessions sit behind a TLS-intercepting proxy).
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-pki-types = { version = "1", features = ["std"] }
+webpki-roots = "0.26"
 toml = "0.8"

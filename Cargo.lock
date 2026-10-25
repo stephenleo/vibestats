@@ -671,10 +671,13 @@ name = "vibestats"
 version = "2.4.5"
 dependencies = [
  "clap",
+ "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "toml",
  "ureq",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]

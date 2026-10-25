@@ -5,17 +5,24 @@ use crate::logger;
 use crate::paths::checkpoint_path;
 
 /// Constructs the Hive path for a given date, harness id, and machine_id.
-/// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config.
-/// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness_id>/machine_id=<id>/data.json"
-fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
+/// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config,
+/// and the cloud session id when running in a Claude Code cloud session.
+/// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness_id>/machine_id=<id>/data.json",
+/// or ".../machine_id=<id>/session=<session>/data.json" for a cloud session.
+fn hive_path(date: &str, harness_id: &str, machine_id: &str, session: Option<&str>) -> String {
     // date is "YYYY-MM-DD" — indexing is safe because parse_date_range only returns
     // dates extracted from JSONL timestamps in that exact format.
     let year = &date[0..4];
     let month = &date[5..7];
     let day = &date[8..10];
+    // Cloud sessions share one machine_id but each container only sees its own
+    // transcript, so each session writes its own file; aggregate.py sums them.
+    let session_segment = session
+        .map(|s| format!("session={}/", s))
+        .unwrap_or_default();
     format!(
-        "machines/year={}/month={}/day={}/harness={}/machine_id={}/data.json",
-        year, month, day, harness_id, machine_id
+        "machines/year={}/month={}/day={}/harness={}/machine_id={}/{}data.json",
+        year, month, day, harness_id, machine_id, session_segment
     )
 }
 
@@ -140,6 +147,7 @@ pub fn run_harnesses(
     let mut checkpoint = cp_path.as_deref().map(Checkpoint::load).unwrap_or_default();
 
     let api = GithubApi::new(&config.oauth_token, &config.vibestats_data_repo);
+    let session = crate::config::cloud_session_id();
     let mut succeeded = true;
     for harness in harnesses {
         let activities = harness.parse_date_range(start_date, end_date);
@@ -171,7 +179,7 @@ pub fn run_harnesses(
                 continue;
             }
 
-            let path = hive_path(date, harness.id(), &config.machine_id);
+            let path = hive_path(date, harness.id(), &config.machine_id, session.as_deref());
             match api.put_file(&path, &payload) {
                 Ok(()) => {
                     record_upload_result(&mut checkpoint, harness.id(), date, &hash, true);
@@ -284,7 +292,7 @@ mod tests {
 
     #[test]
     fn hive_path_formats_correctly() {
-        let result = hive_path("2026-04-10", "claude", "stephens-mbp-a1b2c3");
+        let result = hive_path("2026-04-10", "claude", "stephens-mbp-a1b2c3", None);
         assert_eq!(
             result,
             "machines/year=2026/month=04/day=10/harness=claude/machine_id=stephens-mbp-a1b2c3/data.json"
@@ -293,7 +301,7 @@ mod tests {
 
     #[test]
     fn hive_path_preserves_zero_padding() {
-        let result = hive_path("2026-01-05", "claude", "my-machine-000001");
+        let result = hive_path("2026-01-05", "claude", "my-machine-000001", None);
         assert_eq!(
             result,
             "machines/year=2026/month=01/day=05/harness=claude/machine_id=my-machine-000001/data.json"
@@ -302,10 +310,19 @@ mod tests {
 
     #[test]
     fn hive_path_uses_selected_harness() {
-        let result = hive_path("2026-05-03", "codex", "my-machine-000001");
+        let result = hive_path("2026-05-03", "codex", "my-machine-000001", None);
         assert_eq!(
             result,
             "machines/year=2026/month=05/day=03/harness=codex/machine_id=my-machine-000001/data.json"
+        );
+    }
+
+    #[test]
+    fn hive_path_adds_session_partition_for_cloud() {
+        let result = hive_path("2026-10-25", "claude", "claude-cloud", Some("cse_abc"));
+        assert_eq!(
+            result,
+            "machines/year=2026/month=10/day=25/harness=claude/machine_id=claude-cloud/session=cse_abc/data.json"
         );
     }
 

@@ -114,8 +114,71 @@ fn generate_machine_id() -> String {
     format!("{}-{:06x}", slug, hash & 0xffffff)
 }
 
+/// Machine id shared by every Claude Code cloud session. Each cloud session
+/// runs in a fresh container that only sees its own transcript, so sessions
+/// are kept apart by a `session=<id>` partition below this machine id instead
+/// of each getting a machine id of their own.
+pub const CLOUD_MACHINE_ID: &str = "claude-cloud";
+
+/// Returns the Claude Code remote session id when running inside a Claude Code
+/// cloud session (`CLAUDE_CODE_REMOTE=true`), or `None` on a normal machine.
+pub fn cloud_session_id() -> Option<String> {
+    cloud_session_id_from(
+        std::env::var("CLAUDE_CODE_REMOTE").ok().as_deref(),
+        std::env::var("CLAUDE_CODE_REMOTE_SESSION_ID")
+            .ok()
+            .as_deref(),
+    )
+}
+
+fn cloud_session_id_from(remote: Option<&str>, session_id: Option<&str>) -> Option<String> {
+    if remote != Some("true") {
+        return None;
+    }
+    // The id becomes a Hive path segment, so keep only path-safe characters.
+    let sanitized: String = session_id?
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .collect();
+    if sanitized.is_empty() {
+        None
+    } else {
+        Some(sanitized)
+    }
+}
+
+/// Builds a cloud-session config from `VIBESTATS_TOKEN` and `VIBESTATS_DATA_REPO`.
+/// Cloud containers have no interactive `gh` login, so the token comes from an
+/// environment variable set in the cloud environment's settings.
+fn config_from_env(token: Option<&str>, repo: Option<&str>) -> Option<Config> {
+    let token = token.map(str::trim).filter(|t| !t.is_empty())?;
+    let repo = repo.map(str::trim).filter(|r| !r.is_empty())?;
+    Some(Config {
+        oauth_token: token.to_string(),
+        machine_id: CLOUD_MACHINE_ID.to_string(),
+        vibestats_data_repo: repo.to_string(),
+    })
+}
+
 impl Config {
     pub fn load() -> Result<Config, String> {
+        if cloud_session_id().is_some() {
+            if let Some(config) = config_from_env(
+                std::env::var("VIBESTATS_TOKEN").ok().as_deref(),
+                std::env::var("VIBESTATS_DATA_REPO").ok().as_deref(),
+            ) {
+                return Ok(config);
+            }
+            // A config file written inside a cloud container still belongs to
+            // the shared cloud machine, not to the container's hostname.
+            let mut config = Self::load_file()?;
+            config.machine_id = CLOUD_MACHINE_ID.to_string();
+            return Ok(config);
+        }
+        Self::load_file()
+    }
+
+    fn load_file() -> Result<Config, String> {
         let path = config_path()?;
         let contents = std::fs::read_to_string(&path).map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
@@ -172,6 +235,41 @@ mod tests {
         let mut path = std::env::temp_dir();
         path.push(format!("vibestats_test_{suffix}"));
         path
+    }
+
+    #[test]
+    fn cloud_session_id_requires_remote_flag() {
+        assert_eq!(cloud_session_id_from(None, Some("cse_abc")), None);
+        assert_eq!(cloud_session_id_from(Some("false"), Some("cse_abc")), None);
+        assert_eq!(
+            cloud_session_id_from(Some("true"), Some("cse_abc")),
+            Some("cse_abc".to_string())
+        );
+    }
+
+    #[test]
+    fn cloud_session_id_strips_path_unsafe_characters() {
+        assert_eq!(
+            cloud_session_id_from(Some("true"), Some("../cse_a/b c")),
+            Some("cse_abc".to_string())
+        );
+        assert_eq!(cloud_session_id_from(Some("true"), Some("/..")), None);
+        assert_eq!(cloud_session_id_from(Some("true"), None), None);
+    }
+
+    #[test]
+    fn config_from_env_uses_shared_cloud_machine_id() {
+        let config = config_from_env(Some("ghp_x"), Some("user/vibestats-data")).unwrap();
+        assert_eq!(config.oauth_token, "ghp_x");
+        assert_eq!(config.machine_id, CLOUD_MACHINE_ID);
+        assert_eq!(config.vibestats_data_repo, "user/vibestats-data");
+    }
+
+    #[test]
+    fn config_from_env_requires_token_and_repo() {
+        assert!(config_from_env(None, Some("user/vibestats-data")).is_none());
+        assert!(config_from_env(Some("ghp_x"), None).is_none());
+        assert!(config_from_env(Some("  "), Some("user/vibestats-data")).is_none());
     }
 
     #[test]
