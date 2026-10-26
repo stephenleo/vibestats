@@ -7,7 +7,7 @@ use crate::paths::checkpoint_path;
 /// Constructs the Hive path for a given date, harness id, and machine_id.
 /// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config.
 /// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness_id>/machine_id=<id>/data.json"
-fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
+pub(crate) fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
     // date is "YYYY-MM-DD" — indexing is safe because parse_date_range only returns
     // dates extracted from JSONL timestamps in that exact format.
     let year = &date[0..4];
