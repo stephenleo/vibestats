@@ -213,16 +213,13 @@ pub fn remove(machine_id: &str, purge_history: bool) {
         }
 
         // Enumerate and delete Hive partition files
-        // A cloud container's checkpoint only knows its own session's files, so
-        // the shared cloud machine is always purged by walking the remote tree.
-        let deleted_count =
-            if machine_id == config.machine_id && crate::config::cloud_session_id().is_none() {
-                // Self-purge: use local checkpoint date hashes (deterministic, low network cost)
-                purge_self(&api, machine_id)
-            } else {
-                // Remote purge: list directory tree via GitHub Contents API
-                purge_remote(&api, machine_id)
-            };
+        let deleted_count = if machine_id == config.machine_id {
+            // Self-purge: use local checkpoint date hashes (deterministic, low network cost)
+            purge_self(&api, machine_id)
+        } else {
+            // Remote purge: list directory tree via GitHub Contents API
+            purge_remote(&api, machine_id)
+        };
 
         // Self-purge: update local checkpoint
         if machine_id == config.machine_id {
@@ -280,7 +277,6 @@ fn purge_self(api: &GithubApi, machine_id: &str) -> usize {
 /// Purge Hive files for a remote machine by listing the GitHub directory tree.
 /// Walks the Hive path structure depth-first:
 ///   machines/ → year=YYYY/ → month=MM/ → day=DD/ → harness=claude/machine_id=<id>/ → data.json
-/// (cloud partitions add a `session=<id>/` level before `data.json`).
 /// Returns the number of files successfully deleted.
 fn purge_remote(api: &GithubApi, machine_id: &str) -> usize {
     let mut deleted = 0usize;
@@ -364,44 +360,36 @@ fn purge_remote(api: &GithubApi, machine_id: &str) -> usize {
                         if !is_match {
                             continue;
                         }
-                        deleted += delete_partition(api, machine_dir);
+                        // List data files within this machine's partition
+                        let (data_files, _) = match api.list_directory_all(machine_dir) {
+                            Ok(entries) => entries,
+                            Err(e) => {
+                                logger::error(&format!(
+                                    "machines: failed to list directory {}: {}",
+                                    machine_dir, e
+                                ));
+                                continue;
+                            }
+                        };
+                        for file_path in &data_files {
+                            match api.delete_file(file_path) {
+                                Ok(()) => {
+                                    deleted += 1;
+                                }
+                                Err(e) => {
+                                    logger::error(&format!(
+                                        "machines: failed to delete {}: {}",
+                                        file_path, e
+                                    ));
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    deleted
-}
-
-/// Deletes every file under a `machine_id=<id>` partition, including the
-/// `session=<id>/` subfolders written by Claude Code cloud sessions.
-/// Returns the number of files successfully deleted.
-fn delete_partition(api: &GithubApi, dir: &str) -> usize {
-    let (files, subdirs) = match api.list_directory_all(dir) {
-        Ok(entries) => entries,
-        Err(e) => {
-            logger::error(&format!(
-                "machines: failed to list directory {}: {}",
-                dir, e
-            ));
-            return 0;
-        }
-    };
-    let mut deleted = 0usize;
-    for file_path in &files {
-        match api.delete_file(file_path) {
-            Ok(()) => {
-                deleted += 1;
-            }
-            Err(e) => {
-                logger::error(&format!("machines: failed to delete {}: {}", file_path, e));
-            }
-        }
-    }
-    for subdir in &subdirs {
-        deleted += delete_partition(api, subdir);
-    }
     deleted
 }
 
