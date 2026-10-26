@@ -140,23 +140,6 @@ curl -fsSL https://vibestats.dev/install.sh | bash -s -- --skip-binary
 
 On any additional machine, re-run the same install command. The installer detects the existing `vibestats-data` repo and registers the new machine without overwriting anything.
 
-### Claude Code cloud sessions
-
-Sessions on [claude.ai/code](https://claude.ai/code) run in throwaway cloud containers, so they sync on their own after each turn instead of from your machine. Set this up once per cloud environment, after a normal install on a local machine has created your `vibestats-data` repo:
-
-1. Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to your `vibestats-data` repo only, with **Contents: Read and write**.
-2. In the cloud environment's settings, add these environment variables:
-   ```
-   VIBESTATS_TOKEN=<your token>
-   VIBESTATS_DATA_REPO=<your-username>/vibestats-data
-   ```
-3. Add this line to the environment's setup script:
-   ```bash
-   curl -fsSL https://vibestats.dev/install.sh | bash -s -- --cloud
-   ```
-
-All cloud sessions are recorded under one machine, `claude-cloud`. Each session writes its own `session=<id>/data.json` under that machine's partition, and the daily aggregation adds them up.
-
 ## How it works
 
 VibeStats has three components that work together:
