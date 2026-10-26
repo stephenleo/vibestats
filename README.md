@@ -142,27 +142,28 @@ On any additional machine, re-run the same install command. The installer detect
 
 ### Claude Code cloud sessions
 
-Sessions on [claude.ai/code](https://claude.ai/code) run in throwaway cloud containers that can't sync themselves: hooks from your user settings don't run there, and their GitHub access is limited to the repositories attached to each session. Instead, one daily [scheduled task](https://code.claude.com/docs/en/routines) records all of them. It lists your cloud sessions with Claude Code's built-in session tools and writes each day's totals to your `vibestats-data` repo as the machine `claude-cloud`. Nothing leaves Anthropic and your GitHub account.
+Sessions on [claude.ai/code](https://claude.ai/code) run in throwaway cloud containers that can't sync themselves: hooks from your user settings don't run there, and their GitHub access is limited to the repositories attached to each session. Instead, one daily [scheduled task](https://code.claude.com/docs/en/routines) records all of them. It lists your cloud sessions with Claude Code's built-in session tools and writes one file per session to your `vibestats-data` repo, under the machine `claude-cloud`. Nothing leaves Anthropic and your GitHub account.
 
 Set it up once, after a normal install has created your `vibestats-data` repo:
 
-1. Go to [claude.ai/code/routines](https://claude.ai/code/routines) and create a new scheduled task.
-2. **Repository:** select only `<your-username>/vibestats-data`. **Environment:** Default. **Trigger:** daily. **Connectors:** remove them all; the task needs none.
-3. Paste this prompt, with your username filled in:
+1. Make sure the [Claude GitHub App](https://github.com/settings/installations) can access `vibestats-data`. If the scheduled task's repository picker can't find it, add it under the app's **Repository access**.
+2. Go to [claude.ai/code/routines](https://claude.ai/code/routines) and create a new scheduled task.
+3. **Repository:** select only `<your-username>/vibestats-data`. **Environment:** Default. **Trigger:** daily. **Connectors:** remove them all; the task needs none. Any model works, including the smallest.
+4. Paste this prompt, with your username filled in:
 
    ```text
    Record my Claude Code cloud session usage in vibestats.
 
    1. Install the vibestats CLI:
       mkdir -p ~/.local/bin && curl -fsSL https://github.com/stephenleo/vibestats/releases/latest/download/vibestats-x86_64-unknown-linux-gnu.tar.gz | tar xz -C ~/.local/bin vibestats
-   2. Run `date -u -d '7 days ago' +%F` and call the result SINCE.
-   3. Call the list_sessions tool with limit 100 and mine set to true. While the response has has_more true and the created_at of its last session is on or after SINCE, call it again with after_id set to the response's last_id. Don't copy the results anywhere: vibestats reads them from this session's transcript.
-   4. Run: ~/.local/bin/vibestats ingest-cloud --repo <your-username>/vibestats-data --since SINCE
+   2. Call the list_sessions tool with limit 100 and mine set to true. While the response has has_more true, call it again with after_id set to that response's last_id. Don't copy the results anywhere: vibestats reads them from this session's transcript.
+   3. Run: ~/.local/bin/vibestats ingest-cloud --repo <your-username>/vibestats-data
+   4. If the command says the listing is incomplete, finish step 2 and run step 3 again.
    5. Reply with the command's output. Don't change files, branches or pull requests in the repository.
    ```
-4. Click **Create**, then **Run now** to check it. The run's last message should end with a line like `3 day(s) uploaded, 0 unchanged, 0 failed`.
+5. Click **Create**, then **Run now** to check it. The run's last message should end with a line like `3 session(s) uploaded, 0 unchanged, 0 failed`.
 
-Each run rewrites the last 7 days, so a session is counted on the day it started and its totals keep updating while you use it that week. Cloud sessions report tokens and models only, so they add no active minutes, message counts or tool-use counts. Sessions you drive from your own machine with Remote Control are skipped here, since that machine's own sync already counts them.
+Each session is counted on the day it started, and its file is updated on every run for as long as you keep using it. A run only uploads sessions whose totals changed since the last run, tracked in `claude-cloud/index.json`. Cloud sessions report tokens and models only, so they add no active minutes, message counts or tool-use counts. Sessions you drive from your own machine with Remote Control are skipped here, since that machine's own sync already counts them.
 
 ## How it works
 

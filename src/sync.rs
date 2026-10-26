@@ -21,7 +21,7 @@ pub(crate) fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> Strin
 
 /// Computes SHA256 of data and returns lowercase hex string (64 chars).
 /// Implemented std-only — no external crate.
-fn sha256_hex(data: &[u8]) -> String {
+pub(crate) fn sha256_hex(data: &[u8]) -> String {
     // SHA256 initial hash values (first 32 bits of fractional parts of square roots of primes 2..19)
     let mut h: [u32; 8] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,

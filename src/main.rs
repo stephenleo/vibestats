@@ -78,11 +78,7 @@ enum Commands {
         /// The vibestats-data repository, e.g. `owner/vibestats-data`
         #[arg(long)]
         repo: String,
-        /// Earliest session start date to record (YYYY-MM-DD). The listing
-        /// must include every session started on or after this date.
-        #[arg(long)]
-        since: String,
-        /// Print the per-day records instead of uploading them
+        /// Print the per-session records instead of uploading them
         #[arg(long)]
         dry_run: bool,
     },
@@ -127,10 +123,9 @@ fn main() {
         Commands::IngestCloud {
             inputs,
             repo,
-            since,
             dry_run,
         } => {
-            if !commands::ingest_cloud::run(&inputs, &repo, &since, dry_run) {
+            if !commands::ingest_cloud::run(&inputs, &repo, dry_run) {
                 std::process::exit(1);
             }
         }
