@@ -112,6 +112,58 @@ where
     Err(last_err)
 }
 
+// ─── HTTP agent ──────────────────────────────────────────────────────────────
+
+/// Shared HTTP agent. Trusts the bundled webpki roots plus any certificates in
+/// the PEM file named by `SSL_CERT_FILE`, so requests work behind a TLS-
+/// intercepting proxy such as the one in Claude Code cloud sessions.
+fn agent() -> &'static ureq::Agent {
+    static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
+    AGENT.get_or_init(|| {
+        let extra = std::env::var_os("SSL_CERT_FILE")
+            .map(|path| load_pem_certs(std::path::Path::new(&path)))
+            .unwrap_or_default();
+        if extra.is_empty() {
+            return ureq::agent();
+        }
+        let mut roots = rustls::RootCertStore {
+            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+        };
+        roots.add_parsable_certificates(extra);
+        let config = rustls::ClientConfig::builder_with_provider(
+            rustls::crypto::ring::default_provider().into(),
+        )
+        .with_safe_default_protocol_versions()
+        .map(|b| b.with_root_certificates(roots).with_no_client_auth());
+        match config {
+            Ok(config) => ureq::AgentBuilder::new()
+                .tls_config(std::sync::Arc::new(config))
+                .build(),
+            Err(e) => {
+                logger::error(&format!("github_api: failed to build TLS config: {}", e));
+                ureq::agent()
+            }
+        }
+    })
+}
+
+/// Reads every certificate from a PEM bundle. Unreadable files and malformed
+/// entries are skipped so a bad `SSL_CERT_FILE` falls back to the bundled roots.
+fn load_pem_certs(path: &std::path::Path) -> Vec<rustls_pki_types::CertificateDer<'static>> {
+    use rustls_pki_types::pem::PemObject;
+    match rustls_pki_types::CertificateDer::pem_file_iter(path) {
+        Ok(iter) => iter.filter_map(Result::ok).collect(),
+        Err(e) => {
+            logger::error(&format!(
+                "github_api: failed to read SSL_CERT_FILE {}: {:?}",
+                path.display(),
+                e
+            ));
+            Vec::new()
+        }
+    }
+}
+
 // ─── Constructor ──────────────────────────────────────────────────────────────
 
 impl GithubApi {
@@ -255,7 +307,8 @@ impl GithubApi {
 fn get_file_sha_inner(token: &str, repo: &str, path: &str) -> Result<Option<String>, ureq::Error> {
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
-    let response = ureq::get(&url)
+    let response = agent()
+        .get(&url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -324,7 +377,8 @@ fn put_file_inner(
         .to_string()
     };
 
-    let response = ureq::put(&url)
+    let response = agent()
+        .put(&url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -350,7 +404,8 @@ fn get_file_content_inner(
 ) -> Result<Option<String>, ureq::Error> {
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
-    let response = ureq::get(&url)
+    let response = agent()
+        .get(&url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -409,7 +464,8 @@ fn delete_file_inner(token: &str, repo: &str, path: &str, sha: &str) -> Result<(
         "sha": sha
     })
     .to_string();
-    let response = ureq::delete(&url)
+    let response = agent()
+        .delete(&url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -433,7 +489,8 @@ fn list_directory_all_inner(
 ) -> Result<(Vec<String>, Vec<String>), ureq::Error> {
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
-    let response = ureq::get(&url)
+    let response = agent()
+        .get(&url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -489,7 +546,8 @@ fn list_directory_all_inner(
 #[allow(clippy::result_large_err)]
 fn get_user_inner(token: &str) -> Result<String, ureq::Error> {
     let url = "https://api.github.com/user";
-    let response = ureq::get(url)
+    let response = agent()
+        .get(url)
         .set("Authorization", &format!("Bearer {}", token))
         .set("User-Agent", "vibestats")
         .set("Accept", "application/vnd.github+json")
@@ -609,6 +667,25 @@ fn base64_decode(input: &str) -> Result<String, &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── SSL_CERT_FILE loading ─────────────────────────────────────────────────
+
+    #[test]
+    fn load_pem_certs_missing_file_returns_empty() {
+        let certs = load_pem_certs(std::path::Path::new(
+            "/tmp/vibestats_definitely_missing_xyzzy/ca.pem",
+        ));
+        assert!(certs.is_empty());
+    }
+
+    #[test]
+    fn load_pem_certs_skips_non_certificate_content() {
+        let mut path = std::env::temp_dir();
+        path.push("vibestats_test_not_a_cert.pem");
+        std::fs::write(&path, "not a pem bundle\n").unwrap();
+        assert!(load_pem_certs(&path).is_empty());
+        std::fs::remove_file(&path).ok();
+    }
 
     // ── base64_encode test vectors (RFC 4648) ─────────────────────────────────
 

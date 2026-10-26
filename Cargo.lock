@@ -668,13 +668,16 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "vibestats"
-version = "2.5.0"
+version = "2.6.0"
 dependencies = [
  "clap",
+ "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "toml",
  "ureq",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]

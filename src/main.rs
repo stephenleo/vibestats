@@ -68,6 +68,24 @@ enum Commands {
     Uninstall,
     /// Run the SessionStart hook
     SessionStart,
+    /// Record Claude Code cloud sessions from saved session listings
+    /// (run by a daily scheduled cloud task; see README)
+    IngestCloud {
+        /// JSON files saved from the cloud session listing tool. Without
+        /// files, reads the `list_sessions` results in this session's own
+        /// transcript.
+        inputs: Vec<std::path::PathBuf>,
+        /// The vibestats-data repository, e.g. `owner/vibestats-data`
+        #[arg(long)]
+        repo: String,
+        /// Earliest session start date to record (YYYY-MM-DD). The listing
+        /// must include every session started on or after this date.
+        #[arg(long)]
+        since: String,
+        /// Print the per-day records instead of uploading them
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -106,6 +124,16 @@ fn main() {
         },
         Commands::Auth => commands::auth::run(),
         Commands::Uninstall => commands::uninstall::run(),
+        Commands::IngestCloud {
+            inputs,
+            repo,
+            since,
+            dry_run,
+        } => {
+            if !commands::ingest_cloud::run(&inputs, &repo, &since, dry_run) {
+                std::process::exit(1);
+            }
+        }
         Commands::SessionStart => {
             hooks::session_start::run();
             std::process::exit(0);
