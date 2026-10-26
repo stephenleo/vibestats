@@ -7,7 +7,7 @@ use crate::paths::checkpoint_path;
 /// Constructs the Hive path for a given date, harness id, and machine_id.
 /// Input: date as "YYYY-MM-DD", harness_id from the Harness trait, machine_id from config.
 /// Output: "machines/year=YYYY/month=MM/day=DD/harness=<harness_id>/machine_id=<id>/data.json"
-pub(crate) fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
+fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> String {
     // date is "YYYY-MM-DD" — indexing is safe because parse_date_range only returns
     // dates extracted from JSONL timestamps in that exact format.
     let year = &date[0..4];
@@ -21,7 +21,7 @@ pub(crate) fn hive_path(date: &str, harness_id: &str, machine_id: &str) -> Strin
 
 /// Computes SHA256 of data and returns lowercase hex string (64 chars).
 /// Implemented std-only — no external crate.
-pub(crate) fn sha256_hex(data: &[u8]) -> String {
+fn sha256_hex(data: &[u8]) -> String {
     // SHA256 initial hash values (first 32 bits of fractional parts of square roots of primes 2..19)
     let mut h: [u32; 8] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,

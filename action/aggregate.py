@@ -38,7 +38,6 @@ def parse_date_from_path(path: pathlib.Path):
     """Extract YYYY-MM-DD from a Hive partition path. Returns str date or None if path is malformed."""
     # Path format:
     # machines/year=YYYY/month=MM/day=DD/harness=.../machine_id=.../data.json
-    # (cloud sessions add a session=... level before data.json)
     parts = path.parts
     year_val = None
     month_val = None
@@ -110,14 +109,7 @@ def aggregate(root: pathlib.Path, username: str) -> dict:
 
     machines_dir = root / "machines"
     if machines_dir.exists():
-        # Claude Code cloud sessions share one machine_id and write one file per
-        # session under machine_id=<id>/session=<id>/, so both layouts are summed.
-        partition = "year=*/month=*/day=*/harness=*/machine_id=*"
-        data_files = sorted(
-            list(machines_dir.glob(f"{partition}/data.json"))
-            + list(machines_dir.glob(f"{partition}/session=*/data.json"))
-        )
-        for data_file in data_files:
+        for data_file in machines_dir.glob("year=*/month=*/day=*/harness=*/machine_id=*/data.json"):
             machine_id = _extract_machine_id_from_path(data_file)
             if machine_id in purged_machines:
                 continue
