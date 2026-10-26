@@ -20,6 +20,13 @@ _CLEANUP_TMPDIR=""
 SKIP_BINARY=0
 SKIP_HOOK_CONFIGURATION=0
 
+# Claude Code cloud sessions (claude.ai/code) run in throwaway containers with
+# no interactive gh login. Set by --cloud: installs only the binary and the
+# Claude Code hooks. At hook time vibestats reads VIBESTATS_TOKEN and
+# VIBESTATS_DATA_REPO from the cloud environment's variables and syncs as the
+# shared "claude-cloud" machine.
+CLOUD_MODE=0
+
 cleanup() {
   if [ -n "$_CLEANUP_TMPDIR" ]; then
     rm -rf "$_CLEANUP_TMPDIR"
@@ -793,6 +800,29 @@ trigger_initial_aggregate() {
 # ---------------------------------------------------------------------------
 # Main entrypoint
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude Code cloud environment setup (--cloud). Meant for the environment's
+# setup script, which cannot read the environment's variables or secrets, so no
+# GitHub API calls happen here: the data repo, registry and workflow are set up
+# once by a normal install on a local machine.
+# ---------------------------------------------------------------------------
+install_cloud() {
+  if [ "$SKIP_BINARY" -eq 1 ]; then
+    if ! command -v vibestats > /dev/null 2>&1; then
+      echo "Error: --skip-binary set but 'vibestats' is not on PATH." >&2
+      exit 1
+    fi
+  else
+    download_and_install_binary
+  fi
+
+  configure_hooks
+
+  echo "=== Cloud setup complete ==="
+  echo "Set VIBESTATS_TOKEN and VIBESTATS_DATA_REPO in the cloud environment's"
+  echo "variables so the hooks can sync as machine 'claude-cloud'."
+}
+
 main() {
   # Parse flags; unknown args exit non-zero so we don't silently swallow typos.
   while [ $# -gt 0 ]; do
@@ -805,23 +835,35 @@ main() {
         SKIP_HOOK_CONFIGURATION=1
         shift
         ;;
+      --cloud)
+        CLOUD_MODE=1
+        shift
+        ;;
       -h|--help)
-        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration]"
+        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration] [--cloud]"
         echo "  --skip-binary  Use the existing 'vibestats' on PATH (e.g. from"
         echo "                 'cargo install') instead of downloading a release."
         echo "  --skip-hook-configuration"
         echo "                 Do not configure Claude Code or Codex hooks."
+        echo "  --cloud        Set up a Claude Code cloud environment: install the"
+        echo "                 binary and hooks only. Sync reads VIBESTATS_TOKEN and"
+        echo "                 VIBESTATS_DATA_REPO from the environment at hook time."
         exit 0
         ;;
       *)
         echo "Error: Unknown argument: $1" >&2
-        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration]" >&2
+        echo "Usage: install.sh [--skip-binary] [--skip-hook-configuration] [--cloud]" >&2
         exit 2
         ;;
     esac
   done
 
   echo "=== vibestats installer ==="
+
+  if [ "$CLOUD_MODE" -eq 1 ]; then
+    install_cloud
+    return 0
+  fi
 
   install_gh_if_missing
   check_gh_version
