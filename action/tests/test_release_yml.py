@@ -14,7 +14,7 @@ Tests assert structural and schema properties of release.yml required for:
 - AC2 (R-007): archive naming convention vibestats-<target>.tar.gz
 - AC3 (R-001): non-zero exit / no partial release on failure
 - P1: action pinning (R-006), tag-only trigger (R-001), cross for Linux (R-002)
-- P2: ref_name usage (R-007), all three targets uploaded (R-001)
+- P2: ref_name usage (R-007), all four targets uploaded (R-001)
 """
 
 import pathlib
@@ -35,6 +35,7 @@ EXPECTED_TARGETS = {
     "aarch64-apple-darwin",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",  # install.ps1 (native Windows, #135)
 }
 
 
@@ -120,16 +121,17 @@ def test_tc1_tag_pattern_matches_v_wildcard() -> None:
 
 
 # ---------------------------------------------------------------------------
-# TC-2 (P0): Matrix targets are exactly the three required targets — 8.1-SCHEMA-020
+# TC-2 (P0): Matrix targets are exactly the four required targets — 8.1-SCHEMA-020
 # Risk: R-002 — wrong targets break install.sh download URLs (FR41)
 # Story 8.1 AC1 / test-design-epic-8.md P0 row 2
 # ---------------------------------------------------------------------------
 
 
 def test_tc2_matrix_targets_exact_set() -> None:
-    """[P0] 8.1-SCHEMA-020: release.yml build job matrix must include EXACTLY the three
-    required targets: aarch64-apple-darwin, x86_64-apple-darwin, x86_64-unknown-linux-gnu.
-    Missing or extra targets break Epic 6 install.sh URL construction (R-002, FR41)."""
+    """[P0] 8.1-SCHEMA-020: release.yml build job matrix must include EXACTLY the four
+    required targets: aarch64-apple-darwin, x86_64-apple-darwin, x86_64-unknown-linux-gnu,
+    x86_64-pc-windows-msvc. Missing or extra targets break install.sh / install.ps1 URL
+    construction (R-002, FR41)."""
     doc = _load_yaml()
     jobs = doc.get("jobs", {})
     assert jobs, "release.yml has no 'jobs:' defined"
@@ -166,7 +168,7 @@ def test_tc2_matrix_targets_exact_set() -> None:
         f"release.yml matrix targets mismatch.\n"
         f"  Expected: {sorted(EXPECTED_TARGETS)}\n"
         f"  Found:    {sorted(found_targets)}\n"
-        "All three targets are required for cross-platform binary distribution (FR41)."
+        "All four targets are required for cross-platform binary distribution (FR41)."
     )
 
 
@@ -329,7 +331,7 @@ def test_tc7_release_step_uses_github_ref_name() -> None:
 
 
 # ---------------------------------------------------------------------------
-# TC-8 (P2): All three targets uploaded to GitHub Release — 8.1-SCHEMA-080
+# TC-8 (P2): All four targets uploaded to GitHub Release — 8.1-SCHEMA-080
 # Risk: R-001 — partial release if any target artifact is not uploaded
 # test-design-epic-8.md P2 row 5
 # ---------------------------------------------------------------------------
@@ -338,7 +340,7 @@ def test_tc7_release_step_uses_github_ref_name() -> None:
 def test_tc8_upload_artifact_step_present() -> None:
     """[P2] 8.1-SCHEMA-080: release.yml must include an upload step for build artifacts.
     The matrix build must upload each vibestats-<target>.tar.gz as a build artifact so
-    the release job can attach all three to the GitHub Release (R-001, AC2)."""
+    the release job can attach all four to the GitHub Release (R-001, AC2)."""
     text = _load_text()
     assert "upload-artifact" in text or "upload_artifact" in text, (
         "release.yml must include an 'actions/upload-artifact' step to store "
@@ -348,18 +350,18 @@ def test_tc8_upload_artifact_step_present() -> None:
 
 def test_tc8_download_artifact_step_present() -> None:
     """[P2] 8.1-SCHEMA-081: release.yml release job must include a download-artifact step.
-    The release job needs 'actions/download-artifact' to collect all three platform archives
+    The release job needs 'actions/download-artifact' to collect all four platform archives
     before attaching them to the GitHub Release (R-001, AC2)."""
     text = _load_text()
     assert "download-artifact" in text or "download_artifact" in text, (
         "release.yml release job must include 'actions/download-artifact' to collect "
-        "all three platform archives before attaching to the GitHub Release (R-001)."
+        "all four platform archives before attaching to the GitHub Release (R-001)."
     )
 
 
 def test_tc8_release_job_needs_build_job() -> None:
     """[P2] 8.1-SCHEMA-082: The release job must declare 'needs: build' (or equivalent).
-    This dependency ensures all three platform builds complete successfully before the
+    This dependency ensures all four platform builds complete successfully before the
     release is created — preventing partial releases (AC3, R-001)."""
     doc = _load_yaml()
     jobs = doc.get("jobs", {})
